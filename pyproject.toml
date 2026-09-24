@@ -8,12 +8,14 @@ dependencies = [
     "flask-migrate>=4.1.0",
     "flask-sqlalchemy>=3.1.1",
     "gunicorn>=26.2.0",
+    "requests>=2.34.2",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
+    "responses>=0.26.3",
     "ruff>=0.16.8",
 ]
 
@@ -23,7 +25,7 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-ra --strict-markers --cov=app --cov-report=term-missing"
+addopts = "-ra --strict-markers -m 'not tnoodle' --cov=app --cov-report=term-missing"
 markers = [
     "tnoodle: needs a real TNoodle server (deselected unless run with -m tnoodle)",
 ]
