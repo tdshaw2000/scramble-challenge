@@ -106,3 +106,28 @@ jobs:
             ghcr.io/${{ github.repository }}/web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    # Runs on the OCI server itself, through the self-hosted runner that
+    # scripts/server-setup.sh registers with the label "oci".
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [publish]
+    runs-on: [self-hosted, oci]
+    permissions:
+      contents: read
+      packages: read
+    env:
+      SITE_ADDRESS: scramble-challenge.duckdns.org
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker compose pull
+      - run: docker compose up -d --remove-orphans
+      - run: scripts/smoke-test.sh
+      - if: failure()
+        run: docker compose logs --tail 100
+      - run: docker image prune -f

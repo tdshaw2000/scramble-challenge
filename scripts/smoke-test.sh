@@ -31,3 +31,37 @@ do
   [ "$i" -ge 30 ] && { echo "FAIL: TNoodle never answered"; exit 1; }
   sleep 2
 done
+
+# Through Caddy, the way players come in. On the server SITE_ADDRESS is the public
+# domain (HTTPS, checked against this machine); in CI and locally it's plain ":80".
+SITE="${SITE_ADDRESS:-:80}"
+if [ "${SITE#:}" != "$SITE" ]; then
+  BASE="http://localhost$SITE"
+  set --
+else
+  BASE="https://$SITE"
+  set -- --resolve "$SITE:443:127.0.0.1"
+fi
+
+echo "Waiting for $BASE/healthz through Caddy..."
+i=0
+until curl -sf "$@" "$BASE/healthz" > /dev/null; do
+  i=$((i + 1))
+  # The first HTTPS start includes getting a certificate, so allow a couple of minutes.
+  [ "$i" -ge 60 ] && { echo "FAIL: $BASE/healthz never came up through Caddy"; exit 1; }
+  sleep 2
+done
+echo "ok: $BASE/healthz through Caddy"
+
+echo "Checking a WebSocket upgrade through Caddy..."
+# The connection stays open after the upgrade, so curl times out; only the status matters.
+response=$(curl -si --http1.1 --max-time 5 "$@" \
+  -H "Connection: Upgrade" -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: c21va2UtdGVzdC1rZXkhIQ==" \
+  "$BASE/socket.io/?EIO=4&transport=websocket" || true)
+if ! echo "$response" | head -1 | grep -q " 101"; then
+  echo "FAIL: expected 101 Switching Protocols, got:"
+  echo "$response" | head -5
+  exit 1
+fi
+echo "ok: WebSocket upgrade through Caddy"

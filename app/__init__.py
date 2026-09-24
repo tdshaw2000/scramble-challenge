@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.config import CONFIGS
 from app.extensions import db, migrate, socketio
@@ -12,6 +13,9 @@ def create_app(config_name: str = "production", **overrides) -> Flask:
     app = Flask(__name__)
     app.config.from_object(CONFIGS[config_name]())
     app.config.update(overrides)
+
+    if proxies := app.config["TRUSTED_PROXIES"]:
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=proxies, x_host=proxies)
 
     db.init_app(app)
     migrate.init_app(
