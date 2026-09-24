@@ -1,12 +1,15 @@
 """Socket.IO handlers for the SPEC.md event contract. Kept thin: look up who is asking,
 call services, and emit. One room per challenge, named by its slug."""
 
+import functools
+import uuid
+
 from flask import request, url_for
 from flask_socketio import emit, join_room
 
 from app import services
-from app.extensions import socketio
-from app.models import Challenge, ChallengeStatus, Round
+from app.extensions import db, socketio
+from app.models import Challenge, ChallengeStatus, Player, Round, RoundStatus
 from app.routes import COOKIE_NAME
 
 # Which player each open connection belongs to. In memory, so the app runs one worker.
@@ -64,3 +67,64 @@ def on_join_challenge(data):
         emit("round_started", round_started(challenge.current_round))
     elif challenge.status == ChallengeStatus.ROUND_RESULTS:
         emit("round_complete", round_results(challenge.current_round))
+
+
+def current_player() -> Player | None:
+    player_id = connections.get(request.sid)
+    return db.session.get(Player, uuid.UUID(player_id)) if player_id else None
+
+
+def player_action(handler):
+    """Run handler(player, data) for a joined player; report game errors to the sender."""
+
+    @functools.wraps(handler)
+    def wrapper(data=None):
+        player = current_player()
+        if player is None:
+            return game_error("Join the challenge first.")
+        try:
+            handler(player, data or {})
+        except services.GameError as error:
+            db.session.rollback()
+            game_error(str(error))
+
+    return wrapper
+
+
+def broadcast_solve_progress(challenge: Challenge, rnd: Round) -> None:
+    emit("leaderboard_update", round_results(rnd), to=challenge.slug)
+    if rnd.status == RoundStatus.COMPLETE:
+        emit("round_complete", round_results(rnd), to=challenge.slug)
+
+
+@socketio.on("start_round")
+@player_action
+def on_start_round(player, data):
+    rnd = services.start_round(player.challenge, player, puzzle=data.get("puzzle"))
+    emit("round_started", round_started(rnd), to=rnd.challenge.slug)
+
+
+@socketio.on("start_inspection")
+@player_action
+def on_start_inspection(player, data):
+    services.start_inspection(player)
+
+
+@socketio.on("start_solve")
+@player_action
+def on_start_solve(player, data):
+    services.start_solve(player)
+
+
+@socketio.on("stop_solve")
+@player_action
+def on_stop_solve(player, data):
+    solve = services.stop_solve(player, time_ms=data.get("time_ms"))
+    broadcast_solve_progress(player.challenge, solve.round)
+
+
+@socketio.on("end_round")
+@player_action
+def on_end_round(player, data):
+    rnd = services.end_round(player.challenge, player)
+    emit("round_complete", round_results(rnd), to=rnd.challenge.slug)
