@@ -13,10 +13,12 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-5000}:5000"
+      # Localhost only: the public way in is through Caddy.
+      - "127.0.0.1:${WEB_PORT:-5000}:5000"
     environment:
       DATABASE_URL: sqlite:////data/scramble.db
       TNOODLE_URL: http://tnoodle:2014
+      TRUSTED_PROXIES: "1"
     volumes:
       - data:/data
     depends_on:
@@ -27,5 +29,20 @@ services:
       timeout: 5s
       retries: 3
 
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data  # HTTPS certificates; keep them to avoid Let's Encrypt rate limits
+    depends_on:
+      - web
+
 volumes:
   data:
+  caddy_data:

@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # The OCI server runner registered by scripts/server-setup.sh.
+  labels:
+    - oci
