@@ -6,9 +6,7 @@ def join(client, challenge):
     client.emit("join_challenge", {"challenge_slug": challenge.slug})
 
 
-def test_joining_marks_the_player_connected_and_broadcasts_the_player_list(
-    challenge, co, connect
-):
+def test_joining_marks_the_player_connected_and_broadcasts_the_player_list(challenge, co, connect):
     client = connect("cookie-co")
 
     join(client, challenge)
@@ -97,7 +95,8 @@ def test_joining_during_results_shows_the_last_results(challenge, co, add_player
 
     join(amy, challenge)
 
-    assert events(amy, "round_started") == []
-    [complete] = events(amy, "round_complete")
+    received = amy.get_received()
+    assert [e for e in received if e["name"] == "round_started"] == []
+    [complete] = [e["args"][0] for e in received if e["name"] == "round_complete"]
     assert complete["round_id"] == str(rnd.id)
     assert [r["display_name"] for r in complete["results"]] == ["Tom"]

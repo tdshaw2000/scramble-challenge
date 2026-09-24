@@ -92,5 +92,6 @@ def connect(app):
 
 
 def events(client, name):
-    """Payloads of every `name` event this client has received since the last call."""
+    """Payloads of every `name` event this client has received since the last call.
+    Note: this drains the client's queue, so other event types received are dropped."""
     return [e["args"][0] for e in client.get_received() if e["name"] == name]

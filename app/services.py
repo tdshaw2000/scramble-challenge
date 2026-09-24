@@ -239,3 +239,8 @@ def join_challenge(challenge: Challenge, display_name: str, cookie_id: str) -> P
     db.session.add(player)
     db.session.commit()
     return player
+
+
+def set_connected(player: Player, connected: bool) -> None:
+    player.connected = connected
+    db.session.commit()
