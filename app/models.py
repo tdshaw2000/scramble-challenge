@@ -59,7 +59,7 @@ class Challenge(db.Model):
     co_left_at: Mapped[datetime | None]
 
     players: Mapped[list["Player"]] = relationship(
-        back_populates="challenge", foreign_keys="Player.challenge_id"
+        back_populates="challenge", foreign_keys="Player.challenge_id", order_by="Player.joined_at"
     )
     co_player: Mapped["Player | None"] = relationship(foreign_keys=[co_player_id], post_update=True)
     rounds: Mapped[list["Round"]] = relationship(
