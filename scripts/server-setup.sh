@@ -11,6 +11,14 @@ set -euo pipefail
 
 TOKEN="${1:?Usage: bash server-setup.sh <runner-registration-token>}"
 REPO_URL="https://github.com/tdshaw2000/scramble-challenge"
+
+# Guard against running this on the wrong machine (e.g. a local PC instead of over SSH):
+# it changes the firewall and installs Docker.
+if [ "$(uname -m)" != "aarch64" ]; then
+  echo "This is $(hostname) ($(uname -m)), not the ARM server. SSH in first:" >&2
+  echo "  ssh -i ~/.ssh/oci.key ubuntu@<server-ip>" >&2
+  exit 1
+fi
 RUNNER_DIR="$HOME/actions-runner"
 
 echo "== Opening ports 80 and 443 in the server's own firewall =="
