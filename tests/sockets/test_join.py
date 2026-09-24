@@ -100,3 +100,16 @@ def test_joining_during_results_shows_the_last_results(challenge, co, add_player
     [complete] = [e["args"][0] for e in received if e["name"] == "round_complete"]
     assert complete["round_id"] == str(rnd.id)
     assert [r["display_name"] for r in complete["results"]] == ["Tom"]
+
+
+def test_player_list_is_in_joining_order(challenge, co, connect, clock):
+    clock.advance(seconds=1)
+    services.join_challenge(challenge, "Zed", "cookie-zed")
+    clock.advance(seconds=1)
+    services.join_challenge(challenge, "Amy", "cookie-amy")
+    client = connect("cookie-amy")
+
+    join(client, challenge)
+
+    [player_list] = events(client, "player_list")
+    assert [p["display_name"] for p in player_list] == ["Tom", "Zed", "Amy"]
