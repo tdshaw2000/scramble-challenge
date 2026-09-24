@@ -216,3 +216,26 @@ def leaderboard(rnd: Round) -> list[dict]:
         }
         for position, row in game.rank(rows)
     ]
+
+
+def player_for_cookie(challenge: Challenge, cookie_id: str | None) -> Player | None:
+    if not cookie_id:
+        return None
+    return db.session.scalar(
+        db.select(Player).filter_by(challenge_id=challenge.id, cookie_id=cookie_id)
+    )
+
+
+def join_challenge(challenge: Challenge, display_name: str, cookie_id: str) -> Player:
+    existing = player_for_cookie(challenge, cookie_id)
+    if existing is not None:
+        return existing
+    player = Player(
+        challenge=challenge,
+        cookie_id=cookie_id,
+        display_name=clean_display_name(display_name),
+        joined_at=now(),
+    )
+    db.session.add(player)
+    db.session.commit()
+    return player

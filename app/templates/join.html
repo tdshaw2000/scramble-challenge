@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="{{ url_for('main.join', slug=challenge.slug) }}">
+  <label>Your name <input name="display_name" maxlength="50" required autofocus></label>
+  <button type="submit">Join</button>
+</form>
+{% endblock %}
