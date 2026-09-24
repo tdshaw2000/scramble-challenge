@@ -58,9 +58,12 @@ def on_join_challenge(data):
     if player is None:
         return game_error("Enter your name to join first.")
 
+    try:
+        services.player_joined(player)
+    except services.GameError as error:
+        return game_error(str(error))
     join_room(challenge.slug)
     connections[request.sid] = str(player.id)
-    services.player_joined(player)
     emit("player_list", player_list(challenge), to=challenge.slug)
 
     if challenge.status == ChallengeStatus.ROUND_ACTIVE:
@@ -128,3 +131,31 @@ def on_stop_solve(player, data):
 def on_end_round(player, data):
     rnd = services.end_round(player.challenge, player)
     emit("round_complete", round_results(rnd), to=rnd.challenge.slug)
+
+
+@socketio.on("disconnect")
+def on_disconnect(*_reason):
+    player_id = connections.pop(request.sid, None)
+    if player_id is None or player_id in connections.values():
+        return  # never joined, or the player still has another tab open
+    player = db.session.get(Player, uuid.UUID(player_id))
+    challenge = player.challenge
+    round_was_active = challenge.status == ChallengeStatus.ROUND_ACTIVE
+    services.player_left(player)
+    emit("player_list", player_list(challenge), to=challenge.slug)
+    if round_was_active:
+        broadcast_solve_progress(challenge, challenge.current_round)
+
+
+def end_abandoned_challenges() -> None:
+    for challenge in services.end_abandoned_challenges():
+        socketio.emit("challenge_ended", {}, to=challenge.slug)
+
+
+def watch_for_abandoned_challenges(app, interval_seconds: int = 5) -> None:  # pragma: no cover
+    """Background loop, started by app/wsgi.py in production. Deliberately untested: an
+    endless loop around end_abandoned_challenges(), which the tests cover directly."""
+    while True:
+        socketio.sleep(interval_seconds)
+        with app.app_context():
+            end_abandoned_challenges()
