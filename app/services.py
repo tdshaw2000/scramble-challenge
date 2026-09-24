@@ -7,7 +7,7 @@ from flask import current_app
 
 from app import game
 from app.extensions import db
-from app.models import Challenge, ChallengeStatus, Player, Round, RoundStatus
+from app.models import Challenge, ChallengeStatus, Player, Round, RoundStatus, Solve, SolveResult
 from app.tnoodle import TNoodleError
 
 MAX_NAME_LENGTH = 50
@@ -110,6 +110,51 @@ def start_round(challenge: Challenge, player: Player, puzzle: str | None = None)
     challenge.current_round = rnd
     db.session.commit()
     return rnd
+
+
+def active_round(player: Player) -> Round:
+    challenge = player.challenge
+    if challenge.status != ChallengeStatus.ROUND_ACTIVE:
+        raise InvalidState("No round is in progress.")
+    return challenge.current_round
+
+
+def find_solve(rnd: Round, player: Player) -> Solve | None:
+    return db.session.scalar(db.select(Solve).filter_by(round_id=rnd.id, player_id=player.id))
+
+
+def start_inspection(player: Player) -> Solve:
+    rnd = active_round(player)
+    if find_solve(rnd, player) is not None:
+        raise InvalidState("One attempt per round.")
+    solve = Solve(round=rnd, player=player, started_inspection_at=now())
+    db.session.add(solve)
+    db.session.commit()
+    return solve
+
+
+def start_solve(player: Player) -> Solve:
+    solve = find_solve(active_round(player), player)
+    if solve is None or solve.started_solve_at is not None:
+        raise InvalidState("Start inspection first, and only start solving once.")
+    solve.started_solve_at = now()
+    db.session.commit()
+    return solve
+
+
+def stop_solve(player: Player, time_ms: int) -> Solve:
+    # Trust boundary: time_ms comes from the client (honour system, per SPEC.md).
+    # To enforce timing, compute it here from started_solve_at and now() instead.
+    if type(time_ms) is not int or time_ms <= 0:
+        raise InvalidInput("time_ms must be a positive whole number.")
+    solve = find_solve(active_round(player), player)
+    if solve is None or solve.started_solve_at is None or solve.result is not None:
+        raise InvalidState("No solve in progress.")
+    solve.time_ms = time_ms
+    solve.result = SolveResult.OK
+    solve.finished_at = now()
+    db.session.commit()
+    return solve
 
 
 def end_round(challenge: Challenge, player: Player) -> Round:
