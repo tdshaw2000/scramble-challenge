@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -113,3 +115,10 @@ def test_solve_result_values_match_spec():
     assert {r.value for r in SolveResult} == {"ok", "dnf"}
     assert {s.value for s in ChallengeStatus} == {"waiting", "round_active", "round_results"}
     assert {s.value for s in RoundStatus} == {"active", "complete"}
+
+
+def test_foreign_keys_are_enforced(db):
+    db.session.add(Player(challenge_id=uuid.uuid4(), cookie_id="c", display_name="Ghost"))
+
+    with pytest.raises(IntegrityError):
+        db.session.commit()
