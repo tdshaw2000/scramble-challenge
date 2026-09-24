@@ -1,6 +1,7 @@
 """Game operations on the database. Handlers (HTTP now, sockets later) call these."""
 
 import secrets
+from dataclasses import dataclass
 from datetime import datetime
 
 from flask import current_app
@@ -154,13 +155,64 @@ def stop_solve(player: Player, time_ms: int) -> Solve:
     solve.result = SolveResult.OK
     solve.finished_at = now()
     db.session.commit()
+    complete_round_if_everyone_finished(player.challenge)
     return solve
 
 
 def end_round(challenge: Challenge, player: Player) -> Round:
+    require_co(challenge, player)
+    if challenge.status != ChallengeStatus.ROUND_ACTIVE:
+        raise InvalidState("No round is in progress.")
+    return complete_round(challenge)
+
+
+def complete_round(challenge: Challenge) -> Round:
+    """Close the current round: every connected player without a result gets a DNF."""
     rnd = challenge.current_round
+    solves = {solve.player_id: solve for solve in rnd.solves}
+    for player in challenge.players:
+        solve = solves.get(player.id)
+        if solve is None and player.connected:
+            solve = Solve(round=rnd, player=player)
+            db.session.add(solve)
+        if solve is not None and solve.result is None:
+            solve.result = SolveResult.DNF
+            solve.time_ms = None
     rnd.status = RoundStatus.COMPLETE
     rnd.ended_at = now()
     challenge.status = ChallengeStatus.ROUND_RESULTS
     db.session.commit()
     return rnd
+
+
+def complete_round_if_everyone_finished(challenge: Challenge) -> None:
+    rnd = challenge.current_round
+    connected = {p.id for p in challenge.players if p.connected}
+    finished = {s.player_id for s in rnd.solves if s.result is not None}
+    if game.round_is_over(connected=connected, finished=finished):
+        complete_round(challenge)
+
+
+@dataclass
+class _Row:
+    name: str
+    time_ms: int | None
+    solve: Solve
+
+
+def leaderboard(rnd: Round) -> list[dict]:
+    rows = [
+        _Row(name=s.player.display_name, time_ms=s.time_ms, solve=s)
+        for s in rnd.solves
+        if s.result is not None
+    ]
+    return [
+        {
+            "player_id": str(row.solve.player_id),
+            "display_name": row.name,
+            "time_ms": row.time_ms,
+            "result": row.solve.result.value,
+            "position": position,
+        }
+        for position, row in game.rank(rows)
+    ]
