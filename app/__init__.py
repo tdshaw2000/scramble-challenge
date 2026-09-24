@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from flask import Flask
 
 from app.config import CONFIGS
@@ -9,7 +11,13 @@ def create_app(config_name: str = "production") -> Flask:
     app.config.from_object(CONFIGS[config_name]())
 
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(
+        app,
+        db,
+        directory=str(Path(app.root_path).parent / "migrations"),
+        # SQLite can't ALTER most things in place; batch mode rebuilds the table instead.
+        render_as_batch=True,
+    )
 
     from app import models  # noqa: F401  (registers the tables with SQLAlchemy)
 

@@ -58,9 +58,7 @@ class Challenge(db.Model):
     players: Mapped[list["Player"]] = relationship(
         back_populates="challenge", foreign_keys="Player.challenge_id"
     )
-    co_player: Mapped["Player | None"] = relationship(
-        foreign_keys=[co_player_id], post_update=True
-    )
+    co_player: Mapped["Player | None"] = relationship(foreign_keys=[co_player_id], post_update=True)
     rounds: Mapped[list["Round"]] = relationship(
         back_populates="challenge", foreign_keys="Round.challenge_id"
     )
