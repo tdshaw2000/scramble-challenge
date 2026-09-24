@@ -67,3 +67,31 @@ def add_player(db, challenge):
         return player
 
     return add
+
+
+@pytest.fixture
+def connect(app):
+    """Open a socket connection as the browser holding `cookie_id` (None: no cookie)."""
+    from app.extensions import socketio
+    from app.routes import COOKIE_NAME
+
+    clients = []
+
+    def open_client(cookie_id=None):
+        http = app.test_client()
+        if cookie_id:
+            http.set_cookie(COOKIE_NAME, cookie_id)
+        client = socketio.test_client(app, flask_test_client=http)
+        clients.append(client)
+        return client
+
+    yield open_client
+    for client in clients:
+        if client.is_connected():
+            client.disconnect()
+
+
+def events(client, name):
+    """Payloads of every `name` event this client has received since the last call.
+    Note: this drains the client's queue, so other event types received are dropped."""
+    return [e["args"][0] for e in client.get_received() if e["name"] == name]

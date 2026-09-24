@@ -119,3 +119,30 @@ def test_round_scramble_image_is_served_as_svg(client, challenge, co):
 
 def test_missing_round_image_is_404(client, challenge):
     assert client.get(f"/c/{challenge.slug}/rounds/1/scramble.svg").status_code == 404
+
+
+def test_challenge_page_loads_the_socket_client_with_the_slug(client, challenge):
+    client.set_cookie(COOKIE_NAME, "cookie-co")
+
+    response = client.get(f"/c/{challenge.slug}")
+
+    assert f'data-slug="{challenge.slug}"'.encode() in response.data
+    assert b'data-is-co="true"' in response.data
+    assert b"socket.io" in response.data
+    assert b"/static/challenge.js" in response.data
+
+
+def test_co_start_round_button_is_enabled(client, challenge):
+    client.set_cookie(COOKIE_NAME, "cookie-co")
+
+    response = client.get(f"/c/{challenge.slug}")
+
+    assert b'id="start-round"' in response.data
+    assert b"disabled" not in response.data
+
+
+def test_socket_client_script_is_served(client):
+    response = client.get("/static/challenge.js")
+
+    assert response.status_code == 200
+    assert b"join_challenge" in response.data

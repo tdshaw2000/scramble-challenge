@@ -1,6 +1,7 @@
 import sqlite3
 
 from flask_migrate import Migrate
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Engine, event
 from sqlalchemy.orm import DeclarativeBase
@@ -12,6 +13,8 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
+# Threading mode: works under gunicorn's gthread worker with simple-websocket.
+socketio = SocketIO(async_mode="threading")
 
 
 @event.listens_for(Engine, "connect")

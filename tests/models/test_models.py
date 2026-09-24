@@ -113,7 +113,13 @@ def test_one_solve_per_player_per_round(db):
 
 def test_solve_result_values_match_spec():
     assert {r.value for r in SolveResult} == {"ok", "dnf"}
-    assert {s.value for s in ChallengeStatus} == {"waiting", "round_active", "round_results"}
+    # "ended" is our addition to SPEC.md, for a challenge whose CO has gone for good.
+    assert {s.value for s in ChallengeStatus} == {
+        "waiting",
+        "round_active",
+        "round_results",
+        "ended",
+    }
     assert {s.value for s in RoundStatus} == {"active", "complete"}
 
 

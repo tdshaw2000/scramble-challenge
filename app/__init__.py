@@ -3,7 +3,7 @@ from pathlib import Path
 from flask import Flask
 
 from app.config import CONFIGS
-from app.extensions import db, migrate
+from app.extensions import db, migrate, socketio
 from app.models import utcnow
 from app.tnoodle import TNoodleClient
 
@@ -24,8 +24,10 @@ def create_app(config_name: str = "production") -> Flask:
     app.extensions["tnoodle"] = TNoodleClient(app.config["TNOODLE_URL"])
     app.extensions["clock"] = utcnow
 
+    from app import sockets  # noqa: F401  (registers the socket event handlers)
     from app.routes import bp
 
     app.register_blueprint(bp)
+    socketio.init_app(app)
 
     return app

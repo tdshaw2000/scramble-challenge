@@ -1,26 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Players</h2>
-<ul>
-  {% for p in challenge.players %}
-  <li>{{ p.display_name }}{% if p.is_co %} (owner){% endif %}</li>
-  {% endfor %}
-</ul>
+<div id="game" data-slug="{{ challenge.slug }}" data-is-co="{{ 'true' if player.is_co else 'false' }}"
+     data-player-id="{{ player.id }}">
+  <p id="message" role="status"></p>
 
-{% if player.is_co %}
-<p>Share this link: <input readonly value="{{ share_url }}"></p>
-<form>
-  <label>Puzzle
-    <select name="puzzle">
-      {% for puzzle in puzzles %}
-      <option value="{{ puzzle }}"{% if puzzle == default_puzzle %} selected{% endif %}>{{ puzzle }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  {# Wired up to the start_round socket event in step 3. #}
-  <button type="button" disabled>Start round</button>
-</form>
-{% else %}
-<p>Waiting for the challenge owner to start a round.</p>
-{% endif %}
+  <section id="lobby">
+    <h2>Players</h2>
+    <ul id="players">
+      {% for p in challenge.players %}<li>{{ p.display_name }}</li>{% endfor %}
+    </ul>
+    {% if player.is_co %}
+    <p>Share this link: <input readonly value="{{ share_url }}"></p>
+    <form id="start-form">
+      <label>Puzzle
+        <select name="puzzle" id="puzzle">
+          {% for puzzle in puzzles %}
+          <option value="{{ puzzle }}"{% if puzzle == default_puzzle %} selected{% endif %}>{{ puzzle }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit" id="start-round">Start round</button>
+    </form>
+    {% else %}
+    <p id="waiting">Waiting for the challenge owner to start a round.</p>
+    {% endif %}
+  </section>
+
+  <section id="scramble" hidden>
+    <h2>Round <span id="round-number"></span></h2>
+    <p id="scramble-text"></p>
+    <img id="scramble-image" alt="Scramble diagram">
+    <button type="button" id="start-inspection">Start inspection</button>
+  </section>
+
+  <div id="overlay" hidden>
+    <p id="countdown"></p>
+  </div>
+
+  <section id="results" hidden>
+    <h2>Results</h2>
+    <ol id="leaderboard"></ol>
+    {% if player.is_co %}<button type="button" id="end-round">End round</button>{% endif %}
+  </section>
+</div>
+
+<style>
+  #overlay { position: fixed; inset: 0; background: #fff; display: flex;
+             align-items: center; justify-content: center; font-size: 20vmin; }
+  #overlay[hidden] { display: none; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='challenge.js') }}"></script>
 {% endblock %}
