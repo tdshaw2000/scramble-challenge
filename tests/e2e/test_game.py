@@ -41,7 +41,10 @@ def solve(page, ms):
 
 
 def leaderboard(page):
-    return [row.inner_text().split("\n") for row in page.locator("#leaderboard li").all()]
+    return [
+        [row.locator(f".{part}").inner_text() for part in ("position", "name", "time")]
+        for row in page.locator("#leaderboard li").all()
+    ]
 
 
 def test_copy_link_button_copies_the_share_link(new_player):
