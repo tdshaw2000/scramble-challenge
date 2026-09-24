@@ -101,3 +101,11 @@ def test_server_setup_registers_an_arm_runner_labelled_oci_as_a_service():
     assert "linux-arm64" in script
     assert "--labels oci" in script
     assert "svc.sh install" in script
+
+
+def test_server_setup_refuses_to_run_anywhere_but_an_arm_server():
+    script = text("scripts/server-setup.sh")
+
+    checks_arch = script.index('"$(uname -m)" != "aarch64"')
+    first_change = script.index("sudo ")
+    assert checks_arch < first_change
