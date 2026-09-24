@@ -1,0 +1,34 @@
+[project]
+name = "scramble-challenge"
+version = "0.1.0"
+description = "Live multiplayer scramble-timing party game for speedcubers"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1.3",
+    "flask-migrate>=4.1.0",
+    "flask-sqlalchemy>=3.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --cov=app --cov-report=term-missing"
+markers = [
+    "tnoodle: needs a real TNoodle server (deselected unless run with -m tnoodle)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
