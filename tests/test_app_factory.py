@@ -37,3 +37,10 @@ def test_app_clock_returns_current_utc_time():
 
     assert now.tzinfo is not None
     assert abs((now - datetime.now(UTC)).total_seconds()) < 5
+
+
+def test_config_values_can_be_overridden_when_creating_the_app(tmp_path):
+    app = create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path}/x.db")
+
+    assert app.config["SQLALCHEMY_DATABASE_URI"] == f"sqlite:///{tmp_path}/x.db"
+    assert app.testing is True
