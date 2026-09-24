@@ -4,6 +4,8 @@ from flask import Flask
 
 from app.config import CONFIGS
 from app.extensions import db, migrate
+from app.models import utcnow
+from app.tnoodle import TNoodleClient
 
 
 def create_app(config_name: str = "production") -> Flask:
@@ -19,7 +21,9 @@ def create_app(config_name: str = "production") -> Flask:
         render_as_batch=True,
     )
 
-    from app import models  # noqa: F401  (registers the tables with SQLAlchemy)
+    app.extensions["tnoodle"] = TNoodleClient(app.config["TNOODLE_URL"])
+    app.extensions["clock"] = utcnow
+
     from app.routes import bp
 
     app.register_blueprint(bp)

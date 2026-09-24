@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="{{ url_for('main.create_challenge') }}">
+  <label>Your name <input name="display_name" maxlength="50" required autofocus></label>
+  <button type="submit">Start new challenge</button>
+</form>
+{% endblock %}

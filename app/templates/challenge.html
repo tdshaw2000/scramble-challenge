@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Players</h2>
+<ul>
+  {% for p in challenge.players %}
+  <li>{{ p.display_name }}{% if p.is_co %} (owner){% endif %}</li>
+  {% endfor %}
+</ul>
+
+{% if player.is_co %}
+<p>Share this link: <input readonly value="{{ share_url }}"></p>
+<form>
+  <label>Puzzle
+    <select name="puzzle">
+      {% for puzzle in puzzles %}
+      <option value="{{ puzzle }}"{% if puzzle == default_puzzle %} selected{% endif %}>{{ puzzle }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {# Wired up to the start_round socket event in step 3. #}
+  <button type="button" disabled>Start round</button>
+</form>
+{% else %}
+<p>Waiting for the challenge owner to start a round.</p>
+{% endif %}
+{% endblock %}
