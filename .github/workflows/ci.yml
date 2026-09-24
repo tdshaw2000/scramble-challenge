@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch or PR cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep in step with the tnoodle build arg in docker-compose.yml.
+  TNOODLE_VERSION: "1.2.3"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run playwright install --with-deps chromium
+      - run: uv run pytest
+
+  tnoodle-contract:
+    # The one test against a real TNoodle: proves the fake used everywhere else is honest.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Start a real TNoodle
+        run: |
+          docker build --build-arg TNOODLE_VERSION="$TNOODLE_VERSION" -t tnoodle docker/tnoodle
+          docker run -d --name tnoodle -p 2014:2014 tnoodle
+          for _ in $(seq 1 60); do
+            curl -sf http://localhost:2014/api/v0/puzzles > /dev/null && exit 0
+            sleep 2
+          done
+          docker logs tnoodle
+          exit 1
+      - run: uv run pytest -m tnoodle
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build
+      - run: docker compose up -d
+      - run: scripts/smoke-test.sh
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down -v
+
+  publish:
+    # Only main publishes images, and only once every check above has passed.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, tnoodle-contract, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      # QEMU lets this x86 runner build the arm64 images the server runs.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check whether this TNoodle version is already published
+        id: tnoodle
+        run: |
+          if docker buildx imagetools inspect "ghcr.io/${{ github.repository }}/tnoodle:$TNOODLE_VERSION" > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build and push TNoodle (once per version)
+        if: steps.tnoodle.outputs.published == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/tnoodle
+          build-args: TNOODLE_VERSION=${{ env.TNOODLE_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}/tnoodle:${{ env.TNOODLE_VERSION }}
+      - name: Build and push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/web:latest
+            ghcr.io/${{ github.repository }}/web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

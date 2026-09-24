@@ -23,6 +23,18 @@ docker compose down
 
 The SQLite database lives on the `data` volume; migrations run when the web container starts.
 
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`:
+
+- `test`: ruff, then every test, including the browser tests
+- `tnoodle-contract`: the one test against a real TNoodle (`pytest -m tnoodle`)
+- `smoke`: builds the Docker Compose stack and runs `scripts/smoke-test.sh`
+- `publish` (on `main` only, after the three above pass): builds the `web` and
+  `tnoodle` images for amd64 and arm64 and pushes them to GHCR. TNoodle is built
+  once per version, so change `TNOODLE_VERSION` in the workflow and in
+  `docker-compose.yml` together.
+
 ## Changing the look
 
 All styling lives in `app/static/themes/<name>/theme.css`. Templates and
