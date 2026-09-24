@@ -29,7 +29,10 @@ def test_tied_times_share_a_position_and_the_next_position_is_skipped():
 
 def test_ties_further_down_also_skip():
     result = ranked(
-        Entry("a", 9_000), Entry("b", 10_000), Entry("c", 10_000), Entry("d", 10_000),
+        Entry("a", 9_000),
+        Entry("b", 10_000),
+        Entry("c", 10_000),
+        Entry("d", 10_000),
         Entry("e", 12_000),
     )
 
