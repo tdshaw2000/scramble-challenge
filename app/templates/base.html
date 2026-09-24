@@ -4,11 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Scramble Challenge{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='themes/' ~ config.THEME ~ '/theme.css') }}">
 </head>
 <body>
-  <main>
-    <h1>Scramble Challenge</h1>
-    {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+  <header class="site-header">
+    <a class="site-title" href="{{ url_for('main.landing') }}" aria-label="Scramble Challenge">
+      {%- for word in ["Scramble", "Challenge"] -%}
+      <span class="site-title-word">
+        {%- for letter in word %}<span class="site-title-letter">{{ letter }}</span>{% endfor -%}
+      </span>
+      {%- endfor -%}
+    </a>
+  </header>
+  <main class="page">
+    {% if error %}<p class="notice notice-error" role="alert">{{ error }}</p>{% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>

@@ -23,20 +23,40 @@ def join(page, link, name):
     expect(page.locator("#players")).to_contain_text(name)
 
 
+# Browser tests control time through performance.now(), which the page uses for the
+# countdown and the solve timer. (Playwright's clock would also freeze Socket.IO's timers.)
+FAKE_NOW = """
+  const realNow = performance.now.bind(performance);
+  window.__fakeNow = null;
+  performance.now = () => (window.__fakeNow === null ? realNow() : window.__fakeNow);
+"""
+
+
+def set_now(page, ms):
+    page.evaluate(f"window.__fakeNow = {ms}")
+
+
+def advance(page, ms):
+    page.evaluate(f"window.__fakeNow += {ms}")
+    page.wait_for_timeout(250)  # let the page's 100 ms ticker catch up
+
+
 @pytest.fixture
 def tom_and_amy(new_player):
     tom, amy = new_player(), new_player()
     for page in (tom, amy):
-        page.clock.install()
+        page.add_init_script(FAKE_NOW)
     link = start_challenge(tom)
     join(amy, link, "Amy")
+    for page in (tom, amy):
+        set_now(page, 1_000_000)
     return tom, amy, link
 
 
 def solve(page, ms):
     page.get_by_role("button", name="Start inspection").click()
     page.locator("#overlay").click()  # start solving
-    page.clock.run_for(ms)
+    advance(page, ms)
     page.locator("#overlay").click()  # stop
 
 
@@ -94,9 +114,9 @@ def test_inspection_counts_down_from_15_on_a_blank_screen(tom_and_amy):
 
     expect(amy.locator("#countdown")).to_have_text("15")
     expect(amy.locator("#scramble-text")).to_be_hidden()
-    amy.clock.run_for(3000)
+    advance(amy, 3000)
     expect(amy.locator("#countdown")).to_have_text("12")
-    amy.clock.run_for(20000)
+    advance(amy, 20000)
     expect(amy.locator("#countdown")).to_have_text("0")
 
 
@@ -107,7 +127,7 @@ def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):
 
     amy.locator("#overlay").click()
     expect(amy.get_by_text("Solving")).to_be_visible()
-    amy.clock.run_for(9870)
+    advance(amy, 9870)
     expect(amy.locator("#overlay")).not_to_contain_text(re.compile(r"\d"))
     amy.locator("#overlay").click()
 
@@ -158,7 +178,7 @@ def test_everyone_is_told_when_the_owner_leaves_for_good(tom_and_amy, live_serve
     tom, amy, _ = tom_and_amy
 
     tom.close()
-    expect(amy.locator("#players")).to_contain_text("Tom (away)")
+    expect(amy.locator("#players")).to_contain_text("Tom (owner) (away)")
     control(live_server, "advance-clock", seconds=30)
     control(live_server, "end-abandoned")
 

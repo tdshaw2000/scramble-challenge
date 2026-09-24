@@ -1,0 +1,32 @@
+/* Plain theme: a minimal, readable look. Proves the app runs on any theme.css. */
+:root { --ink: #1f2933; --muted: #616e7c; --line: #cbd2d9; --accent: #2563eb; --bad: #b91c1c; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); background: #f5f7fa; }
+.site-header { padding: 16px; text-align: center; }
+.site-title { color: var(--ink); text-decoration: none; font-size: 1.5rem; font-weight: 700; }
+.site-title-word + .site-title-word { margin-left: 0.3em; }
+.page { max-width: 480px; margin: 0 auto; padding: 0 16px 32px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card-title { margin: 0 0 12px; font-size: 1.2rem; }
+.field { display: block; margin-bottom: 12px; }
+.field-label { display: block; font-size: 0.9rem; color: var(--muted); }
+.field-input { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--line); border-radius: 6px; }
+.button { padding: 12px 16px; font: inherit; font-weight: 600; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+.button-primary { background: var(--accent); border-color: var(--accent); color: #fff; width: 100%; }
+.button-danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.notice { padding: 12px; background: #fff7e6; border: 1px solid #f0b429; border-radius: 6px; }
+.players { padding-left: 20px; }
+.player-away { color: var(--muted); }
+.share { margin-bottom: 12px; }
+.scramble-text { font: 1.2rem/1.6 ui-monospace, monospace; }
+.scramble-image { display: block; width: 100%; max-width: 320px; margin: 0 auto 16px; }
+.overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: manipulation; user-select: none; }
+.countdown { font-size: 30vmin; font-weight: 700; margin: 0; }
+.solving { font-size: 2rem; margin: 0; }
+.overlay-hint { color: var(--muted); }
+.leaderboard { list-style: none; padding: 0; margin: 0 0 12px; }
+.result { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.result .name { flex: 1; }
+.result .time { font-variant-numeric: tabular-nums; }
+.result-dnf .time { color: var(--bad); }

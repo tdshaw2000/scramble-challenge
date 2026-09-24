@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<form method="post" action="{{ url_for('main.create_challenge') }}">
-  <label>Your name <input name="display_name" maxlength="50" required autofocus></label>
-  <button type="submit">Start new challenge</button>
+<form class="card name-form" method="post" action="{{ url_for('main.create_challenge') }}">
+  <h2 class="card-title">Start a challenge</h2>
+  <label class="field">
+    <span class="field-label">Your name</span>
+    <input class="field-input" name="display_name" maxlength="50" required autofocus>
+  </label>
+  <button class="button button-primary" type="submit">Start new challenge</button>
 </form>
 {% endblock %}
