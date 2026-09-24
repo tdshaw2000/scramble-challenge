@@ -116,8 +116,22 @@ def test_inspection_counts_down_from_15_on_a_blank_screen(tom_and_amy):
     expect(amy.locator("#scramble-text")).to_be_hidden()
     advance(amy, 3000)
     expect(amy.locator("#countdown")).to_have_text("12")
-    advance(amy, 20000)
-    expect(amy.locator("#countdown")).to_have_text("0")
+    advance(amy, 11500)
+    expect(amy.locator("#countdown")).to_have_text("1")
+
+
+def test_letting_the_countdown_reach_zero_is_a_dnf(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+
+    advance(amy, 15_000)
+
+    expect(amy.locator("#overlay")).to_be_hidden()
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
+    for page in (tom, amy):
+        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        assert leaderboard(page) == [["1st", "Amy", "DNF"]]
 
 
 def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):

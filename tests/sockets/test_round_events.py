@@ -159,3 +159,28 @@ def test_only_the_co_can_end_the_round(challenge, add_player, joined):
 
     assert events(amy, "game_error") == [{"message": "Only the challenge owner can do that."}]
     assert challenge.status == ChallengeStatus.ROUND_ACTIVE
+
+
+def test_running_out_of_inspection_posts_a_dnf_to_everyone(challenge, add_player, joined):
+    add_player("Amy", connected=False)
+    tom, amy = joined("cookie-co", "cookie-Amy")
+    tom.emit("start_round", {})
+    tom.get_received()
+    amy.emit("start_inspection", {})
+    amy.get_received()
+
+    amy.emit("inspection_expired", {})
+
+    for client in (tom, amy):
+        [update] = events(client, "leaderboard_update")
+        assert [(r["display_name"], r["result"]) for r in update["results"]] == [("Amy", "dnf")]
+
+
+def test_inspection_expiring_without_inspecting_is_reported(challenge, joined):
+    [tom] = joined("cookie-co")
+    tom.emit("start_round", {})
+    tom.get_received()
+
+    tom.emit("inspection_expired", {})
+
+    assert events(tom, "game_error") == [{"message": "No inspection in progress."}]
