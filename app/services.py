@@ -5,10 +5,15 @@ from datetime import datetime
 
 from flask import current_app
 
+from app import game
 from app.extensions import db
-from app.models import Challenge, Player
+from app.models import Challenge, ChallengeStatus, Player, Round, RoundStatus
+from app.tnoodle import TNoodleError
 
 MAX_NAME_LENGTH = 50
+
+# v1 offers 3x3 only; more WCA events are a change to this list, not the schema.
+SUPPORTED_PUZZLES = ("333",)
 
 
 class GameError(Exception):
@@ -16,6 +21,18 @@ class GameError(Exception):
 
 
 class InvalidInput(GameError):
+    pass
+
+
+class NotAllowed(GameError):
+    pass
+
+
+class InvalidState(GameError):
+    pass
+
+
+class ScrambleUnavailable(GameError):
     pass
 
 
@@ -56,3 +73,49 @@ def create_challenge(display_name: str, cookie_id: str) -> Challenge:
 
 def get_challenge(slug: str) -> Challenge | None:
     return db.session.scalar(db.select(Challenge).filter_by(slug=slug))
+
+
+def require_co(challenge: Challenge, player: Player) -> None:
+    if player.id != challenge.co_player_id:
+        raise NotAllowed("Only the challenge owner can do that.")
+
+
+def next_puzzle_default(challenge: Challenge) -> str:
+    previous = challenge.rounds[-1].puzzle if challenge.rounds else None
+    return game.default_puzzle(previous)
+
+
+def start_round(challenge: Challenge, player: Player, puzzle: str | None = None) -> Round:
+    require_co(challenge, player)
+    if challenge.status not in (ChallengeStatus.WAITING, ChallengeStatus.ROUND_RESULTS):
+        raise InvalidState("A round is already in progress.")
+    puzzle = puzzle or next_puzzle_default(challenge)
+    if puzzle not in SUPPORTED_PUZZLES:
+        raise InvalidInput(f"Unsupported puzzle: {puzzle}")
+
+    try:
+        scramble = current_app.extensions["tnoodle"].generate(puzzle)
+    except TNoodleError as error:
+        raise ScrambleUnavailable("Couldn't get a scramble; try again.") from error
+
+    rnd = Round(
+        challenge=challenge,
+        round_number=len(challenge.rounds) + 1,
+        puzzle=puzzle,
+        scramble_text=scramble.text,
+        scramble_svg=scramble.svg,
+        started_at=now(),
+    )
+    challenge.status = ChallengeStatus.ROUND_ACTIVE
+    challenge.current_round = rnd
+    db.session.commit()
+    return rnd
+
+
+def end_round(challenge: Challenge, player: Player) -> Round:
+    rnd = challenge.current_round
+    rnd.status = RoundStatus.COMPLETE
+    rnd.ended_at = now()
+    challenge.status = ChallengeStatus.ROUND_RESULTS
+    db.session.commit()
+    return rnd
