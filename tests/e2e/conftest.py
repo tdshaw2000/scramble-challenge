@@ -23,7 +23,15 @@ def live_server(tmp_path_factory):
     port = free_port()
     database = tmp_path_factory.mktemp("e2e") / "e2e.db"
     process = subprocess.Popen(
-        [sys.executable, "-m", "tests.e2e.server", "--port", str(port), "--database", str(database)],
+        [
+            sys.executable,
+            "-m",
+            "tests.e2e.server",
+            "--port",
+            str(port),
+            "--database",
+            str(database),
+        ],
         cwd=ROOT,
         env={**os.environ, "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"},
     )
@@ -57,6 +65,7 @@ def new_player(browser, live_server):
 
     def open_page():
         context = browser.new_context(viewport={"width": 390, "height": 844}, base_url=live_server)
+        context.set_default_timeout(5000)
         contexts.append(context)
         return context.new_page()
 
