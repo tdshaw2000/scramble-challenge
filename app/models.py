@@ -26,6 +26,7 @@ class ChallengeStatus(enum.StrEnum):
     WAITING = "waiting"
     ROUND_ACTIVE = "round_active"
     ROUND_RESULTS = "round_results"
+    ENDED = "ended"  # not in SPEC.md: set when the CO has gone for good
 
 
 class RoundStatus(enum.StrEnum):
@@ -54,6 +55,8 @@ class Challenge(db.Model):
         ForeignKey("rounds.id", use_alter=True, name="fk_challenges_current_round_id")
     )
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    # When the CO's last connection closed; cleared when they come back.
+    co_left_at: Mapped[datetime | None]
 
     players: Mapped[list["Player"]] = relationship(
         back_populates="challenge", foreign_keys="Player.challenge_id"

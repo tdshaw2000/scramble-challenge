@@ -60,7 +60,7 @@ def on_join_challenge(data):
 
     join_room(challenge.slug)
     connections[request.sid] = str(player.id)
-    services.set_connected(player, True)
+    services.player_joined(player)
     emit("player_list", player_list(challenge), to=challenge.slug)
 
     if challenge.status == ChallengeStatus.ROUND_ACTIVE:

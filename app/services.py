@@ -2,7 +2,7 @@
 
 import secrets
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import current_app
 
@@ -86,8 +86,14 @@ def next_puzzle_default(challenge: Challenge) -> str:
     return game.default_puzzle(previous)
 
 
+def require_not_ended(challenge: Challenge) -> None:
+    if challenge.status == ChallengeStatus.ENDED:
+        raise InvalidState("This challenge has ended.")
+
+
 def start_round(challenge: Challenge, player: Player, puzzle: str | None = None) -> Round:
     require_co(challenge, player)
+    require_not_ended(challenge)
     if challenge.status not in (ChallengeStatus.WAITING, ChallengeStatus.ROUND_RESULTS):
         raise InvalidState("A round is already in progress.")
     puzzle = puzzle or next_puzzle_default(challenge)
@@ -241,6 +247,46 @@ def join_challenge(challenge: Challenge, display_name: str, cookie_id: str) -> P
     return player
 
 
-def set_connected(player: Player, connected: bool) -> None:
-    player.connected = connected
+def player_joined(player: Player) -> None:
+    require_not_ended(player.challenge)
+    player.connected = True
+    if player.is_co:
+        player.challenge.co_left_at = None
     db.session.commit()
+
+
+def player_left(player: Player) -> None:
+    """The player's last connection closed. Mid-round, that's a DNF if they had no result."""
+    challenge = player.challenge
+    player.connected = False
+    if player.is_co:
+        challenge.co_left_at = now()
+    if challenge.status == ChallengeStatus.ROUND_ACTIVE:
+        rnd = challenge.current_round
+        solve = find_solve(rnd, player)
+        if solve is None:
+            solve = Solve(round=rnd, player=player)
+            db.session.add(solve)
+        if solve.result is None:
+            solve.result = SolveResult.DNF
+    db.session.commit()
+    if challenge.status == ChallengeStatus.ROUND_ACTIVE:
+        complete_round_if_everyone_finished(challenge)
+
+
+def end_abandoned_challenges() -> list[Challenge]:
+    """End every challenge whose CO has been gone longer than the grace period."""
+    cutoff = now() - timedelta(seconds=current_app.config["CO_GRACE_SECONDS"])
+    abandoned = db.session.scalars(
+        db.select(Challenge).where(
+            Challenge.co_left_at.is_not(None),
+            Challenge.co_left_at <= cutoff,
+            Challenge.status != ChallengeStatus.ENDED,
+        )
+    ).all()
+    for challenge in abandoned:
+        if challenge.status == ChallengeStatus.ROUND_ACTIVE:
+            complete_round(challenge)
+        challenge.status = ChallengeStatus.ENDED
+    db.session.commit()
+    return list(abandoned)

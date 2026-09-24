@@ -4,6 +4,8 @@ import os
 class Config:
     TESTING = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # How long the CO can be away (e.g. a page refresh) before the challenge ends.
+    CO_GRACE_SECONDS = 30
 
 
 class TestingConfig(Config):
