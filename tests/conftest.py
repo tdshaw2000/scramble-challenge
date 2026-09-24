@@ -36,3 +36,34 @@ def tnoodle(app):
 @pytest.fixture
 def clock(app):
     return app.extensions["clock"]
+
+
+@pytest.fixture
+def challenge(db):
+    from app import services
+
+    challenge = services.create_challenge("Tom", "cookie-co")
+    # No sockets until step 3, so mark the CO connected by hand.
+    challenge.co_player.connected = True
+    _db.session.commit()
+    return challenge
+
+
+@pytest.fixture
+def co(challenge):
+    return challenge.co_player
+
+
+@pytest.fixture
+def add_player(db, challenge):
+    from app.models import Player
+
+    def add(name, connected=True):
+        player = Player(
+            challenge=challenge, cookie_id=f"cookie-{name}", display_name=name, connected=connected
+        )
+        _db.session.add(player)
+        _db.session.commit()
+        return player
+
+    return add
