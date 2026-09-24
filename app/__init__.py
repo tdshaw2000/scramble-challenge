@@ -20,5 +20,8 @@ def create_app(config_name: str = "production") -> Flask:
     )
 
     from app import models  # noqa: F401  (registers the tables with SQLAlchemy)
+    from app.routes import bp
+
+    app.register_blueprint(bp)
 
     return app
