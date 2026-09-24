@@ -74,7 +74,7 @@ One `Solve` row per (round, player) — created when a player presses Start Insp
 
 **Per-player solve flow** (independent per player — no synchronised countdown across players)
 1. Player scrambles their physical puzzle, presses "Start inspection" → 15→0 countdown, screen otherwise blank.
-2. A press anywhere starts the solve timer.
+2. A press anywhere starts the solve timer. If the countdown reaches 0 first, the attempt is a DNF (a house rule, simpler than WCA's +2-then-DNF).
 3. A subsequent press anywhere stops it → `Solve` row filled with `time_ms`, `result: ok`.
 4. Player's screen returns to the Players list / live leaderboard for this round.
 
@@ -104,6 +104,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `start_round` | `{ puzzle }` | CO only | Generates scramble, creates `Round`, broadcasts `round_started` |
 | `start_inspection` | `{}` | player, during `round_active` | Records `started_inspection_at` |
 | `start_solve` | `{}` | player, mid-inspection | Records `started_solve_at` (client-side inspection countdown; this just marks the transition) |
+| `inspection_expired` | `{}` | player, mid-inspection | Countdown reached 0: fills `Solve` (`result: dnf`), broadcasts `leaderboard_update` |
 | `stop_solve` | `{ time_ms }` | player, mid-solve | Fills `Solve` (`time_ms`, `result: ok`), broadcasts `leaderboard_update` |
 | `end_round` | `{}` | CO only | Force-ends round: unfinished players marked `dnf`, broadcasts `round_complete` |
 
@@ -149,7 +150,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 - **Same scramble per round, always.** Generated once when the round starts, stored on the `Round`, never regenerated per player.
 - **One attempt per player per round.** No retries within a round.
 - **Ties share position.** Two players with equal `time_ms` both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
-- **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, or if they disconnect mid-round. Shown as "DNF" in the leaderboard, sorted after all timed results.
+- **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if their inspection countdown reaches 0. Shown as "DNF" in the leaderboard, sorted after all timed results.
 - **Puzzle defaults.** Round 1 of any challenge always defaults to 3x3 (`333`). Round 2 onward defaults to whatever puzzle was used in the immediately preceding round. CO can always override via the dropdown.
 - **Puzzle list scope (v1).** 3x3 only to start, but the puzzle field and TNoodle integration are built generically so adding more WCA events later (2x2, 4x4, Megaminx, etc.) is a dropdown-list change, not a schema change.
 

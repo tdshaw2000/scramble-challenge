@@ -149,6 +149,19 @@ def start_solve(player: Player) -> Solve:
     return solve
 
 
+def inspection_expired(player: Player) -> Solve:
+    """The countdown reached zero before the solve started: a DNF (a game rule, not WCA's)."""
+    # Trust boundary: like time_ms, the client decides when inspection ran out.
+    solve = find_solve(active_round(player), player)
+    if solve is None or solve.started_solve_at is not None or solve.result is not None:
+        raise InvalidState("No inspection in progress.")
+    solve.result = SolveResult.DNF
+    solve.finished_at = now()
+    db.session.commit()
+    complete_round_if_everyone_finished(player.challenge)
+    return solve
+
+
 def stop_solve(player: Player, time_ms: int) -> Solve:
     # Trust boundary: time_ms comes from the client (honour system, per SPEC.md).
     # To enforce timing, compute it here from started_solve_at and now() instead.

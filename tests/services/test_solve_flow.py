@@ -96,3 +96,38 @@ def test_each_player_has_their_own_solve(rnd, co, challenge):
     services.start_inspection(other)
 
     assert {s.player for s in rnd.solves} == {co, other}
+
+
+def test_running_out_of_inspection_is_a_dnf(rnd, co):
+    services.start_inspection(co)
+
+    solve = services.inspection_expired(co)
+
+    assert solve.result == SolveResult.DNF
+    assert solve.time_ms is None
+    assert solve.started_solve_at is None
+
+
+def test_inspection_cannot_run_out_once_solving(rnd, co):
+    services.start_inspection(co)
+    services.start_solve(co)
+
+    with pytest.raises(services.InvalidState):
+        services.inspection_expired(co)
+
+
+def test_inspection_cannot_run_out_before_it_starts(rnd, co):
+    with pytest.raises(services.InvalidState):
+        services.inspection_expired(co)
+
+
+def test_inspection_running_out_for_the_last_player_completes_the_round(rnd, co, challenge):
+    other = next(p for p in challenge.players if not p.is_co)
+    services.start_inspection(co)
+    services.start_solve(co)
+    services.stop_solve(co, time_ms=9_000)
+    services.start_inspection(other)
+
+    services.inspection_expired(other)
+
+    assert rnd.ended_at is not None

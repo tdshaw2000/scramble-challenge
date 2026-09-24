@@ -1,0 +1,237 @@
+/* "mario64" theme: a late-90s 3D-platformer feel built from CSS alone (no game assets).
+   Sky and clouds, a checkered grassy hill, chunky multicoloured title letters, dark
+   rounded dialog boxes, gold coin medals. Swap themes via THEME in app/config.py. */
+
+@font-face {
+  font-family: "Luckiest Guy";
+  src: url("fonts/luckiest-guy.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --sky-top: #3aa0ff;
+  --sky-bottom: #bfe8ff;
+  --grass: #3fbf3f;
+  --grass-dark: #2e9a2e;
+  --dialog: rgba(18, 24, 64, 0.96);
+  --dialog-edge: #fdfdfd;
+  --text: #ffffff;
+  --muted: #b9c6ff;
+  --gold: #ffd21f;
+  --gold-dark: #d99a00;
+  --red: #e5322d;
+  --red-dark: #9e1511;
+  --blue: #2f5ee8;
+  --green: #22b14c;
+  --outline: #1a1030;
+  --display: "Luckiest Guy", "Arial Black", Impact, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font: 17px/1.45 "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 90px 34px at 18% 14%, #fff 60%, transparent 62%),
+    radial-gradient(ellipse 60px 26px at 26% 12%, #fff 60%, transparent 62%),
+    radial-gradient(ellipse 110px 38px at 78% 22%, #fff 60%, transparent 62%),
+    radial-gradient(ellipse 70px 28px at 86% 19%, #fff 60%, transparent 62%),
+    linear-gradient(var(--sky-top), var(--sky-bottom) 70%);
+  background-attachment: fixed;
+}
+
+/* Checkered grassy hill along the bottom of the screen. */
+body::after {
+  content: "";
+  position: fixed;
+  left: -10%;
+  right: -10%;
+  bottom: -12vh;
+  height: 34vh;
+  z-index: -1;
+  border-radius: 50% 50% 0 0;
+  background: repeating-conic-gradient(var(--grass) 0 25%, var(--grass-dark) 0 50%) 0 0 / 56px 56px;
+  box-shadow: inset 0 10px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Title: each letter its own colour, outlined and tilted, like a 64-bit logo. */
+.site-header { padding: 22px 12px 8px; text-align: center; }
+.site-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.35em;
+  text-decoration: none;
+  font: 2.6rem/1 var(--display);
+  letter-spacing: 0.02em;
+}
+.site-title-letter {
+  display: inline-block;
+  color: var(--red);
+  -webkit-text-stroke: 2px var(--outline);
+  text-shadow: 0 4px 0 var(--outline);
+  transform: rotate(-4deg);
+}
+.site-title-letter:nth-child(4n + 2) { color: var(--gold); transform: rotate(3deg) translateY(-2px); }
+.site-title-letter:nth-child(4n + 3) { color: var(--blue); transform: rotate(-2deg) translateY(1px); }
+.site-title-letter:nth-child(4n) { color: var(--green); transform: rotate(5deg); }
+
+.page { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; }
+
+/* Dialog boxes. */
+.card {
+  background: var(--dialog);
+  border: 4px solid var(--dialog-edge);
+  border-radius: 22px;
+  padding: 18px 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+}
+.card-title {
+  margin: 0 0 12px;
+  font: 1.6rem/1.1 var(--display);
+  color: var(--gold);
+  -webkit-text-stroke: 1px var(--outline);
+  text-shadow: 0 3px 0 var(--outline);
+  letter-spacing: 0.03em;
+}
+
+.field { display: block; margin-bottom: 14px; }
+.field-label { display: block; margin-bottom: 4px; font-weight: 700; color: var(--muted); }
+.field-input {
+  width: 100%;
+  padding: 12px 14px;
+  font: 700 1.1rem/1.2 inherit;
+  font-family: inherit;
+  color: var(--outline);
+  background: #fffbe6;
+  border: 3px solid var(--outline);
+  border-radius: 14px;
+}
+
+/* Chunky 3D buttons that press down. */
+.button {
+  display: inline-block;
+  padding: 12px 18px;
+  font: 1.25rem/1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--outline);
+  background: #ffffff;
+  border: 3px solid var(--outline);
+  border-radius: 16px;
+  box-shadow: 0 6px 0 var(--outline);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.button:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--outline); }
+.button-primary { width: 100%; background: var(--gold); box-shadow: 0 6px 0 var(--gold-dark), 0 6px 0 3px var(--outline); }
+.button-primary:active { box-shadow: 0 2px 0 var(--gold-dark), 0 2px 0 3px var(--outline); }
+.button-danger { width: 100%; margin-top: 8px; color: #fff; background: var(--red); box-shadow: 0 6px 0 var(--red-dark), 0 6px 0 3px var(--outline); }
+
+.notice {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  color: var(--outline);
+  background: var(--gold);
+  border: 3px solid var(--outline);
+  border-radius: 16px;
+}
+
+/* Players: little star badges. */
+.players { list-style: none; padding: 0; margin: 0 0 14px; }
+.player { padding: 6px 0 6px 30px; position: relative; font-weight: 700; }
+.player::before { content: "★"; position: absolute; left: 4px; color: var(--gold); -webkit-text-stroke: 1px var(--outline); }
+.player-co::before { color: var(--red); }
+.player-away { opacity: 0.5; }
+
+.share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.share .field { margin-bottom: 0; }
+.share .field-input { font-size: 0.9rem; }
+.waiting { margin: 0; color: var(--muted); font-weight: 700; }
+
+.scramble-text {
+  margin: 0 0 14px;
+  padding: 12px;
+  font: 700 1.25rem/1.6 ui-monospace, "Courier New", monospace;
+  word-spacing: 0.2em;
+  color: var(--outline);
+  background: #fffbe6;
+  border: 3px solid var(--outline);
+  border-radius: 14px;
+}
+.scramble-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 18px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 14px;
+}
+
+/* Inspection and solving: the whole screen is the tap target. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: manipulation;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.35), transparent 60%),
+    linear-gradient(var(--sky-top), var(--sky-bottom));
+}
+.countdown {
+  margin: 0;
+  font: 40vmin/1 var(--display);
+  color: var(--gold);
+  -webkit-text-stroke: 6px var(--outline);
+  text-shadow: 0 12px 0 var(--outline);
+}
+.solving {
+  margin: 0;
+  font: 3rem/1 var(--display);
+  color: #fff;
+  -webkit-text-stroke: 2px var(--outline);
+  text-shadow: 0 5px 0 var(--outline);
+  animation: bob 1s ease-in-out infinite alternate;
+}
+.overlay-hint { margin-top: 24px; font-weight: 700; color: var(--outline); opacity: 0.6; }
+@keyframes bob { to { transform: translateY(-12px) rotate(-3deg); } }
+
+/* Leaderboard: gold, silver and bronze coins. */
+.leaderboard { list-style: none; padding: 0; margin: 0 0 10px; }
+.result {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+}
+.result:last-child { border-bottom: 0; }
+.result .position {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  font: 0.95rem/1 var(--display);
+  color: var(--outline);
+  background: #9aa4c7;
+  border: 3px solid var(--outline);
+  border-radius: 50%;
+}
+.result-position-1 .position { background: radial-gradient(circle at 35% 30%, #fff6b0, var(--gold) 55%, var(--gold-dark)); }
+.result-position-2 .position { background: radial-gradient(circle at 35% 30%, #ffffff, #c9d1e0 55%, #8a94a8); }
+.result-position-3 .position { background: radial-gradient(circle at 35% 30%, #ffd9b0, #d9894a 55%, #9c5a26); }
+.result .time { font: 1.3rem/1 var(--display); letter-spacing: 0.03em; color: var(--gold); }
+.result-dnf .time { color: #ff7b75; }

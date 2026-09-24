@@ -8,9 +8,10 @@ from app.models import utcnow
 from app.tnoodle import TNoodleClient
 
 
-def create_app(config_name: str = "production") -> Flask:
+def create_app(config_name: str = "production", **overrides) -> Flask:
     app = Flask(__name__)
     app.config.from_object(CONFIGS[config_name]())
+    app.config.update(overrides)
 
     db.init_app(app)
     migrate.init_app(
