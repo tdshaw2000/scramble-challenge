@@ -11,7 +11,8 @@ def app():
         _db.create_all()
         yield app
         _db.session.remove()
-        _db.drop_all()
+        # Each app gets its own in-memory database, so disposing the engine discards it.
+        _db.engine.dispose()
 
 
 @pytest.fixture
