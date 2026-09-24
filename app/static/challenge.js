@@ -164,7 +164,15 @@
     setPhase("inspecting");
     ticker = setInterval(() => {
       const elapsed = Math.floor((performance.now() - inspectionStartedAt) / 1000);
-      setText("countdown", Math.max(0, INSPECTION_SECONDS - elapsed));
+      const remaining = Math.max(0, INSPECTION_SECONDS - elapsed);
+      setText("countdown", remaining);
+      if (remaining === 0) {
+        // House rule, not WCA's: letting the countdown reach zero is a DNF.
+        stopTicker();
+        socket.emit("inspection_expired", {});
+        showMessage("Inspection ran out: DNF.");
+        setPhase("waiting");
+      }
     }, 100);
   });
 

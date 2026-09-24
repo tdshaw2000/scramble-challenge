@@ -119,6 +119,13 @@ def on_start_solve(player, data):
     services.start_solve(player)
 
 
+@socketio.on("inspection_expired")
+@player_action
+def on_inspection_expired(player, data):
+    solve = services.inspection_expired(player)
+    broadcast_solve_progress(player.challenge, solve.round)
+
+
 @socketio.on("stop_solve")
 @player_action
 def on_stop_solve(player, data):
