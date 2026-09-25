@@ -34,6 +34,8 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .result .time { font-variant-numeric: tabular-nums; }
 .result-dnf .time { color: var(--bad); }
 .summary .button { display: block; text-align: center; text-decoration: none; }
+.summary-ended { text-align: center; }
+.summary-ended .card-title { margin: 0; }
 .admin-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .admin-nav form { margin: 0; }
 .admin-meta { color: var(--muted); font-size: 0.9rem; }
