@@ -70,14 +70,19 @@ def test_script_refuses_short_passwords(script, tmp_path, password):
         script.write_env_file(tmp_path / "admin.env", password)
 
 
-def test_script_hands_the_file_to_the_given_owner_so_the_deploy_can_read_it(script, tmp_path):
+def test_script_hands_the_file_to_the_given_owner_so_the_deploy_can_read_it(
+    script, tmp_path, monkeypatch
+):
     # Compose reads env_file as the user running it (the runner's "ubuntu" account),
-    # so a root-only file would break every deploy.
+    # so a root-only file would break every deploy. Changing a file's owner needs root,
+    # which tests don't have, so record the call instead.
+    chowned = []
+    monkeypatch.setattr(script.os, "chown", lambda *args: chowned.append(args))
     env_file = tmp_path / "admin.env"
 
     script.write_env_file(env_file, "correct horse", owner=(1234, 5678))
 
-    assert (env_file.stat().st_uid, env_file.stat().st_gid) == (1234, 5678)
+    assert chowned == [(env_file, 1234, 5678)]
 
 
 @pytest.mark.parametrize(
