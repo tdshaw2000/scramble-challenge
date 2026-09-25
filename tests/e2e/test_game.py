@@ -339,3 +339,84 @@ def test_times_are_truncated_to_hundredths_like_wca(new_player, time_ms, shown):
     start_challenge(page)
 
     assert page.evaluate(f"ScrambleChallenge.formatTime({time_ms})") == shown
+
+
+# On a keyboard, the spacebar does what a tap on the blank screen does.
+# Records, for every spacebar keydown, whether the page stopped the browser's own action
+# (scrolling the page, or pressing a focused button). Listens on window, so it runs after
+# any listener on the document.
+RECORD_SPACE_DEFAULTS = """
+  window.__spaceDefaultPrevented = [];
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "Space") window.__spaceDefaultPrevented.push(event.defaultPrevented);
+  });
+"""
+
+
+def start_inspecting(tom, amy):
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+    expect(amy.locator("#countdown")).to_have_text("15")
+
+
+def test_space_starts_the_solve_during_inspection_and_stops_it(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.keyboard.press("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    advance(amy, 7650)
+    amy.keyboard.press("Space")
+
+    for page in (tom, amy):
+        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        assert leaderboard(page) == [["1st", "Amy", "7.65"]]
+
+
+def test_holding_space_down_does_not_stop_the_solve_it_started(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    # A held key repeats its keydown; only a fresh press counts.
+    amy.keyboard.down("Space")
+    amy.keyboard.down("Space")
+    amy.keyboard.down("Space")
+    amy.keyboard.up("Space")
+
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    expect(amy.locator("#overlay")).to_be_visible()
+
+
+def test_space_mixes_with_taps(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.locator("#overlay").click()
+    advance(amy, 5000)
+    amy.keyboard.press("Space")
+
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    assert leaderboard(amy) == [["1st", "Amy", "5.00"]]
+
+
+def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    amy.evaluate(RECORD_SPACE_DEFAULTS)
+    start_inspecting(tom, amy)
+
+    amy.keyboard.press("Space")
+    amy.keyboard.press("Space")
+
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    assert amy.evaluate("window.__spaceDefaultPrevented") == [True, True]
+
+
+def test_space_does_nothing_before_inspection_starts(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+
+    amy.keyboard.press("Space")
+
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+    expect(amy.locator("#overlay")).to_be_hidden()
