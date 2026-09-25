@@ -153,10 +153,21 @@
       socket.emit("start_round", { puzzle: $("puzzle").value });
     });
     $("end-round").addEventListener("click", () => socket.emit("end_round", {}));
-    $("copy-link").addEventListener("click", async () => {
-      await navigator.clipboard.writeText($("share-link").value);
-      setText("copy-link", "Copied!");
-      setTimeout(() => setText("copy-link", "Copy link"), 2000);
+    $("share-link-button").addEventListener("click", async () => {
+      const url = $("share-link").value;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Scramble Challenge", text: "Join my Scramble Challenge", url });
+          return;
+        } catch (error) {
+          // The player closed the share sheet: nothing to do.
+          if (error.name === "AbortError") return;
+          // Any other refusal falls back to copying, like browsers without sharing.
+        }
+      }
+      await navigator.clipboard.writeText(url);
+      setText("share-link-button", "Copied!");
+      setTimeout(() => setText("share-link-button", "Share"), 2000);
     });
   }
 
