@@ -1,4 +1,5 @@
-"""The Monkey skin's fonts: a SCUMM-like pixel font for words, a clear one for moves and times."""
+"""The Monkey skin uses one font, VT323, for words, moves and times (the owner's pick: Tiny5's
+letters were too small to read, e.g. its lowercase e)."""
 
 from playwright.sync_api import expect
 
@@ -10,7 +11,7 @@ def first_font(page, selector):
     return family.split(",")[0].strip().strip('"')
 
 
-def test_words_use_tiny5_and_scrambles_and_times_stay_clear(new_player, live_server):
+def test_everything_uses_vt323(new_player, live_server):
     tom = new_player()
     tom.context.add_cookies(
         [{"name": "scramble_skin", "value": "monkeyisland2", "url": live_server}]
@@ -19,10 +20,11 @@ def test_words_use_tiny5_and_scrambles_and_times_stay_clear(new_player, live_ser
     tom.evaluate("document.fonts.ready")
 
     for selector in ("body", ".card-title", ".button-primary", ".site-title-letter"):
-        assert first_font(tom, selector) == "Tiny5", selector
+        assert first_font(tom, selector) == "VT323", selector
     assert tom.evaluate(
-        "[...document.fonts].some(f => f.family === 'Tiny5' && f.status === 'loaded')"
+        "[...document.fonts].some(f => f.family === 'VT323' && f.status === 'loaded')"
     )
+    assert not tom.evaluate("[...document.fonts].some(f => f.family === 'Tiny5')")
     # The share link is a random slug (0/O, l/I/1) that people read out or retype.
     assert first_font(tom, ".share .field-input") == "VT323"
 
