@@ -50,6 +50,16 @@ def test_start_round_without_a_puzzle_uses_the_default(challenge, joined):
     assert started["puzzle"] == "333"
 
 
+def test_round_started_names_the_puzzle_so_players_know_what_to_pick_up(challenge, joined):
+    [tom] = joined("cookie-co")
+
+    tom.emit("start_round", {"puzzle": "minx"})
+
+    [started] = events(tom, "round_started")
+    assert started["puzzle"] == "minx"
+    assert started["puzzle_name"] == "Megaminx"
+
+
 def test_only_the_co_can_start_a_round(challenge, add_player, joined):
     add_player("Amy", connected=False)
     tom, amy = joined("cookie-co", "cookie-Amy")

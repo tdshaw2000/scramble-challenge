@@ -31,8 +31,8 @@
       <label class="field">
         <span class="field-label">Puzzle</span>
         <select id="puzzle" class="field-input" name="puzzle">
-          {% for puzzle in puzzles %}
-          <option value="{{ puzzle }}"{% if puzzle == default_puzzle %} selected{% endif %}>{{ puzzle }}</option>
+          {% for puzzle, name in puzzles.items() %}
+          <option value="{{ puzzle }}"{% if puzzle == default_puzzle %} selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </label>

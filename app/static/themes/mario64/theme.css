@@ -163,11 +163,27 @@ body::after {
   background: #fffbe6;
   border: 3px solid var(--outline);
   border-radius: 14px;
+  white-space: pre-line; /* Megaminx scrambles come as one line per row */
+}
+/* Megaminx rows must not wrap, so shrink the text to fit the widest row on a phone. */
+[data-puzzle="minx"] .scramble-text {
+  padding-inline: 6px;
+  font-size: min(1.25rem, calc((100vw - 100px) / 26));
+  word-spacing: normal;
+}
+/* Big-cube scrambles run to 100 moves: a smaller size keeps the diagram on screen. */
+[data-puzzle="666"] .scramble-text,
+[data-puzzle="777"] .scramble-text {
+  font-size: 1rem;
+  line-height: 1.45;
+  word-spacing: normal;
 }
 .scramble-image {
   display: block;
   width: 100%;
   max-width: 320px;
+  max-height: 240px; /* Square-1's diagram is twice as tall as wide */
+  object-fit: contain;
   margin: 0 auto 18px;
   padding: 10px;
   background: #fff;

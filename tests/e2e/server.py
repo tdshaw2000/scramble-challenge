@@ -22,6 +22,18 @@ def advance_clock():
     return jsonify(ok=True)
 
 
+@control.post("/next-scramble")
+def next_scramble():
+    tnoodle = control.app.extensions["tnoodle"]
+    tnoodle.next_text = request.args["text"]
+    width, height = request.args["width"], request.args["height"]
+    tnoodle.next_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+        f'width="{width}px" height="{height}px"><rect width="100%" height="100%"/></svg>'
+    )
+    return jsonify(ok=True)
+
+
 @control.post("/end-abandoned")
 def end_abandoned():
     sockets.end_abandoned_challenges()
