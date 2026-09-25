@@ -123,3 +123,30 @@ def test_production_dependencies_include_what_gunicorns_gevent_worker_imports():
     ).stdout
     packages = {line.split("==")[0] for line in exported.splitlines() if "==" in line}
     assert {"gunicorn", "gevent", "packaging"} <= packages
+
+
+BACKUP = "docker compose run --rm --no-deps backup python -m app.backup"
+
+
+def test_a_backup_service_takes_nightly_snapshots_onto_its_own_volume(compose):
+    backup = compose["services"]["backup"]
+    web = compose["services"]["web"]
+
+    assert backup["image"] == web["image"]
+    assert backup["command"] == ["python", "-m", "app.backup", "schedule"]
+    assert backup["restart"] == "unless-stopped"
+    assert backup["environment"]["DATABASE_URL"] == web["environment"]["DATABASE_URL"]
+    assert backup["environment"]["BACKUP_DIR"] == "/backups"
+    assert {"data:/data", "backups:/backups"} <= set(backup["volumes"])
+    assert "backups" in compose["volumes"]
+    # The web app never needs to see the snapshots.
+    assert "backups:/backups" not in web["volumes"]
+
+
+def test_deploy_snapshots_the_database_with_the_new_image_before_restarting(deploy):
+    runs = [step.get("run", "") for step in deploy["steps"]]
+
+    pull = runs.index("docker compose pull")
+    snapshot = runs.index(f"{BACKUP} snapshot predeploy")
+    up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
+    assert pull < snapshot < up
