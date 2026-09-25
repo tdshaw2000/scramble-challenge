@@ -284,3 +284,15 @@ body::after {
   .admin-rounds::before { content: "Rounds: "; }
 }
 .admin-code-value { font-family: ui-monospace, monospace; font-weight: 700; }
+
+/* The player's own time, shown for a moment after the solve. */
+.finished {
+  margin: 0;
+  font: 24vmin/1 var(--display);
+  color: var(--gold);
+  -webkit-text-stroke: 6px var(--outline);
+  text-shadow: 0 12px 0 var(--outline);
+  animation: pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.finished[data-result="dnf"] { color: var(--red); }
+@keyframes pop { from { transform: scale(0.3); opacity: 0; } }

@@ -141,7 +141,8 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Solving (per player)**
 - Blank screen, timer running (not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator)
-- Tap/click anywhere, or press Space, stops the timer, submits `stop_solve`, returns to leaderboard
+- Tap/click anywhere, or press Space, stops the timer, submits `stop_solve`, then shows the player's own time (truncated to hundredths) full screen for one second, with no label, and returns to leaderboard. Taps and Space do nothing during that second. If the round ends meanwhile (they were last to finish), the results wait until the second is up; if the next round starts meanwhile, its scramble shows at once.
+- Letting inspection reach zero shows "DNF" the same way. A DNF given by End Round does not (the results already show it).
 
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
