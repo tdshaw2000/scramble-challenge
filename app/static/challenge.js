@@ -6,6 +6,8 @@
   "use strict";
 
   const INSPECTION_SECONDS = 15;
+  // How long the player's own time (or DNF) fills the screen after they finish.
+  const FINISHED_MS = 1000;
 
   function formatTime(ms) {
     if (ms === null || ms === undefined) return "DNF";
@@ -39,8 +41,11 @@
   let solveStartedAt = 0;
   let ticker = null;
   let spaceHeldInInspection = false;
+  let finishedTimer = null;
+  let roundEndedWhileFinished = false;
 
   function setPhase(next) {
+    clearTimeout(finishedTimer);
     phase = next;
     game.dataset.phase = next;
     if (next !== "inspecting") setSpaceHeld(false);
@@ -49,12 +54,15 @@
       scramble: ["scramble"],
       inspecting: ["overlay"],
       solving: ["overlay"],
+      finished: ["overlay"],
       waiting: ["results"],
       results: ["results", "lobby"],
     }[next];
     for (const id of ["lobby", "scramble", "overlay", "results"]) {
       $(id).hidden = !show.includes(id);
     }
+    $("finished").hidden = next !== "finished";
+    $("overlay-hint").hidden = next === "finished";
   }
 
   function setText(id, text) {
@@ -152,7 +160,9 @@
     renderResults(update.results);
     setText("results-heading", roundNumber ? `Round ${roundNumber} results` : "Last round's results");
     setEndRoundVisible(false);
-    setPhase("results");
+    // The player's own time finishes showing first; see showFinished.
+    if (phase === "finished") roundEndedWhileFinished = true;
+    else setPhase("results");
   });
 
   // However the challenge ended, the server now answers this page's address with the
@@ -163,6 +173,22 @@
   });
 
   socket.on("game_error", (error) => showMessage(error.message));
+
+  // Right after a solve (or a DNF) the player's own result fills the screen for a moment,
+  // then the page moves on: to the results if the round ended meanwhile, else to waiting.
+  // data-result on #finished ("time" or "dnf") lets themes show a DNF differently.
+  function showFinished(timeMs) {
+    setText("finished", formatTime(timeMs));
+    $("finished").dataset.result = timeMs === null ? "dnf" : "time";
+    $("countdown").hidden = true;
+    $("solving").hidden = true;
+    roundEndedWhileFinished = false;
+    setPhase("finished");
+    finishedTimer = setTimeout(
+      () => setPhase(roundEndedWhileFinished ? "results" : "waiting"),
+      FINISHED_MS,
+    );
+  }
 
   // --- player actions ------------------------------------------------------
 
@@ -215,7 +241,7 @@
         stopTicker();
         socket.emit("inspection_expired", {});
         showMessage("Inspection ran out: DNF.");
-        setPhase("waiting");
+        showFinished(null);
       }
     }, 100);
   });
@@ -233,7 +259,7 @@
     } else if (phase === "solving") {
       const timeMs = Math.max(1, Math.round(performance.now() - solveStartedAt));
       socket.emit("stop_solve", { time_ms: timeMs });
-      setPhase("waiting");
+      showFinished(timeMs);
     }
   }
 
