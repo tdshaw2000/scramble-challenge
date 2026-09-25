@@ -13,7 +13,10 @@ def test_start_round_stays_disabled_until_the_page_has_joined(new_player, live_s
     tom = new_player()
     tom.route("**/socket.io/**", lambda route: route.abort())
 
-    start_challenge(tom)
+    tom.goto("/")
+    tom.get_by_label("Your name").fill("Tom")
+    tom.get_by_role("button", name="Start new challenge").click()
+    expect(tom.locator("#players")).to_contain_text("Tom")
 
     expect(tom.get_by_role("button", name="Start round")).to_be_disabled()
 
