@@ -16,7 +16,7 @@ def test_choosing_a_skin_switches_it_without_reloading_and_remembers_it(new_play
     tom.evaluate("window.__sameLoad = true")
 
     tom.get_by_label("Change skin").click()
-    tom.get_by_role("button", name="Plain").click()
+    tom.get_by_role("button", name="Minimal").click()
 
     expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
         "href", "/static/themes/plain/theme.css"
@@ -40,7 +40,7 @@ def test_each_player_keeps_their_own_skin(new_player):
     amy.goto("/")
 
     tom.get_by_label("Change skin").click()
-    tom.get_by_role("button", name="Plain").click()
+    tom.get_by_role("button", name="Minimal").click()
     expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
         "href", "/static/themes/plain/theme.css"
     )
@@ -81,11 +81,11 @@ def test_tapping_outside_the_menu_closes_it(new_player):
     tom.goto("/")
 
     tom.get_by_label("Change skin").click()
-    expect(tom.get_by_role("button", name="Plain")).to_be_visible()
+    expect(tom.get_by_role("button", name="Minimal")).to_be_visible()
 
     tom.mouse.click(20, 700)
 
-    expect(tom.get_by_role("button", name="Plain")).to_be_hidden()
+    expect(tom.get_by_role("button", name="Minimal")).to_be_hidden()
     assert stylesheet(tom) == "/static/themes/mario64/theme.css"
 
 
@@ -104,7 +104,7 @@ def test_if_saving_in_place_fails_the_menu_falls_back_to_a_normal_form_post(new_
     tom.route("**/skin", fail_the_first_try)
 
     tom.get_by_label("Change skin").click()
-    tom.get_by_role("button", name="Plain").click()
+    tom.get_by_role("button", name="Minimal").click()
 
     expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
         "href", "/static/themes/plain/theme.css"
@@ -129,7 +129,7 @@ def test_if_the_server_refuses_the_in_place_save_the_menu_falls_back_to_a_form_p
     tom.route("**/skin", refuse_the_first_try)
 
     tom.get_by_label("Change skin").click()
-    tom.get_by_role("button", name="Plain").click()
+    tom.get_by_role("button", name="Minimal").click()
 
     expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
         "href", "/static/themes/plain/theme.css"
