@@ -283,7 +283,6 @@ def test_gh_pr_create_needs_the_draft_flag(repo):
     "tool_name, tool_input",
     [
         ("Bash", {"command": "uv run pytest"}),
-        ("Bash", {"command": "echo 'gh pr ready' is how you mark it"}),
         ("mcp__github__update_pull_request", {"title": "new title"}),
         ("mcp__github__update_pull_request", {"draft": True}),
         ("Read", {"file_path": "/x"}),
@@ -305,11 +304,22 @@ def test_a_verdict_without_the_json_block_sends_the_reviewer_back(repo):
     assert "```json" in result.stderr
 
 
-def test_a_verdict_for_another_commit_sends_the_reviewer_back(repo):
+def test_a_verdict_for_an_older_commit_is_kept_for_that_commit_only(repo):
+    reviewed = head(repo)
+    new_commit(repo)
+
+    assert record(repo, verdict(reviewed)).returncode == 0
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "reviewer" in result.stderr
+
+
+def test_a_verdict_for_a_commit_that_does_not_exist_sends_the_reviewer_back(repo):
     result = record(repo, verdict("0" * 40))
 
     assert result.returncode == BLOCKED
-    assert head(repo) in result.stderr
+    assert "0" * 40 in result.stderr
 
 
 def test_a_second_bad_verdict_is_let_go_but_not_recorded(repo):
@@ -351,3 +361,94 @@ def test_marking_ready_outside_a_git_repo_is_blocked_not_crashed(tmp_path):
 
     assert result.returncode == BLOCKED
     assert "git" in result.stderr
+
+
+# --- Round 1 review fixes ---
+
+
+def test_a_pass_after_three_failed_rounds_is_still_blocked(repo):
+    for _ in range(3):
+        review(repo, blocking=1)
+        new_commit(repo)
+    review(repo)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "Stop" in result.stderr
+
+
+def test_re_reviewing_the_same_commit_counts_as_one_round(repo):
+    review(repo, blocking=1)
+    review(repo, blocking=1)
+    review(repo, blocking=1)
+    new_commit(repo)
+    review(repo)
+
+    assert mark_ready(repo).returncode == 0
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "(gh pr ready 12)",
+        "echo 1; $(gh pr ready 12)",
+        "GH_REPO=o/r gh pr ready 12",
+        "command gh pr ready 12",
+        'bash -c "gh pr ready 12"',
+        "gh api graphql -f query='mutation { markPullRequestReadyForReview(input: {}) { x } }'",
+        "echo 'gh pr ready' is how you mark it",
+    ],
+)
+def test_every_shell_form_of_marking_ready_is_gated(repo, command):
+    assert bash(repo, command).returncode == BLOCKED
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'gh pr create --title "fix; tidy" --draft --body b',
+        "gh pr create --title t --body \"$(cat <<'EOF'\nSummary\n\nMore | detail\nEOF\n)\" --draft",
+        "gh pr create -d --title t",
+    ],
+)
+def test_draft_creates_are_allowed_however_the_body_is_written(repo, command):
+    result = bash(repo, command)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_the_github_server_may_have_another_name(repo):
+    result = run(
+        "gate",
+        {
+            "cwd": str(repo),
+            "tool_name": "mcp__plugin_gh_github__update_pull_request",
+            "tool_input": {"draft": False},
+        },
+    )
+
+    assert result.returncode == BLOCKED
+
+
+def test_a_corrupt_state_file_blocks_instead_of_failing_open(repo):
+    review(repo)
+    state = next((repo / ".git/claude-review").iterdir())
+    state.write_text("{bad")
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "review gate" in result.stderr
+
+
+def test_a_pushed_branch_without_an_upstream_is_told_to_set_one(repo):
+    git(repo, "checkout", "-b", "no-upstream")
+    new_commit(repo, push=False)
+    git(repo, "push", "origin", "HEAD")
+    review(repo)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "push -u" in result.stderr
