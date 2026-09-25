@@ -39,6 +39,13 @@ def test_ties_further_down_also_skip():
     assert [position for position, _ in result] == [1, 2, 2, 2, 5]
 
 
+def test_times_equal_to_the_hundredth_tie_like_wca():
+    # WCA results drop everything past the hundredths, so 12.341 and 12.349 are both 12.34.
+    result = ranked(Entry("b", 12_349), Entry("a", 12_341), Entry("c", 12_350))
+
+    assert result == [(1, "a"), (1, "b"), (3, "c")]
+
+
 def test_tied_entries_are_listed_alphabetically():
     assert ranked(Entry("zed", 10_000), Entry("amy", 10_000)) == [(1, "amy"), (1, "zed")]
 

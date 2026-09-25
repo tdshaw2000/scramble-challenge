@@ -27,20 +27,29 @@ class Rankable(Protocol):
     time_ms: int | None  # None means DNF
 
 
+def hundredths(time_ms: int) -> int:
+    """WCA results keep whole hundredths and drop the rest: 12.349s is 12.34s, never 12.35s."""
+    return time_ms // 10
+
+
 def rank[R: Rankable](entries: Sequence[R]) -> list[tuple[int, R]]:
     """Fastest first; equal times share a position (1, 1, 3); DNFs last, sharing one position."""
     ordered = sorted(
         entries,
-        key=lambda e: (e.time_ms is None, e.time_ms or 0, e.name.casefold()),
+        key=lambda e: (e.time_ms is None, hundredths(e.time_ms or 0), e.name.casefold()),
     )
     ranked: list[tuple[int, R]] = []
     for index, entry in enumerate(ordered):
-        if index and entry.time_ms == ordered[index - 1].time_ms:
+        if index and _ranked_time(entry) == _ranked_time(ordered[index - 1]):
             position = ranked[-1][0]
         else:
             position = index + 1
         ranked.append((position, entry))
     return ranked
+
+
+def _ranked_time(entry: Rankable) -> int | None:
+    return None if entry.time_ms is None else hundredths(entry.time_ms)
 
 
 def default_puzzle(previous_puzzle: str | None) -> str:

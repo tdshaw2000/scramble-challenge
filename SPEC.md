@@ -149,7 +149,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 - **Same scramble per round, always.** Generated once when the round starts, stored on the `Round`, never regenerated per player.
 - **One attempt per player per round.** No retries within a round.
-- **Ties share position.** Two players with equal `time_ms` both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
+- **Ties share position.** Two players whose `time_ms` match to the hundredth (times are truncated, not rounded, as in WCA results) both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
 - **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if their inspection countdown reaches 0. Shown as "DNF" in the leaderboard, sorted after all timed results.
 - **Puzzle defaults.** Round 1 of any challenge always defaults to 3x3 (`333`). Round 2 onward defaults to whatever puzzle was used in the immediately preceding round. CO can always override via the dropdown.
 - **Puzzle list.** The WCA puzzles TNoodle scrambles, without variants: 2x2 to 7x7, Pyraminx, Skewb, Square-1, Megaminx and Clock. The blindfolded (`333ni`, `444ni`, `555ni`), fewest-moves (`333fm`) and fast-4x4 (`444fast`) variants are deliberately left out. The dropdown and round heading show names ("Megaminx"); events and the database use TNoodle codes (`minx`).

@@ -206,3 +206,21 @@ def test_times_over_a_minute_show_minutes(new_player):
     assert page.evaluate("ScrambleChallenge.formatTime(62350)") == "1:02.35"
     assert page.evaluate("ScrambleChallenge.formatTime(9870)") == "9.87"
     assert page.evaluate("ScrambleChallenge.formatTime(null)") == "DNF"
+
+
+@pytest.mark.parametrize(
+    ("time_ms", "shown"),
+    [
+        (12_345, "12.34"),
+        (12_349, "12.34"),
+        (59_999, "59.99"),
+        (60_009, "1:00.00"),
+        (600_000, "10:00.00"),
+        (1_005, "1.00"),
+    ],
+)
+def test_times_are_truncated_to_hundredths_like_wca(new_player, time_ms, shown):
+    page = new_player()
+    start_challenge(page)
+
+    assert page.evaluate(f"ScrambleChallenge.formatTime({time_ms})") == shown

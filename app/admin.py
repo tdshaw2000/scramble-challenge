@@ -49,7 +49,7 @@ def solve_time(time_ms: int | None) -> str:
     """Same look as formatTime in challenge.js: 9.87, 1:05.43, or DNF."""
     if time_ms is None:
         return "DNF"
-    minutes, hundredths = divmod((time_ms + 5) // 10, 6000)  # hundredths, halves rounded up
+    minutes, hundredths = divmod(game.hundredths(time_ms), 6000)
     seconds = f"{hundredths // 100}.{hundredths % 100:02d}"
     return f"{minutes}:{seconds:0>5}" if minutes else seconds
 

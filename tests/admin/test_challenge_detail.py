@@ -113,8 +113,10 @@ def test_links_back_to_the_list(admin, challenge):
     [
         (None, "DNF"),
         (9_870, "9.87"),
-        (12_345, "12.35"),  # rounded to hundredths, like the live results
-        (59_999, "1:00.00"),
+        (12_345, "12.34"),  # truncated to hundredths, like WCA results: no rounding
+        (12_349, "12.34"),
+        (59_999, "59.99"),
+        (60_009, "1:00.00"),
         (65_430, "1:05.43"),
         (600_000, "10:00.00"),
     ],
