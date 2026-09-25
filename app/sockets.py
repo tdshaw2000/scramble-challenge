@@ -7,7 +7,7 @@ import uuid
 from flask import request, url_for
 from flask_socketio import emit, join_room
 
-from app import services
+from app import game, services
 from app.extensions import db, socketio
 from app.models import Challenge, ChallengeStatus, Player, Round, RoundStatus
 from app.routes import COOKIE_NAME
@@ -33,6 +33,7 @@ def round_started(rnd: Round) -> dict:
         "round_id": str(rnd.id),
         "round_number": rnd.round_number,
         "puzzle": rnd.puzzle,
+        "puzzle_name": game.PUZZLE_NAMES[rnd.puzzle],
         "scramble_text": rnd.scramble_text,
         "scramble_svg_url": url_for(
             "main.scramble_svg", slug=rnd.challenge.slug, round_number=rnd.round_number

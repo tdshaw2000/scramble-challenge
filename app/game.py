@@ -3,6 +3,22 @@
 from collections.abc import Iterable, Sequence
 from typing import Protocol
 
+# TNoodle event codes and the names players see: the WCA puzzles, without the
+# blindfolded, fewest-moves and fast-generation variants.
+PUZZLE_NAMES = {
+    "222": "2x2",
+    "333": "3x3",
+    "444": "4x4",
+    "555": "5x5",
+    "666": "6x6",
+    "777": "7x7",
+    "pyram": "Pyraminx",
+    "skewb": "Skewb",
+    "sq1": "Square-1",
+    "minx": "Megaminx",
+    "clock": "Clock",
+}
+
 DEFAULT_PUZZLE = "333"
 
 

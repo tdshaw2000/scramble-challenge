@@ -12,7 +12,7 @@ from flask import (
 )
 from sqlalchemy import text
 
-from app import services
+from app import game, services
 from app.extensions import db
 from app.models import Round
 
@@ -73,7 +73,7 @@ def challenge(slug: str):
         challenge=challenge,
         player=player,
         share_url=url_for("main.challenge", slug=slug, _external=True),
-        puzzles=services.SUPPORTED_PUZZLES,
+        puzzles={code: game.PUZZLE_NAMES[code] for code in services.SUPPORTED_PUZZLES},
         default_puzzle=services.next_puzzle_default(challenge),
     )
 

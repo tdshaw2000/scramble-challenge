@@ -111,7 +111,7 @@
 
   socket.on("round_started", (round) => {
     roundNumber = round.round_number;
-    setText("round-heading", `Round ${roundNumber}`);
+    setText("round-heading", `Round ${roundNumber}: ${round.puzzle_name}`);
     setText("results-heading", `Round ${roundNumber}`);
     setText("scramble-text", round.scramble_text);
     $("scramble-image").src = round.scramble_svg_url;
