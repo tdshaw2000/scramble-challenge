@@ -153,13 +153,13 @@ def test_challenge_page_loads_the_socket_client_with_the_slug(client, challenge)
     assert b"/static/challenge.js" in response.data
 
 
-def test_co_start_round_button_is_enabled(client, challenge):
+def test_co_start_round_button_starts_disabled_until_the_socket_joins(client, challenge):
+    # challenge.js enables it once the join is confirmed (tests/e2e/test_join_race.py).
     client.set_cookie(COOKIE_NAME, "cookie-co")
 
     response = client.get(f"/c/{challenge.slug}")
 
-    assert b'id="start-round"' in response.data
-    assert b"disabled" not in response.data
+    assert b'id="start-round" class="button button-primary" disabled' in response.data
 
 
 def test_socket_client_script_is_served(client):
