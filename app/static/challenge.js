@@ -40,7 +40,7 @@
   let inspectionStartedAt = 0;
   let solveStartedAt = 0;
   let ticker = null;
-  let spaceHeldInInspection = false;
+  let heldInInspection = false;
   let finishedTimer = null;
   let roundEndedWhileFinished = false;
 
@@ -48,7 +48,7 @@
     clearTimeout(finishedTimer);
     phase = next;
     game.dataset.phase = next;
-    if (next !== "inspecting") setSpaceHeld(false);
+    if (next !== "inspecting") setHeld(false);
     const show = {
       lobby: ["lobby"],
       scramble: ["scramble"],
@@ -227,7 +227,7 @@
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     inspectionStartedAt = performance.now();
-    setSpaceHeld(false);
+    setHeld(false);
     setText("countdown", INSPECTION_SECONDS);
     $("countdown").hidden = false;
     $("solving").hidden = true;
@@ -246,7 +246,9 @@
     }, 100);
   });
 
-  // A press anywhere on the blank screen starts the solve, and the next one stops it.
+  // Starts the solve during inspection and stops it while solving. A finger or the spacebar
+  // works it like a real cubing timer: during inspection, holding down gets ready and
+  // letting go starts the solve; while solving, pressing down stops the solve at once.
   function pressTimer() {
     if (phase === "inspecting") {
       stopTicker();
@@ -263,20 +265,33 @@
     }
   }
 
-  $("overlay").addEventListener("pointerdown", pressTimer);
-
-  // On a keyboard the spacebar works the timer while the blank screen is showing. Like a
-  // real cubing timer, holding space during inspection gets ready and letting go starts the
-  // solve; pressing it while solving stops the solve at once. Space must not scroll the page
-  // or press a focused button, and a held key's repeats are not new presses. Space with
-  // Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
-  // While space is held in inspection, data-ready on #game lets themes light the screen up.
-  function setSpaceHeld(held) {
-    spaceHeldInInspection = held;
+  // While held down in inspection, data-ready on #game lets themes light the screen up.
+  function setHeld(held) {
+    heldInInspection = held;
     if (held) game.dataset.ready = "true";
     else delete game.dataset.ready;
   }
 
+  function holdOrStop() {
+    if (phase === "inspecting") setHeld(true);
+    else pressTimer();
+  }
+
+  function letGo() {
+    if (phase === "inspecting" && heldInInspection) pressTimer();
+    setHeld(false);
+  }
+
+  $("overlay").addEventListener("pointerdown", holdOrStop);
+  $("overlay").addEventListener("pointerup", letGo);
+  // The browser took the touch over (e.g. for a gesture): no pointerup will follow.
+  $("overlay").addEventListener("pointercancel", () => setHeld(false));
+  // A long press on a phone would otherwise open a menu.
+  $("overlay").addEventListener("contextmenu", (event) => event.preventDefault());
+
+  // The spacebar does the same while the blank screen is showing. It must not scroll the
+  // page or press a focused button, and a held key's repeats are not new presses. Space
+  // with Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
   function isTimerSpace(event) {
     const plain = event.code === "Space" && !event.ctrlKey && !event.altKey && !event.metaKey;
     return plain && (phase === "inspecting" || phase === "solving");
@@ -285,15 +300,12 @@
   document.addEventListener("keydown", (event) => {
     if (!isTimerSpace(event)) return;
     event.preventDefault();
-    if (event.repeat) return;
-    if (phase === "inspecting") setSpaceHeld(true);
-    else pressTimer();
+    if (!event.repeat) holdOrStop();
   });
 
   document.addEventListener("keyup", (event) => {
     if (!isTimerSpace(event)) return;
     event.preventDefault();
-    if (phase === "inspecting" && spaceHeldInInspection) pressTimer();
-    setSpaceHeld(false);
+    letGo();
   });
 })();

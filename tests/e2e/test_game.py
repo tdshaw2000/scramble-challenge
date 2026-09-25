@@ -602,4 +602,88 @@ def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom
     amy.keyboard.up("Space")
 
     expect(amy.locator("#overlay")).to_be_hidden()
+    # The leaderboard comes from the server, so wait for it before reading it.
+    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
+
+
+# A finger (or mouse button) on the blank screen works like the spacebar: hold it down
+# during inspection to get ready, lift it to start the solve; a press while solving stops.
+def press_overlay(page):
+    box = page.locator("#overlay").bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+
+
+def test_holding_a_finger_down_waits_and_lifting_it_starts_the_solve(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    press_overlay(amy)
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    advance(amy, 2000)
+    expect(amy.locator("#countdown")).to_have_text("13")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+    amy.mouse.up()
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    advance(amy, 4310)
+    # Stopping happens the moment the finger goes down, so lifting it adds no time.
+    press_overlay(amy)
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    amy.mouse.up()
+
+    assert leaderboard(amy) == [["1st", "Amy (0)", "4.31"]]
+
+
+def test_a_press_the_browser_cancels_does_not_start_the_solve(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    press_overlay(amy)
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    amy.locator("#overlay").dispatch_event("pointercancel")
+
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    amy.mouse.up()
+    expect(amy.locator("#countdown")).to_have_text("15")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+
+def test_a_long_press_does_not_open_the_phones_menu(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    not_prevented = amy.evaluate(
+        "document.getElementById('overlay').dispatchEvent("
+        "new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))"
+    )
+
+    assert not_prevented is False
+
+
+def test_a_finger_that_drifts_while_held_still_starts_the_solve_when_lifted(new_player):
+    # Real touch events, as a phone sends them. A finger rarely stays perfectly still, and
+    # the browser must not take a small drift over as a scroll (which cancels the press).
+    tom, amy = new_player(), new_player(has_touch=True, is_mobile=True)
+    for page in (tom, amy):
+        page.add_init_script(FAKE_NOW)
+    link = start_challenge(tom)
+    join(amy, link, "Amy")
+    for page in (tom, amy):
+        set_now(page, 1_000_000)
+    start_inspecting(tom, amy)
+    touch = amy.context.new_cdp_session(amy)
+
+    touch.send(
+        "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 195, "y": 400}]}
+    )
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    for y in (420, 440, 460):
+        touch.send(
+            "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": 195, "y": y}]}
+        )
+    touch.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+    expect(amy.get_by_text("Solving")).to_be_visible()
