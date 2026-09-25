@@ -24,7 +24,7 @@ def test_the_theme_is_a_config_setting():
     assert stylesheet_links(app.test_client().get("/").data) == ["/static/themes/plain/theme.css"]
 
 
-THEMES = ["mario64", "plain", "monkeyisland2"]
+THEMES = ["mario64", "plain", "neon80s", "monkeyisland2"]
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -32,11 +32,12 @@ def test_each_theme_is_a_single_css_file(theme):
     assert (APP / "static" / "themes" / theme / "theme.css").is_file()
 
 
-@pytest.mark.parametrize("theme", THEMES)
-def test_bundled_fonts_ship_with_their_licence(theme):
-    fonts = APP / "static" / "themes" / theme / "fonts"
-    for font in fonts.glob("*.woff2"):
-        assert (fonts / f"LICENSE-{font.stem}.txt").is_file(), font.name
+def test_every_bundled_font_has_its_licence_beside_it():
+    themes = APP / "static" / "themes"
+    fonts = [f for ext in ("woff2", "woff", "ttf", "otf") for f in themes.rglob(f"*.{ext}")]
+    assert fonts
+    for font in fonts:
+        assert (font.parent / f"LICENSE-{font.stem}.txt").is_file(), font.name
 
 
 @pytest.mark.parametrize("theme", THEMES)

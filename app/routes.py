@@ -1,9 +1,11 @@
 import secrets
+from urllib.parse import urlsplit
 
 from flask import (
     Blueprint,
     Response,
     abort,
+    current_app,
     jsonify,
     redirect,
     render_template,
@@ -21,6 +23,7 @@ bp = Blueprint("main", __name__)
 COOKIE_NAME = "scramble_device"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 NAME_COOKIE_NAME = "scramble_name"
+SKIN_COOKIE_NAME = "scramble_skin"
 
 
 @bp.get("/healthz")
@@ -51,6 +54,48 @@ def with_name_cookie(response, display_name: str):
 def remembered_name():
     name = request.cookies.get(NAME_COOKIE_NAME, "")
     return {"remembered_name": name[: services.MAX_NAME_LENGTH]}
+
+
+@bp.app_context_processor
+def chosen_skin():
+    """The player's own skin if they picked one, otherwise the server's THEME."""
+    skins = current_app.config["THEMES"]
+    skin = request.cookies.get(SKIN_COOKIE_NAME)
+    if skin not in skins:
+        skin = current_app.config["THEME"]
+    return {"skin": skin, "skins": skins, "skin_next": skin_return_path()}
+
+
+def skin_return_path() -> str:
+    """Where the skin menu goes back to. A page drawn after a failed form (a POST) has no
+    GET of its own, so go back to the page the form was on, or home."""
+    if request.method == "GET":
+        return request.full_path.rstrip("?")
+    referrer = urlsplit(request.referrer or "")
+    if referrer.netloc == request.host and is_local_path(referrer.path):
+        return referrer.path
+    return "/"
+
+
+def is_local_path(url: str) -> bool:
+    """A path on this site. Whitespace, control characters and backslashes are refused
+    because browsers drop or rewrite them, which can turn "/<tab>/x" into "//x"."""
+    if any(c.isspace() or not c.isprintable() or c == "\\" for c in url):
+        return False
+    return url.startswith("/") and not url.startswith("//")
+
+
+@bp.post("/skin")
+def choose_skin():
+    skin = request.form.get("skin", "")
+    if skin not in current_app.config["THEMES"]:
+        abort(400)
+    next_url = request.form.get("next", "")
+    response = redirect(next_url if is_local_path(next_url) else "/", code=303)
+    response.set_cookie(
+        SKIN_COOKIE_NAME, skin, max_age=COOKIE_MAX_AGE, httponly=True, samesite="Lax"
+    )
+    return response
 
 
 def challenge_or_404(slug: str):
