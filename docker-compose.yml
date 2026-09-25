@@ -19,6 +19,11 @@ services:
       DATABASE_URL: sqlite:////data/scramble.db
       TNOODLE_URL: http://tnoodle:2014
       TRUSTED_PROXIES: "1"
+    # The admin password hash and secret key, written by scripts/set_admin_password.py.
+    # Kept outside the repo checkout; without it the admin area is switched off.
+    env_file:
+      - path: /etc/scramble-challenge/admin.env
+        required: false
     volumes:
       - data:/data
     depends_on:
