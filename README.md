@@ -61,7 +61,7 @@ times in UK time. It is switched off (404) until a password is set on the server
 
 1. SSH to the server, then
    `cd ~/actions-runner/_work/scramble-challenge/scramble-challenge`.
-2. `sudo python3 scripts/set_admin_password.py` asks for a password (12+ characters)
+2. `sudo python3 scripts/set_admin_password.py` asks for a password
    and writes its hash and a new secret key to `/etc/scramble-challenge/admin.env`.
 3. Re-run the latest CI run on `main` so the deploy restarts the web container with it.
 

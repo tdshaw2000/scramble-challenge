@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 ENV_FILE = "/etc/scramble-challenge/admin.env"
-MIN_LENGTH = 12
 N, R, P = 32768, 8, 1  # werkzeug's scrypt defaults
 
 
@@ -37,8 +36,8 @@ def sudo_owner(environ) -> tuple[int, int] | None:
 
 
 def write_env_file(path, password: str, owner: tuple[int, int] | None = None) -> None:
-    if len(password) < MIN_LENGTH:
-        raise ValueError(f"The password must be at least {MIN_LENGTH} characters.")
+    if not password:
+        raise ValueError("The password can't be empty.")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # Single quotes stop docker compose treating the "$" signs in the hash as variables.
