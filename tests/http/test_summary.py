@@ -118,9 +118,7 @@ def test_joining_an_ended_challenge_goes_to_its_summary_without_adding_a_player(
     assert db.session.scalar(db.select(Player).filter_by(display_name="Bob")) is None
 
 
-def test_the_summary_depends_only_on_the_challenge_having_ended_not_on_why(
-    client, db, challenge
-):
+def test_the_summary_depends_only_on_the_challenge_having_ended_not_on_why(client, db, challenge):
     # A future manual "End challenge" should get the same page as the owner leaving.
     challenge.status = ChallengeStatus.ENDED
     db.session.commit()
