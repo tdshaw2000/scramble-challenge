@@ -22,6 +22,12 @@ def advance_clock():
     return jsonify(ok=True)
 
 
+@control.post("/next-scramble")
+def next_scramble():
+    control.app.extensions["tnoodle"].next_text = request.args["text"]
+    return jsonify(ok=True)
+
+
 @control.post("/end-abandoned")
 def end_abandoned():
     sockets.end_abandoned_challenges()

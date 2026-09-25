@@ -1,6 +1,6 @@
 import pytest
 
-from app import services
+from app import game, services
 from app.models import ChallengeStatus, RoundStatus
 
 
@@ -42,8 +42,11 @@ def test_next_round_can_start_from_results_and_is_numbered_on(challenge, co):
     assert challenge.current_round == second
 
 
-def test_later_rounds_default_to_the_previous_puzzle(challenge, co, monkeypatch):
-    monkeypatch.setattr(services, "SUPPORTED_PUZZLES", ("333", "222"))
+def test_every_puzzle_in_the_list_can_be_played():
+    assert services.SUPPORTED_PUZZLES == tuple(game.PUZZLE_NAMES)
+
+
+def test_later_rounds_default_to_the_previous_puzzle(challenge, co):
     services.start_round(challenge, co, puzzle="222")
     services.end_round(challenge, co)
 
@@ -55,9 +58,10 @@ def test_first_round_default_is_3x3(challenge):
     assert services.next_puzzle_default(challenge) == "333"
 
 
-def test_unsupported_puzzle_is_rejected_without_calling_tnoodle(challenge, co, tnoodle):
+@pytest.mark.parametrize("puzzle", ["333ni", "444ni", "555ni", "333fm", "444fast", "nonsense"])
+def test_unsupported_puzzle_is_rejected_without_calling_tnoodle(challenge, co, tnoodle, puzzle):
     with pytest.raises(services.InvalidInput):
-        services.start_round(challenge, co, puzzle="minx")
+        services.start_round(challenge, co, puzzle=puzzle)
 
     assert tnoodle.requested == []
     assert challenge.status == ChallengeStatus.WAITING
