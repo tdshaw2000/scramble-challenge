@@ -1,6 +1,6 @@
 """Read-only admin area for browsing past challenges, behind a single password."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 from zoneinfo import ZoneInfo
 
@@ -23,6 +23,10 @@ from app.models import Challenge, ChallengeStatus
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 PAGE_SIZE = 50
+# Wrong passwords allowed per visitor before they must wait. Each check is a slow
+# scrypt hash on the only worker, so this also stops a flood of attempts stalling games.
+MAX_FAILED_LOGINS = 5
+FAILED_LOGIN_WINDOW = timedelta(minutes=15)
 UK = ZoneInfo("Europe/London")
 STATUS_LABELS = {
     ChallengeStatus.WAITING: "Waiting",
@@ -78,11 +82,27 @@ def login():
     return render_template("admin/login.html")
 
 
+def recent_failures() -> list[datetime]:
+    """This visitor's wrong guesses inside the window. Kept in memory: there is one worker,
+    and a restart forgetting them is fine."""
+    failures = current_app.extensions.setdefault("admin_failed_logins", {})
+    cutoff = services.now() - FAILED_LOGIN_WINDOW
+    recent = [moment for moment in failures.get(request.remote_addr, []) if moment > cutoff]
+    failures[request.remote_addr] = recent
+    return recent
+
+
 @bp.post("/login")
 def login_submit():
+    failures = recent_failures()
+    if len(failures) >= MAX_FAILED_LOGINS:
+        error = "Too many attempts. Try again in 15 minutes."
+        return render_template("admin/login.html", error=error), 429
     password = request.form.get("password", "")
     if not check_password_hash(current_app.config["ADMIN_PASSWORD_HASH"], password):
+        failures.append(services.now())
         return render_template("admin/login.html", error="Wrong password."), 401
+    failures.clear()
     session.clear()
     session.permanent = True
     session["admin"] = True
