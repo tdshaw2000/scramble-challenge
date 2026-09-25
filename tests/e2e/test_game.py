@@ -333,12 +333,20 @@ def test_the_last_to_finish_sees_their_time_before_the_round_results(tom_and_amy
     tom, amy, _ = tom_and_amy
     tom.get_by_role("button", name="Start round").click()
     solve(amy, 9_000)
+    expect(amy.locator("#overlay")).to_be_hidden()  # Amy's own second is over
 
     solve(tom, 10_000)
 
+    # Amy is already on the results, so the round has ended for Tom's page too...
+    expect(amy.get_by_role("heading", name="Round 1 results")).to_be_visible()
+    tom.wait_for_timeout(300)  # time for the same round_complete to reach Tom's page
+    # ...but Tom's own time is still showing, not the results.
+    expect(tom.locator("#finished")).to_be_visible()
     expect(tom.locator("#finished")).to_have_text("10.00")
     expect(tom.get_by_role("heading", name="Round 1 results")).to_be_hidden()
+
     expect(tom.get_by_role("heading", name="Round 1 results")).to_be_visible()
+    expect(tom.get_by_role("button", name="Start round")).to_be_visible()
     expect(tom.locator("#overlay")).to_be_hidden()
 
 
