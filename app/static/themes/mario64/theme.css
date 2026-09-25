@@ -258,7 +258,7 @@ body::after {
 .summary .button { display: block; box-sizing: border-box; text-align: center; text-decoration: none; }
 .summary-ended { text-align: center; }
 .summary-ended .card-title { margin: 0; }
-.summary-standings .button { margin-top: 12px; }
+.summary-standings .button { width: 100%; margin-top: 12px; }
 
 /* Admin area */
 .admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
