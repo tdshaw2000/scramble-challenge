@@ -373,18 +373,27 @@ def test_space_starts_the_solve_during_inspection_and_stops_it(tom_and_amy):
         assert leaderboard(page) == [["1st", "Amy", "7.65"]]
 
 
-def test_holding_space_down_does_not_stop_the_solve_it_started(tom_and_amy):
+def test_holding_space_waits_and_letting_go_starts_the_solve(tom_and_amy):
+    # Like a real cubing timer: hold space while getting ready, let go to start. The
+    # key's auto-repeats while it is held are not new presses.
     tom, amy, _ = tom_and_amy
     start_inspecting(tom, amy)
 
-    # A held key repeats its keydown; only a fresh press counts.
     amy.keyboard.down("Space")
     amy.keyboard.down("Space")
+    advance(amy, 2000)
+    expect(amy.locator("#countdown")).to_have_text("13")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+    amy.keyboard.up("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    advance(amy, 6420)
+    # Stopping happens the moment space goes down, so no time is added while letting go.
     amy.keyboard.down("Space")
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
     amy.keyboard.up("Space")
 
-    expect(amy.get_by_text("Solving")).to_be_visible()
-    expect(amy.locator("#overlay")).to_be_visible()
+    assert leaderboard(amy) == [["1st", "Amy", "6.42"]]
 
 
 def test_space_mixes_with_taps(tom_and_amy):
