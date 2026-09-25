@@ -24,9 +24,15 @@ def test_the_theme_is_a_config_setting():
     assert stylesheet_links(app.test_client().get("/").data) == ["/static/themes/plain/theme.css"]
 
 
-@pytest.mark.parametrize("theme", ["mario64", "plain"])
+@pytest.mark.parametrize("theme", ["mario64", "plain", "neon80s"])
 def test_each_theme_is_a_single_css_file(theme):
     assert (APP / "static" / "themes" / theme / "theme.css").is_file()
+
+
+def test_every_bundled_font_has_its_licence_beside_it():
+    fonts = list((APP / "static" / "themes").rglob("*.woff2"))
+    for font in fonts:
+        assert (font.parent / f"LICENSE-{font.stem}.txt").is_file(), font.name
 
 
 def test_templates_contain_no_styling():
