@@ -1,6 +1,7 @@
 // Challenge page client: talks to the server over Socket.IO and switches screens.
 // Presentation lives entirely in the theme CSS: this file only shows/hides elements
-// (the `hidden` attribute), sets text, and sets data-phase on #game for themes to use.
+// (the `hidden` attribute), sets text, and sets data-phase on #game and data-puzzle on
+// #scramble for themes to use.
 (function () {
   "use strict";
 
@@ -113,6 +114,7 @@
     roundNumber = round.round_number;
     setText("round-heading", `Round ${roundNumber}: ${round.puzzle_name}`);
     setText("results-heading", `Round ${roundNumber}`);
+    $("scramble").dataset.puzzle = round.puzzle;
     setText("scramble-text", round.scramble_text);
     $("scramble-image").src = round.scramble_svg_url;
     renderResults([]);

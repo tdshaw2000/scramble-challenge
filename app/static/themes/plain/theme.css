@@ -19,7 +19,8 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .players { padding-left: 20px; }
 .player-away { color: var(--muted); }
 .share { margin-bottom: 12px; }
-.scramble-text { font: 1.2rem/1.6 ui-monospace, monospace; }
+.scramble-text { font: 1.2rem/1.6 ui-monospace, monospace; white-space: pre-line; }
+[data-puzzle="minx"] .scramble-text { font-size: min(1.2rem, calc((100vw - 64px) / 26)); }
 .scramble-image { display: block; width: 100%; max-width: 320px; margin: 0 auto 16px; }
 .overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: manipulation; user-select: none; }
 .countdown { font-size: 30vmin; font-weight: 700; margin: 0; }

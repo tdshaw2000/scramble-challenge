@@ -163,6 +163,13 @@ body::after {
   background: #fffbe6;
   border: 3px solid var(--outline);
   border-radius: 14px;
+  white-space: pre-line; /* Megaminx scrambles come as one line per row */
+}
+/* Megaminx rows must not wrap, so shrink the text to fit the widest row on a phone. */
+[data-puzzle="minx"] .scramble-text {
+  padding-inline: 6px;
+  font-size: min(1.25rem, calc((100vw - 100px) / 26));
+  word-spacing: normal;
 }
 .scramble-image {
   display: block;
