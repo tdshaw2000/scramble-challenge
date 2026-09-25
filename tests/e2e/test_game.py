@@ -332,7 +332,17 @@ def test_everyone_goes_to_the_summary_when_the_challenge_ends(tom_and_amy, live_
     expect(amy).to_have_url(f"{link}/summary")
     expect(amy.get_by_role("heading", name="This challenge has ended")).to_be_visible()
     expect(amy.locator(".standing")).to_have_text(["1st Amy (1)", "2nd Tom (0)"])
+    expect(amy.locator(".result").first).to_be_hidden()
+
+    amy.get_by_role("button", name="View rounds").click()
     expect(amy.locator(".result")).to_have_text(["1st Amy (1) 9.00", "2nd Tom (0) 12.00"])
+    expect(amy.locator(".result").first).to_be_visible()
+
+    amy.get_by_role("button", name="Hide rounds").click()
+    expect(amy.locator(".result").first).to_be_hidden()
+    expect(amy.get_by_role("button", name="View rounds")).to_have_attribute(
+        "aria-expanded", "false"
+    )
 
 
 def test_times_over_a_minute_show_minutes(new_player):
