@@ -501,3 +501,97 @@ def test_a_verdict_commit_that_is_not_a_sha_is_never_passed_to_git(repo):
 
     assert result.returncode == BLOCKED
     assert "full sha" in result.stderr
+
+
+# --- Merging: Claude merges once review passes (owner's decision, 2026-09-25) ---
+
+
+def merge(repo, **overrides):
+    tool_input = {
+        "owner": "o",
+        "repo": "r",
+        "pullNumber": 1,
+        "merge_method": "merge",
+        "expectedHeadSha": head(repo),
+    }
+    tool_input.update(overrides)
+    return run(
+        "gate",
+        {
+            "cwd": str(repo),
+            "tool_name": "mcp__github__merge_pull_request",
+            "tool_input": tool_input,
+        },
+    )
+
+
+def test_merging_is_blocked_until_the_commit_passes_review(repo):
+    result = merge(repo)
+
+    assert result.returncode == BLOCKED
+    assert "reviewer" in result.stderr
+
+
+def test_merging_is_allowed_once_the_commit_passes_review(repo):
+    review(repo)
+
+    assert merge(repo).returncode == 0
+
+
+def test_merging_after_three_failed_rounds_is_blocked(repo):
+    for _ in range(3):
+        review(repo, blocking=1)
+        new_commit(repo)
+    review(repo)
+
+    result = merge(repo)
+
+    assert result.returncode == BLOCKED
+    assert "Stop" in result.stderr
+
+
+@pytest.mark.parametrize("method", ["squash", "rebase", None])
+def test_merging_must_use_a_merge_commit(repo, method):
+    review(repo)
+
+    result = merge(repo, merge_method=method)
+
+    assert result.returncode == BLOCKED
+    assert "merge commit" in result.stderr
+
+
+@pytest.mark.parametrize("sha", ["0" * 40, None])
+def test_merging_must_name_the_reviewed_head(repo, sha):
+    review(repo)
+
+    result = merge(repo, expectedHeadSha=sha)
+
+    assert result.returncode == BLOCKED
+    assert "expectedHeadSha" in result.stderr
+
+
+def test_gh_pr_merge_is_gated_and_needs_a_merge_commit_and_the_head(repo):
+    ok = f"gh pr merge 13 --merge --match-head-commit {head(repo)}"
+    assert bash(repo, ok).returncode == BLOCKED
+    review(repo)
+    assert bash(repo, ok).returncode == 0
+    assert bash(repo, f"gh pr merge 13 --squash --match-head-commit {head(repo)}").returncode == 2
+    assert bash(repo, "gh pr merge 13 --merge").returncode == BLOCKED
+
+
+@pytest.mark.parametrize(
+    "tool_name, tool_input",
+    [
+        ("mcp__github__enable_pr_auto_merge", {"pullNumber": 1}),
+        ("Bash", {"command": "gh pr merge 13 --auto --merge"}),
+    ],
+)
+def test_auto_merge_is_blocked(repo, tool_name, tool_input):
+    review(repo)
+    if tool_name == "Bash":
+        tool_input["command"] += f" --match-head-commit {head(repo)}"
+
+    result = run("gate", {"cwd": str(repo), "tool_name": tool_name, "tool_input": tool_input})
+
+    assert result.returncode == BLOCKED
+    assert "auto-merge" in result.stderr

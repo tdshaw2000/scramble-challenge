@@ -38,6 +38,8 @@ def commands_for(hooks, event, tool):
         "mcp__github__update_pull_request",
         "mcp__github__create_pull_request",
         "mcp__plugin_gh_github__update_pull_request",
+        "mcp__github__merge_pull_request",
+        "mcp__github__enable_pr_auto_merge",
         "Bash",
     ],
 )
@@ -100,3 +102,10 @@ def test_claude_md_says_how_to_reset_a_branchs_review_rounds():
     text = (ROOT / "CLAUDE.md").read_text()
 
     assert "rm .git/claude-review/" in text
+
+
+def test_claude_md_says_claude_merges_with_a_merge_commit():
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "Never merge" not in text
+    assert "merge_method" in text
