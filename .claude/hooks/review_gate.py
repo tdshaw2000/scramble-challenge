@@ -123,7 +123,6 @@ def record(event):
 
 
 def marks_ready(command):
-    command = command.replace("\\\n", " ")  # join backslash line continuations
     if GRAPHQL_READY in command:
         return True
     return any(
@@ -170,7 +169,7 @@ def wants(event):
     if tool.startswith("mcp__") and tool.endswith("__create_pull_request"):
         return None if args.get("draft") is True else "create-not-draft"
     if tool == "Bash":
-        command = str(args.get("command") or "")
+        command = str(args.get("command") or "").replace("\\\n", " ")  # join continuations
         if marks_ready(command):
             return "ready"
         if creates_without_draft(command):
