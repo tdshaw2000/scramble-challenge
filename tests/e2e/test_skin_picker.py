@@ -61,7 +61,7 @@ def gear_is_covered(page):
     )
 
 
-@pytest.mark.parametrize("skin", ["mario64", "plain", "monkeyisland2"])
+@pytest.mark.parametrize("skin", ["mario64", "plain", "monkeyisland2", "neon80s"])
 def test_the_timer_screen_covers_the_gear(new_player, live_server, skin):
     tom = new_player()
     tom.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": live_server}])
