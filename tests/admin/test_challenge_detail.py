@@ -59,13 +59,14 @@ def test_says_so_when_no_rounds_were_played(admin, challenge):
 def test_shows_each_round_with_its_puzzle_scramble_and_picture(admin, challenge, co):
     services.start_round(challenge, co, "333")
     services.complete_round(challenge)
-    services.start_round(challenge, co, "333")
+    services.start_round(challenge, co, "pyram")
 
     html = admin.get(f"/admin/challenges/{challenge.slug}").data.decode()
 
     first, second = html.index("Round 1"), html.index("Round 2")
     assert first < second
-    assert "Round 1: 333" in html
+    assert "Round 1: 3x3" in html
+    assert "Round 2: Pyraminx" in html
     assert "R U R&#39; U&#39; 1" in html[first:second]
     assert f'src="/c/{challenge.slug}/rounds/1/scramble.svg"' in html[first:second]
     assert "R U R&#39; U&#39; 2" in html[second:]
