@@ -558,3 +558,29 @@ def test_a_long_press_does_not_open_the_phones_menu(tom_and_amy):
     )
 
     assert not_prevented is False
+
+
+def test_a_finger_that_drifts_while_held_still_starts_the_solve_when_lifted(new_player):
+    # Real touch events, as a phone sends them. A finger rarely stays perfectly still, and
+    # the browser must not take a small drift over as a scroll (which cancels the press).
+    tom, amy = new_player(), new_player(has_touch=True, is_mobile=True)
+    for page in (tom, amy):
+        page.add_init_script(FAKE_NOW)
+    link = start_challenge(tom)
+    join(amy, link, "Amy")
+    for page in (tom, amy):
+        set_now(page, 1_000_000)
+    start_inspecting(tom, amy)
+    touch = amy.context.new_cdp_session(amy)
+
+    touch.send(
+        "Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 195, "y": 400}]}
+    )
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    for y in (420, 440, 460):
+        touch.send(
+            "Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": 195, "y": y}]}
+        )
+    touch.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+    expect(amy.get_by_text("Solving")).to_be_visible()
