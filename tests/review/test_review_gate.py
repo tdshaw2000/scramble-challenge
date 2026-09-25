@@ -645,9 +645,79 @@ def test_admin_merges_are_blocked(repo):
     assert "--admin" in result.stderr
 
 
-def test_a_quoted_head_sha_is_accepted(repo):
+@pytest.mark.parametrize(
+    "form",
+    [
+        '--match-head-commit "SHA"',
+        "--match-head-commit 'SHA'",
+        '--match-head-commit="SHA"',
+        "--match-head-commit=SHA",
+    ],
+)
+def test_a_quoted_head_sha_is_accepted(repo, form):
     review(repo)
 
-    result = bash(repo, f'gh pr merge 13 --merge --match-head-commit "{head(repo)}"')
+    result = bash(repo, "gh pr merge 13 --merge " + form.replace("SHA", head(repo)))
 
     assert result.returncode == 0, result.stderr
+
+
+# --- Merge gating, review round 2 fixes ---
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh pr -R o/r merge 13 --squash",
+        "gh pr --repo=o/r merge 13 --squash --admin",
+        "gh pr --repo o/r ready 13",
+        "gh -R o/r pr merge 13 --squash",
+    ],
+)
+def test_repo_flags_before_the_subcommand_are_still_gated(repo, command):
+    assert bash(repo, command).returncode == BLOCKED
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh api repos/o/r/merges -f base=main -f head=feat",
+        "gh api graphql -f query='mutation{mergeBranch(input:{}){x}}'",
+    ],
+)
+def test_branch_merges_through_gh_api_are_blocked(repo, command):
+    review(repo)
+
+    assert bash(repo, command).returncode == BLOCKED
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git push origin HEAD:main",
+        "git push origin main",
+        "git push -f origin main",
+        "git push origin HEAD:refs/heads/main",
+        "gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc",
+    ],
+)
+def test_pushing_straight_to_main_is_blocked(repo, command):
+    review(repo)
+
+    result = bash(repo, command)
+
+    assert result.returncode == BLOCKED
+    assert "main" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git push -u origin review-loop",
+        "git push origin main-fix",
+        "git push",
+        "git pull origin main",
+    ],
+)
+def test_ordinary_pushes_are_not_gated(repo, command):
+    assert bash(repo, command).returncode == 0
