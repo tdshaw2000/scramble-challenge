@@ -1,2 +1,33 @@
 {% extends "admin/base.html" %}
-{% block admin_content %}{% endblock %}
+{% block admin_content %}
+<section class="card admin-card">
+  <h2 class="card-title">All challenges</h2>
+  {% if page.items %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Started</th><th>Code</th><th>Owner</th><th>Players</th><th>Rounds</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for c in page.items %}
+        <tr class="admin-challenge">
+          <td>{{ c.created_at | uk_time }}</td>
+          <td><a href="{{ url_for('admin.challenge', slug=c.slug) }}">{{ c.slug }}</a></td>
+          <td>{{ c.co_player.display_name if c.co_player }}</td>
+          <td class="admin-players">{{ c.players | length }}</td>
+          <td class="admin-rounds">{{ c.rounds | length }}</td>
+          <td>{{ status_labels[c.status] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav class="admin-pages">
+    {% if page.has_prev %}<a href="{{ url_for('admin.home', page=page.prev_num) }}">Newer</a>{% endif %}
+    {% if page.has_next %}<a href="{{ url_for('admin.home', page=page.next_num) }}">Older</a>{% endif %}
+  </nav>
+  {% else %}
+  <p>No challenges yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

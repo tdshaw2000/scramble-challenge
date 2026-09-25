@@ -1,6 +1,8 @@
 """Read-only admin area for browsing past challenges, behind a single password."""
 
+from datetime import UTC, datetime
 from functools import wraps
+from zoneinfo import ZoneInfo
 
 from flask import (
     Blueprint,
@@ -14,7 +16,27 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from app.extensions import db
+from app.models import Challenge, ChallengeStatus
+
 bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+PAGE_SIZE = 50
+UK = ZoneInfo("Europe/London")
+STATUS_LABELS = {
+    ChallengeStatus.WAITING: "Waiting",
+    ChallengeStatus.ROUND_ACTIVE: "Round in progress",
+    ChallengeStatus.ROUND_RESULTS: "Showing results",
+    ChallengeStatus.ENDED: "Ended",
+}
+
+
+@bp.app_template_filter("uk_time")
+def uk_time(moment: datetime) -> str:
+    # SQLite hands datetimes back without a timezone; they were stored as UTC.
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=UTC)
+    return moment.astimezone(UK).strftime("%-d %b %Y, %H:%M")
 
 
 @bp.before_request
@@ -59,4 +81,15 @@ def logout():
 @bp.get("")
 @login_required
 def home():
-    return render_template("admin/home.html")
+    page = db.paginate(
+        db.select(Challenge).order_by(Challenge.created_at.desc()),
+        per_page=PAGE_SIZE,
+        max_per_page=PAGE_SIZE,
+    )
+    return render_template("admin/home.html", page=page, status_labels=STATUS_LABELS)
+
+
+@bp.get("/challenges/<slug>")
+@login_required
+def challenge(slug: str):
+    abort(404)
