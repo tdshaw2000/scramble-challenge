@@ -410,6 +410,7 @@ def test_every_shell_form_of_marking_ready_is_gated(repo, command):
         'gh pr create --title "fix; tidy" --draft --body b',
         "gh pr create --title t --body \"$(cat <<'EOF'\nSummary\n\nMore | detail\nEOF\n)\" --draft",
         "gh pr create -d --title t",
+        "gh pr create \\\n  --draft \\\n  --fill",
     ],
 )
 def test_draft_creates_are_allowed_however_the_body_is_written(repo, command):
