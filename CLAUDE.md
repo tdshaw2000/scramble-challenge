@@ -24,5 +24,10 @@ draft, and it blocks marking a PR ready until the pushed HEAD commit has a passi
    question with the options and your recommendation, and list them in the PR review body too.
 6. Once CI is green, mark the PR ready for review.
 
-The hook only runs inside Claude Code sessions. A PR pushed by hand is not reviewed.
-Verdicts live in .git/claude-review/, one file per branch, and are never committed.
+Limits, on purpose: the hook only runs inside Claude Code sessions, so a PR pushed by hand is
+not reviewed. It checks the branch you are on, not the PR number you pass, so mark ready from
+the PR's own branch. It guards against mistakes, not against an agent that edits its state.
+
+Verdicts live in .git/claude-review/, one file per branch, and are never committed. Rounds are
+counted per commit reviewed. To start a branch's count again (only when the owner says so):
+`rm .git/claude-review/<branch>.json`.
