@@ -26,7 +26,7 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; user-select: none; }
 .countdown { font-size: 30vmin; font-weight: 700; margin: 0; }
 .solving { font-size: 2rem; margin: 0; }
-.finished { font-size: 22vmin; font-weight: 700; margin: 0; }
+.finished { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; }
 .finished[data-result="dnf"] { color: #b91c1c; }
 .game[data-ready] .countdown { color: #15803d; }
 .overlay-hint { color: var(--muted); }

@@ -285,7 +285,7 @@ def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):
 
 # After stopping, the player's own time fills the screen for a second, then the page
 # moves on. The finished screen shows the time and nothing else (the owner chose no label).
-def test_stopping_shows_the_time_full_screen_for_a_second_then_the_results(tom_and_amy):
+def test_stopping_shows_the_time_full_screen_for_a_second_then_the_leaderboard(tom_and_amy):
     tom, amy, _ = tom_and_amy
     tom.get_by_role("button", name="Start round").click()
     amy.get_by_role("button", name="Start inspection").click()
