@@ -13,6 +13,7 @@ so the hook runs with any python3.
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -24,10 +25,12 @@ LOOP = "See 'Review loop' in CLAUDE.md."
 
 # Fail closed: anything that looks like marking ready is gated, even a quoted mention.
 # A false block only costs a retry; a missed one skips the review.
-GH_READY = re.compile(r"\bgh\b.*\bpr\s+ready\b(?!.*--undo)")
+# Each "pr ready" is exempt only if its own part of the command (up to ; & | or #) says --undo.
+GH_READY = re.compile(r"\bpr\s+ready\b([^;&|#\n]*)")
 GRAPHQL_READY = "markPullRequestReadyForReview"
-GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b")
-DRAFT_FLAG = re.compile(r"(?:^|\s)(?:--draft|-d)(?:\s|$|=)")
+GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b", re.DOTALL)
+SEPARATORS = {";", "&", "&&", "|", "||", "\n", "(", ")"}
+DRAFT_FLAGS = {"--draft", "-d", "--draft=true"}
 VERDICT = re.compile(r"```json\s*\n(.*?)\n```", re.DOTALL)
 
 
@@ -90,8 +93,11 @@ def record(event):
     else:
         # The verdict counts for the commit it names. If HEAD has moved on since, the gate
         # simply won't find a review for HEAD; the reviewer must never relabel its verdict.
-        commit = git(cwd, "rev-parse", "--verify", "--quiet", f"{verdict.get('commit')}^{{commit}}")
-        if commit is None or len(str(verdict.get("commit"))) != 40:
+        named = verdict.get("commit")
+        commit = None
+        if isinstance(named, str) and re.fullmatch(r"[0-9a-f]{40}", named):
+            commit = git(cwd, "rev-parse", "--verify", "--quiet", f"{named}^{{commit}}")
+        if commit is None:
             problem = (
                 f"The verdict names commit {verdict.get('commit')}, which isn't a full sha of a "
                 f"commit here. Name the commit you actually reviewed (HEAD is "
@@ -116,6 +122,46 @@ def record(event):
 # --- gate ---
 
 
+def marks_ready(command):
+    command = command.replace("\\\n", " ")  # join backslash line continuations
+    if GRAPHQL_READY in command:
+        return True
+    return any(
+        "--undo" not in match.group(1).split()
+        for line in command.split("\n")
+        if re.search(r"\bgh\b", line)
+        for match in GH_READY.finditer(line)
+    )
+
+
+def creates_without_draft(command):
+    """True if any gh pr create in the command lacks its own --draft. Unsure means True."""
+    if not GH_CREATE.search(command):
+        return False
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()\n")
+    lexer.whitespace = " \t\r"
+    lexer.whitespace_split = True
+    try:
+        words = list(lexer)
+    except ValueError:
+        return True  # unbalanced quotes
+    segments, current = [], []
+    for word in words + [";"]:
+        if word in SEPARATORS or set(word) <= set(";&|()\n"):
+            segments.append(current)
+            current = []
+        else:
+            current.append(word)
+    creates = [
+        seg
+        for seg in segments
+        if any(seg[i : i + 2] == ["pr", "create"] and "gh" in seg[:i] for i in range(len(seg)))
+    ]
+    if not creates:
+        return True  # gh pr create is in there somewhere we can't read, such as bash -c "..."
+    return any(not DRAFT_FLAGS & set(seg) for seg in creates)
+
+
 def wants(event):
     """What the tool call does: 'ready', 'create-not-draft', or None for anything else."""
     tool, args = event.get("tool_name") or "", event.get("tool_input") or {}
@@ -124,10 +170,10 @@ def wants(event):
     if tool.startswith("mcp__") and tool.endswith("__create_pull_request"):
         return None if args.get("draft") is True else "create-not-draft"
     if tool == "Bash":
-        command = args.get("command", "")
-        if GRAPHQL_READY in command or any(GH_READY.search(line) for line in command.split("\n")):
+        command = str(args.get("command") or "")
+        if marks_ready(command):
             return "ready"
-        if GH_CREATE.search(command) and not DRAFT_FLAG.search(command):
+        if creates_without_draft(command):
             return "create-not-draft"
     return None
 
