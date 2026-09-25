@@ -60,11 +60,11 @@ def on_join_challenge(data):
     player = services.player_for_cookie(challenge, request.cookies.get(COOKIE_NAME))
     if player is None:
         return game_error("Enter your name to join first.")
+    if challenge.status == ChallengeStatus.ENDED:
+        # However it ended, the page reloads and the server sends it to the summary.
+        return emit("challenge_ended", {})
 
-    try:
-        services.player_joined(player)
-    except services.GameError as error:
-        return game_error(str(error))
+    services.player_joined(player)
     join_room(challenge.slug)
     connections[request.sid] = str(player.id)
     emit("player_list", player_list(challenge), to=challenge.slug)
