@@ -4,7 +4,8 @@
   <h2 class="card-title">Join the challenge</h2>
   <label class="field">
     <span class="field-label">Your name</span>
-    <input class="field-input" name="display_name" maxlength="50" required autofocus>
+    <input class="field-input" name="display_name" maxlength="50" required autofocus
+      {%- if remembered_name %} value="{{ remembered_name }}"{% endif %}>
   </label>
   <button class="button button-primary" type="submit">Join</button>
 </form>
