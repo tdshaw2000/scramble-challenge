@@ -93,7 +93,7 @@ body::after {
 @keyframes drive { to { background-position: 0 0, 0 0, 0 42px, 0 0; } }
 
 /* Title: neon tubes, pink then cyan, with a red scanner light sweeping underneath. */
-.site-header { position: relative; padding: 26px 12px 22px; text-align: center; }
+.site-header { position: relative; z-index: 2; padding: 26px 12px 22px; text-align: center; }
 .site-title {
   display: inline-flex;
   flex-direction: column;
@@ -462,6 +462,16 @@ body::after {
   box-shadow: 0 0 10px rgba(255, 36, 54, 0.5);
 }
 .confirm-text { margin: 0 0 4px; text-align: center; font: 700 1rem var(--display); letter-spacing: 0.06em; }
+
+/* Skin picker: a small neon gear in the header's top-right corner. */
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: pointer; font-size: 1.9rem; line-height: 1; padding: 4px; color: var(--cyan); opacity: 0.8; text-shadow: 0 0 8px var(--cyan); }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-picker[open] .skin-picker-toggle { opacity: 1; }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 160px; padding: 8px; background: #0b0420; border: 2px solid var(--cyan); border-radius: 8px; box-shadow: 0 0 12px rgba(47, 243, 255, 0.6); }
+.skin-menu-title { margin: 0 4px 4px; font: 600 0.75rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pink); }
+.skin-option { display: block; width: 100%; padding: 8px; text-align: left; font: inherit; color: var(--text); background: none; border: 0; border-radius: 6px; cursor: pointer; text-decoration: none; }
+.skin-option[aria-current="true"]::after { content: " \2713"; color: var(--pink); text-shadow: 0 0 6px var(--pink); }
 
 /* Keep the glow but stop the movement for anyone who asks for less motion. */
 @media (prefers-reduced-motion: reduce) {
