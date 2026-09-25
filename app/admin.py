@@ -123,7 +123,9 @@ def home():
         per_page=PAGE_SIZE,
         max_per_page=PAGE_SIZE,
     )
-    return render_template("admin/home.html", page=page, status_labels=STATUS_LABELS)
+    return render_template(
+        "admin/home.html", page=page, status_labels=STATUS_LABELS, points=services.points
+    )
 
 
 @bp.get("/challenges/<slug>")
@@ -137,5 +139,6 @@ def challenge(slug: str):
         challenge=challenge,
         status=STATUS_LABELS[challenge.status],
         puzzle_names=game.PUZZLE_NAMES,
+        points=services.points(challenge),
         leaderboards={rnd.id: services.leaderboard(rnd) for rnd in challenge.rounds},
     )
