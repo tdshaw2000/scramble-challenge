@@ -287,6 +287,20 @@ def player_left(player: Player) -> None:
         complete_round_if_everyone_finished(challenge)
 
 
+def reset_presence_after_restart() -> None:
+    """A restart runs no disconnect handlers, so nobody's "connected" flag can be trusted.
+    Mark everyone away (browsers reconnect by themselves) and start the owner's grace
+    period where it wasn't running. No DNFs: a deploy isn't the player's fault."""
+    live = db.session.scalars(
+        db.select(Challenge).where(Challenge.status != ChallengeStatus.ENDED)
+    ).all()
+    for challenge in live:
+        if challenge.co_left_at is None:
+            challenge.co_left_at = now()
+    db.session.execute(db.update(Player).values(connected=False))
+    db.session.commit()
+
+
 def end_abandoned_challenges() -> list[Challenge]:
     """End every challenge whose CO has been gone longer than the grace period."""
     cutoff = now() - timedelta(seconds=current_app.config["CO_GRACE_SECONDS"])

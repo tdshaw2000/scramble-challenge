@@ -12,6 +12,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
+COPY gunicorn.conf.py ./
 COPY app/ app/
 COPY migrations/ migrations/
 COPY docker/web/entrypoint.sh /entrypoint.sh

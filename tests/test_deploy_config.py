@@ -109,3 +109,17 @@ def test_server_setup_refuses_to_run_anywhere_but_an_arm_server():
     checks_arch = script.index('"$(uname -m)" != "aarch64"')
     first_change = script.index("sudo ")
     assert checks_arch < first_change
+
+
+def test_production_dependencies_include_what_gunicorns_gevent_worker_imports():
+    # The image installs without dev dependencies, and gunicorn's gevent worker imports
+    # "packaging", which gunicorn itself doesn't declare. Locally dev tools bring it in.
+    exported = subprocess.run(
+        ["uv", "export", "--frozen", "--no-dev", "--no-hashes"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    packages = {line.split("==")[0] for line in exported.splitlines() if "==" in line}
+    assert {"gunicorn", "gevent", "packaging"} <= packages

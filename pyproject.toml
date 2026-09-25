@@ -8,7 +8,9 @@ dependencies = [
     "flask-migrate>=4.1.0",
     "flask-socketio>=5.6.1",
     "flask-sqlalchemy>=3.1.1",
+    "gevent>=26.9.0",
     "gunicorn>=26.2.0",
+    "packaging>=26.3",
     "requests>=2.34.2",
     "simple-websocket>=1.1.0",
 ]
