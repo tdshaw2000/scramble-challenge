@@ -135,6 +135,8 @@ def test_a_backup_service_takes_nightly_snapshots_onto_its_own_volume(compose):
     assert backup["image"] == web["image"]
     assert backup["command"] == ["python", "-m", "app.backup", "schedule"]
     assert backup["restart"] == "unless-stopped"
+    # An init process passes on the stop signal, so deploys don't wait 10s to kill it.
+    assert backup["init"] is True
     assert backup["environment"]["DATABASE_URL"] == web["environment"]["DATABASE_URL"]
     assert backup["environment"]["BACKUP_DIR"] == "/backups"
     assert {"data:/data", "backups:/backups"} <= set(backup["volumes"])
