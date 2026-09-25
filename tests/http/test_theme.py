@@ -30,7 +30,7 @@ def test_each_theme_is_a_single_css_file(theme):
 
 
 def test_templates_contain_no_styling():
-    for template in (APP / "templates").glob("*.html"):
+    for template in (APP / "templates").rglob("*.html"):
         text = template.read_text()
         assert "<style" not in text, template.name
         assert "style=" not in text, template.name

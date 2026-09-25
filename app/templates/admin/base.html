@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Admin · Scramble Challenge{% endblock %}
+{% block content %}
+<nav class="admin-nav">
+  <a href="{{ url_for('admin.home') }}">All challenges</a>
+  <form method="post" action="{{ url_for('admin.logout') }}">
+    <button class="button" type="submit">Log out</button>
+  </form>
+</nav>
+{% block admin_content %}{% endblock %}
+{% endblock %}

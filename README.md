@@ -54,6 +54,19 @@ and gets its certificate from Let's Encrypt automatically.
    server's own firewall, installs Docker, and registers the runner as a service.
 5. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job does the rest.
 
+## Admin area
+
+`/admin` is a read-only view of every past challenge, its rounds and results, with
+times in UK time. It is switched off (404) until a password is set on the server:
+
+1. SSH to the server, then
+   `cd ~/actions-runner/_work/scramble-challenge/scramble-challenge`.
+2. `sudo python3 scripts/set_admin_password.py` asks for a password
+   and writes its hash and a new secret key to `/etc/scramble-challenge/admin.env`.
+3. Re-run the latest CI run on `main` so the deploy restarts the web container with it.
+
+Run it again to change the password; that also logs out every admin browser.
+
 ## Changing the look
 
 All styling lives in `app/static/themes/<name>/theme.css`. Templates and

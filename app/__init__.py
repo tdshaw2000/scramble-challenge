@@ -30,9 +30,11 @@ def create_app(config_name: str = "production", **overrides) -> Flask:
     app.extensions["clock"] = utcnow
 
     from app import sockets  # noqa: F401  (registers the socket event handlers)
+    from app.admin import bp as admin_bp
     from app.routes import bp
 
     app.register_blueprint(bp)
+    app.register_blueprint(admin_bp)
     socketio.init_app(app, async_mode=app.config["SOCKETIO_ASYNC_MODE"])
 
     return app

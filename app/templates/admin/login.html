@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Admin login · Scramble Challenge{% endblock %}
+{% block content %}
+<form class="card name-form" method="post" action="{{ url_for('admin.login_submit') }}">
+  <h2 class="card-title">Admin</h2>
+  <label class="field">
+    <span class="field-label">Password</span>
+    <input class="field-input" type="password" name="password" required autofocus
+           autocomplete="current-password">
+  </label>
+  <button class="button button-primary" type="submit">Log in</button>
+</form>
+{% endblock %}

@@ -13,6 +13,7 @@ dependencies = [
     "packaging>=26.3",
     "requests>=2.34.2",
     "simple-websocket>=1.1.0",
+    "tzdata>=2026.4",
 ]
 
 [dependency-groups]

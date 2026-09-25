@@ -251,3 +251,27 @@ body::after {
 .result-position-3 .position { background: radial-gradient(circle at 35% 30%, #ffd9b0, #d9894a 55%, #9c5a26); }
 .result .time { font: 1.3rem/1 var(--display); letter-spacing: 0.03em; color: var(--gold); }
 .result-dnf .time { color: #ff7b75; }
+
+/* Admin area */
+.admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.admin-nav a { font: 1.1rem var(--display); color: var(--gold); -webkit-text-stroke: 1px var(--outline); letter-spacing: 0.03em; }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--muted); font-size: 0.9rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th { text-align: left; color: var(--muted); padding: 6px 8px 6px 0; white-space: nowrap; }
+.admin-table td { padding: 8px 8px 8px 0; border-top: 2px solid rgba(255, 255, 255, 0.15); white-space: nowrap; }
+.admin-table a, .admin-pages a { color: var(--gold); font-weight: 700; }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }
+
+/* On a phone each challenge becomes a small block instead of a wide table row. */
+@media (max-width: 600px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; grid-template-columns: 1fr auto; padding: 10px 0; border-top: 2px solid rgba(255, 255, 255, 0.15); }
+  .admin-table td { border: 0; padding: 2px 0; white-space: normal; }
+  .admin-table td:nth-child(even) { text-align: right; }
+  .admin-players::before { content: "Players: "; }
+  .admin-rounds::before { content: "Rounds: "; }
+}
+.admin-code-value { font-family: ui-monospace, monospace; font-weight: 700; }

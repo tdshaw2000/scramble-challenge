@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<section class="card admin-card">
+  <h2 class="card-title">Challenge</h2>
+  <p class="admin-code">Code <span class="admin-code-value">{{ challenge.slug }}</span></p>
+  <p class="admin-meta">Started {{ challenge.created_at | uk_time }} · {{ status }}</p>
+  <ul class="players">
+    {% for p in challenge.players %}
+    <li class="player{% if p.is_co %} player-co{% endif %}">
+      {{ p.display_name }}{% if p.is_co %} (owner){% endif %}
+      <span class="admin-meta">joined {{ p.joined_at | uk_time }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% for rnd in challenge.rounds %}
+<section class="card admin-card">
+  <h2 class="card-title">Round {{ rnd.round_number }}: {{ puzzle_names.get(rnd.puzzle, rnd.puzzle) }}</h2>
+  <p class="admin-meta">Started {{ rnd.started_at | uk_time }}</p>
+  <p class="scramble-text">{{ rnd.scramble_text }}</p>
+  <img class="scramble-image" alt="Scramble picture"
+       src="{{ url_for('main.scramble_svg', slug=challenge.slug, round_number=rnd.round_number) }}">
+  {% set results = leaderboards[rnd.id] %}
+  {% if results %}
+  <ol class="leaderboard">
+    {% for r in results %}
+    <li class="result result-{{ r.result }} result-position-{{ r.position }}">
+      <span class="position">{{ r.position | ordinal }}</span>
+      <span class="name">{{ r.display_name }}</span>
+      <span class="time">{{ r.time_ms | solve_time }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p>No results.</p>
+  {% endif %}
+</section>
+{% else %}
+<section class="card admin-card"><p>No rounds played.</p></section>
+{% endfor %}
+{% endblock %}
