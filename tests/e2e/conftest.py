@@ -63,8 +63,10 @@ def new_player(browser, live_server):
     """A fresh phone-sized browser (its own cookies) for one player."""
     contexts = []
 
-    def open_page():
-        context = browser.new_context(viewport={"width": 390, "height": 844}, base_url=live_server)
+    def open_page(**options):
+        context = browser.new_context(
+            **{"viewport": {"width": 390, "height": 844}, "base_url": live_server, **options}
+        )
         context.set_default_timeout(5000)
         contexts.append(context)
         return context.new_page()

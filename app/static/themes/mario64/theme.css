@@ -200,7 +200,8 @@ body::after {
   align-items: center;
   justify-content: center;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none; /* a finger drifting while held must not become a scroll */
+  -webkit-touch-callout: none;
   background:
     radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.35), transparent 60%),
     linear-gradient(var(--sky-top), var(--sky-bottom));
