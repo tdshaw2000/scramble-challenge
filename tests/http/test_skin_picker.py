@@ -64,6 +64,7 @@ def test_the_page_offers_each_skin_and_ticks_the_current_one(client):
     assert skin_options(client.get("/").data) == [
         ("mario64", "Mario 64", True),
         ("plain", "Plain", False),
+        ("neon80s", "Night Drive", False),
     ]
 
 
@@ -73,11 +74,12 @@ def test_the_tick_follows_the_chosen_skin(client):
     assert skin_options(client.get("/").data) == [
         ("mario64", "Mario 64", False),
         ("plain", "Plain", True),
+        ("neon80s", "Night Drive", False),
     ]
 
 
 def test_the_gear_is_on_challenge_pages_too(client, challenge):
-    assert len(skin_options(client.get(f"/c/{challenge.slug}").data)) == 2
+    assert len(skin_options(client.get(f"/c/{challenge.slug}").data)) == 3
 
 
 def test_the_skin_menu_comes_back_to_the_same_page(client, challenge):
