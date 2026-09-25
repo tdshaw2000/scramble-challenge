@@ -131,3 +131,32 @@ def test_choosing_a_skin_only_goes_back_to_a_page_on_this_site(client, next_url)
     response = client.post("/skin", data={"skin": "plain", "next": next_url})
 
     assert response.headers["Location"] == "/"
+
+
+def skin_next(response) -> str:
+    return re.search(r'name="next" value="([^"]*)"', response.get_data(as_text=True)).group(1)
+
+
+def test_the_default_skin_is_one_of_the_listed_skins(app):
+    assert app.config["THEME"] in app.config["THEMES"]
+
+
+def test_after_a_failed_form_the_skin_menu_goes_back_to_the_page_the_form_was_on(client, challenge):
+    response = client.post(
+        f"/c/{challenge.slug}/join",
+        data={"display_name": "   "},
+        headers={"Referer": f"http://localhost/c/{challenge.slug}"},
+    )
+
+    assert response.status_code == 400
+    assert skin_next(response) == f"/c/{challenge.slug}"
+
+
+@pytest.mark.parametrize("referer", [None, "https://evil.example/c/abc"])
+def test_after_a_failed_form_with_no_usable_referer_the_skin_menu_goes_home(client, referer):
+    headers = {"Referer": referer} if referer else {}
+
+    response = client.post("/challenges", data={"display_name": "   "}, headers=headers)
+
+    assert response.status_code == 400
+    assert skin_next(response) == "/"

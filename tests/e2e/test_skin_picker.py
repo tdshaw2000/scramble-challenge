@@ -110,3 +110,28 @@ def test_if_saving_in_place_fails_the_menu_falls_back_to_a_normal_form_post(new_
         "href", "/static/themes/plain/theme.css"
     )
     assert len(attempts) == 2
+
+
+def test_if_the_server_refuses_the_in_place_save_the_menu_falls_back_to_a_form_post(
+    new_player,
+):
+    tom = new_player()
+    tom.goto("/")
+    attempts = []
+
+    def refuse_the_first_try(route):
+        attempts.append(route.request.post_data)
+        if len(attempts) == 1:
+            route.fulfill(status=500, body="oops")
+        else:
+            route.continue_()
+
+    tom.route("**/skin", refuse_the_first_try)
+
+    tom.get_by_label("Change skin").click()
+    tom.get_by_role("button", name="Plain").click()
+
+    expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
+        "href", "/static/themes/plain/theme.css"
+    )
+    assert len(attempts) == 2
