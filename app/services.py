@@ -239,6 +239,7 @@ def points(challenge: Challenge) -> dict[uuid.UUID, int]:
 
 def leaderboard(rnd: Round) -> list[dict]:
     rows = _rows(rnd)
+    totals = points(rnd.challenge)
     return [
         {
             "player_id": str(row.solve.player_id),
@@ -246,6 +247,7 @@ def leaderboard(rnd: Round) -> list[dict]:
             "time_ms": row.time_ms,
             "result": row.solve.result.value,
             "position": position,
+            "points": totals[row.solve.player_id],
         }
         for position, row in game.rank(rows)
     ]

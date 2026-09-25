@@ -17,12 +17,14 @@ connections: dict[str, str] = {}
 
 
 def player_list(challenge: Challenge) -> list[dict]:
+    points = services.points(challenge)
     return [
         {
             "player_id": str(p.id),
             "display_name": p.display_name,
             "is_co": p.is_co,
             "connected": p.connected,
+            "points": points[p.id],
         }
         for p in challenge.players
     ]
@@ -95,10 +97,16 @@ def player_action(handler):
     return wrapper
 
 
+def broadcast_round_complete(challenge: Challenge, rnd: Round) -> None:
+    emit("round_complete", round_results(rnd), to=challenge.slug)
+    # The winners' points just went up, and the players list shows them.
+    emit("player_list", player_list(challenge), to=challenge.slug)
+
+
 def broadcast_solve_progress(challenge: Challenge, rnd: Round) -> None:
     emit("leaderboard_update", round_results(rnd), to=challenge.slug)
     if rnd.status == RoundStatus.COMPLETE:
-        emit("round_complete", round_results(rnd), to=challenge.slug)
+        broadcast_round_complete(challenge, rnd)
 
 
 @socketio.on("start_round")
@@ -138,7 +146,7 @@ def on_stop_solve(player, data):
 @player_action
 def on_end_round(player, data):
     rnd = services.end_round(player.challenge, player)
-    emit("round_complete", round_results(rnd), to=rnd.challenge.slug)
+    broadcast_round_complete(rnd.challenge, rnd)
 
 
 @socketio.on("disconnect")
