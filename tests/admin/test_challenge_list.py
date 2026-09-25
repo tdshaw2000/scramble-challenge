@@ -58,6 +58,20 @@ def test_each_row_shows_code_owner_counts_and_status_and_links_to_the_challenge(
     assert "Showing results" in row
 
 
+def test_the_owner_is_shown_with_their_points(admin, clock):
+    challenge = make_challenge(clock, owner="Tom")
+    for _ in range(2):
+        services.start_round(challenge, challenge.co_player)
+        services.start_inspection(challenge.co_player)
+        services.start_solve(challenge.co_player)
+        services.stop_solve(challenge.co_player, 9_000)
+        services.complete_round(challenge)
+
+    (row,) = rows(admin.get("/admin").data)
+
+    assert "<td>Tom (2)</td>" in row
+
+
 @pytest.mark.parametrize(
     ("status", "label"),
     [

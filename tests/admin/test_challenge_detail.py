@@ -36,8 +36,8 @@ def test_shows_the_challenge_code_status_and_players_with_the_owner_marked(
 
     assert challenge.slug in html
     assert "Waiting" in html
-    assert re.search(r'<li class="player player-co">\s*Tom \(owner\)', html)
-    assert re.search(r'<li class="player">\s*Ann', html)
+    assert re.search(r'<li class="player player-co">\s*Tom \(0\) \(owner\)', html)
+    assert re.search(r'<li class="player">\s*Ann \(0\)', html)
 
 
 def test_shows_when_the_challenge_started_and_when_players_joined_in_uk_time(admin, clock, db):
@@ -50,6 +50,17 @@ def test_shows_when_the_challenge_started_and_when_players_joined_in_uk_time(adm
 
     assert "15 Jul 2026, 10:05" in html
     assert re.search(r"Ann.*joined 15 Jul 2026, 10:08", html, re.S)
+
+
+def test_players_show_their_points_after_their_names(admin, challenge, co, ann):
+    services.start_round(challenge, co)
+    finish(ann, 9_000)
+    finish(co, 12_000)
+
+    html = admin.get(f"/admin/challenges/{challenge.slug}").data.decode()
+
+    assert re.search(r'<li class="player player-co">\s*Tom \(0\) \(owner\)', html)
+    assert re.search(r'<li class="player">\s*Ann \(1\)', html)
 
 
 def test_says_so_when_no_rounds_were_played(admin, challenge):
@@ -85,7 +96,7 @@ def test_shows_each_rounds_results_ranked_with_times_and_dnfs(
 
     html = admin.get(f"/admin/challenges/{challenge.slug}").data
 
-    assert results(html) == ["1st Tom 9.87", "2nd Ann 1:05.43", "3rd Bob DNF"]
+    assert results(html) == ["1st Tom (1) 9.87", "2nd Ann (0) 1:05.43", "3rd Bob (0) DNF"]
 
 
 def test_a_round_still_in_progress_leaves_out_unfinished_solves(admin, challenge, co, ann):
@@ -95,7 +106,7 @@ def test_a_round_still_in_progress_leaves_out_unfinished_solves(admin, challenge
 
     html = admin.get(f"/admin/challenges/{challenge.slug}").data
 
-    assert results(html) == ["1st Ann 12.00"]
+    assert results(html) == ["1st Ann (0) 12.00"]
 
 
 def test_a_round_with_no_results_says_so(admin, challenge, co):

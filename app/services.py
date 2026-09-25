@@ -1,6 +1,7 @@
 """Game operations on the database. Handlers (HTTP now, sockets later) call these."""
 
 import secrets
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -218,12 +219,27 @@ class _Row:
     solve: Solve
 
 
-def leaderboard(rnd: Round) -> list[dict]:
-    rows = [
+def _rows(rnd: Round) -> list[_Row]:
+    return [
         _Row(name=s.player.display_name, time_ms=s.time_ms, solve=s)
         for s in rnd.solves
         if s.result is not None
     ]
+
+
+def points(challenge: Challenge) -> dict[uuid.UUID, int]:
+    """One point per round won, for every player; the round in progress doesn't count yet."""
+    totals = {player.id: 0 for player in challenge.players}
+    for rnd in challenge.rounds:
+        if rnd.status == RoundStatus.COMPLETE:
+            for row in game.round_winners(_rows(rnd)):
+                totals[row.solve.player_id] += 1
+    return totals
+
+
+def leaderboard(rnd: Round) -> list[dict]:
+    rows = _rows(rnd)
+    totals = points(rnd.challenge)
     return [
         {
             "player_id": str(row.solve.player_id),
@@ -231,6 +247,7 @@ def leaderboard(rnd: Round) -> list[dict]:
             "time_ms": row.time_ms,
             "result": row.solve.result.value,
             "position": position,
+            "points": totals[row.solve.player_id],
         }
         for position, row in game.rank(rows)
     ]

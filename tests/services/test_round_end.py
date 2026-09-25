@@ -108,6 +108,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "time_ms": 10_000,
             "result": "ok",
             "position": 1,
+            "points": 0,
         },
         {
             "player_id": str(bob.id),
@@ -115,6 +116,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "time_ms": 10_000,
             "result": "ok",
             "position": 1,
+            "points": 0,
         },
         {
             "player_id": str(co.id),
@@ -122,6 +124,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "time_ms": 12_500,
             "result": "ok",
             "position": 3,
+            "points": 0,
         },
     ]
 

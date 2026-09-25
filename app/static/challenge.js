@@ -73,11 +73,16 @@
     return el;
   }
 
+  // Round wins so far in this challenge, in brackets after the name.
+  function nameWithPoints(person) {
+    return `${person.display_name} (${person.points})`;
+  }
+
   function renderPlayers(players) {
     const list = $("players");
     list.replaceChildren();
     for (const p of players) {
-      const label = p.display_name + (p.is_co ? " (owner)" : "") + (p.connected ? "" : " (away)");
+      const label = nameWithPoints(p) + (p.is_co ? " (owner)" : "") + (p.connected ? "" : " (away)");
       const li = element("li", "player", label);
       li.classList.toggle("player-co", p.is_co);
       li.classList.toggle("player-away", !p.connected);
@@ -92,7 +97,7 @@
       const li = element("li", `result result-${r.result} result-position-${r.position}`);
       li.append(
         element("span", "position", ordinal(r.position)),
-        element("span", "name", r.display_name),
+        element("span", "name", nameWithPoints(r)),
         element("span", "time", formatTime(r.time_ms)),
       );
       list.appendChild(li);
