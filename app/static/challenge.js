@@ -43,6 +43,7 @@
   function setPhase(next) {
     phase = next;
     game.dataset.phase = next;
+    if (next !== "inspecting") setSpaceHeld(false);
     const show = {
       lobby: ["lobby"],
       scramble: ["scramble"],
@@ -201,7 +202,7 @@
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     inspectionStartedAt = performance.now();
-    spaceHeldInInspection = false;
+    setSpaceHeld(false);
     setText("countdown", INSPECTION_SECONDS);
     $("countdown").hidden = false;
     $("solving").hidden = true;
@@ -244,6 +245,13 @@
   // solve; pressing it while solving stops the solve at once. Space must not scroll the page
   // or press a focused button, and a held key's repeats are not new presses. Space with
   // Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
+  // While space is held in inspection, data-ready on #game lets themes light the screen up.
+  function setSpaceHeld(held) {
+    spaceHeldInInspection = held;
+    if (held) game.dataset.ready = "true";
+    else delete game.dataset.ready;
+  }
+
   function isTimerSpace(event) {
     const plain = event.code === "Space" && !event.ctrlKey && !event.altKey && !event.metaKey;
     return plain && (phase === "inspecting" || phase === "solving");
@@ -253,7 +261,7 @@
     if (!isTimerSpace(event)) return;
     event.preventDefault();
     if (event.repeat) return;
-    if (phase === "inspecting") spaceHeldInInspection = true;
+    if (phase === "inspecting") setSpaceHeld(true);
     else pressTimer();
   });
 
@@ -261,6 +269,6 @@
     if (!isTimerSpace(event)) return;
     event.preventDefault();
     if (phase === "inspecting" && spaceHeldInInspection) pressTimer();
-    spaceHeldInInspection = false;
+    setSpaceHeld(false);
   });
 })();
