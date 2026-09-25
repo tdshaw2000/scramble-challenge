@@ -29,12 +29,12 @@ def skin_options(html: bytes) -> list[tuple[str, str, bool]]:
 
 
 def test_every_listed_skin_has_a_theme_folder(app):
-    assert list(app.config["THEMES"]) == ["mario64", "plain"]
+    assert list(app.config["THEMES"]) == ["mario64", "plain", "neon80s"]
     for theme in app.config["THEMES"]:
         assert (APP / "static" / "themes" / theme / "theme.css").is_file()
 
 
-@pytest.mark.parametrize("theme", ["mario64", "plain"])
+@pytest.mark.parametrize("theme", ["mario64", "plain", "neon80s"])
 def test_every_theme_styles_the_skin_picker(theme):
     css = (APP / "static" / "themes" / theme / "theme.css").read_text()
 
