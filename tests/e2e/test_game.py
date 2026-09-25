@@ -501,6 +501,8 @@ def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom
     amy.keyboard.up("Space")
 
     expect(amy.locator("#overlay")).to_be_hidden()
+    # The leaderboard comes from the server, so wait for it before reading it.
+    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
 
 
