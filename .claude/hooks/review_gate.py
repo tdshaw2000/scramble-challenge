@@ -131,6 +131,8 @@ def gate(event):
         block("Open the pull request as a draft. It is marked ready only after review. " + LOOP)
 
     cwd = event.get("cwd")
+    if git(cwd, "rev-parse", "--abbrev-ref", "HEAD") in (None, "HEAD"):
+        block("Not on a git branch here, so the review state can't be checked. " + LOOP)
     if git(cwd, "status", "--porcelain"):
         block("There are uncommitted changes. Commit and push them, then review. " + LOOP)
     commit = git(cwd, "rev-parse", "HEAD")
