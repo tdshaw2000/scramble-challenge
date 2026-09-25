@@ -191,7 +191,7 @@ body::before {
 
 .share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
 .share .field { margin-bottom: 0; }
-.share .field-input { font-size: 0.9rem; }
+.share .field-input { font-size: 0.9rem; font-family: var(--mono); } /* a random slug: keep 0/O and l/I/1 clear */
 .waiting { margin: 0; color: var(--muted); }
 
 .scramble-text {
