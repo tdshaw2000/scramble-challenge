@@ -214,7 +214,7 @@
   });
 
   // A press anywhere on the blank screen starts the solve, and the next one stops it.
-  $("overlay").addEventListener("pointerdown", () => {
+  function pressTimer() {
     if (phase === "inspecting") {
       stopTicker();
       solveStartedAt = performance.now();
@@ -228,5 +228,15 @@
       socket.emit("stop_solve", { time_ms: timeMs });
       setPhase("waiting");
     }
+  }
+
+  $("overlay").addEventListener("pointerdown", pressTimer);
+
+  // On a keyboard the spacebar does the same, while the blank screen is showing. It must not
+  // scroll the page or press a focused button, and a held key's repeats are not new presses.
+  document.addEventListener("keydown", (event) => {
+    if (event.code !== "Space" || (phase !== "inspecting" && phase !== "solving")) return;
+    event.preventDefault();
+    if (!event.repeat) pressTimer();
   });
 })();
