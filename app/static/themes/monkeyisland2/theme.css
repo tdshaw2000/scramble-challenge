@@ -329,3 +329,16 @@ body::before {
 .end-challenge { margin-top: 16px; }
 .confirm { margin-top: 16px; padding: 12px; border: 3px solid var(--yellow); clip-path: var(--notch); }
 .confirm-text { margin: 0 0 4px; text-align: center; color: var(--yellow); }
+
+/* Skin picker: a small gear in the header's top-right corner, opening a verb-panel menu. */
+.site-header { position: relative; z-index: 2; }
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: crosshair; font-size: 2rem; line-height: 1; padding: 4px; color: var(--verb); opacity: 0.85; text-shadow: 2px 2px 0 #000; }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-picker[open] .skin-picker-toggle { opacity: 1; color: var(--text); }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 160px; padding: 8px; background: var(--panel); border: 3px solid var(--verb); clip-path: var(--notch); }
+.skin-menu-title { margin: 0 4px 4px; color: var(--cyan); }
+.skin-option { display: block; width: 100%; padding: 6px 4px; text-align: left; background: none; border: 0; font: 1.1rem/1.2 var(--mono); color: var(--verb); cursor: crosshair; text-decoration: none; }
+.skin-option:hover, .skin-option:focus-visible { color: var(--text); outline: none; }
+.skin-option[aria-current="true"] { color: var(--yellow); }
+.skin-option[aria-current="true"]::after { content: " \2713"; }
