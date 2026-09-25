@@ -3,7 +3,8 @@
     review_gate.py record   SubagentStop, for the reviewer subagent. Saves its verdict
                             against the commit it reviewed.
     review_gate.py gate     PreToolUse. Blocks opening a PR that isn't a draft, and blocks
-                            marking a PR ready until the current commit has passed review.
+                            marking a PR ready or merging it until the current commit has
+                            passed review. Merges must be merge commits of that exact commit.
 
 Claude Code sends the event as JSON on stdin. Exit code 2 blocks, and stderr tells Claude why.
 Any other failure would let the tool call through, so the gate turns its own errors into blocks.
@@ -28,6 +29,7 @@ LOOP = "See 'Review loop' in CLAUDE.md."
 # Each "pr ready" is exempt only if its own part of the command (up to ; & | or #) says --undo.
 GH_READY = re.compile(r"\bpr\s+ready\b([^;&|#\n]*)")
 GRAPHQL_READY = "markPullRequestReadyForReview"
+GH_MERGE = re.compile(r"\bpr\s+merge\b([^;&|#\n]*)")
 GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b", re.DOTALL)
 SEPARATORS = {";", "&", "&&", "|", "||", "\n", "(", ")"}
 DRAFT_FLAGS = {"--draft", "-d", "--draft=true"}
@@ -161,20 +163,73 @@ def creates_without_draft(command):
     return any(not DRAFT_FLAGS & set(seg) for seg in creates)
 
 
+def gh_merges(command):
+    """(method, head sha) for each gh pr merge in the command, or 'auto' if any uses --auto."""
+    merges = []
+    for line in command.split("\n"):
+        if not re.search(r"\bgh\b", line):
+            continue
+        for match in GH_MERGE.finditer(line):
+            flags = match.group(1).split()
+            if "--auto" in flags:
+                return "auto"
+            method = next(
+                (
+                    m
+                    for m in ("merge", "squash", "rebase")
+                    if f"--{m}" in flags or f"-{m[0]}" in flags
+                ),
+                None,
+            )
+            sha = None
+            for i, flag in enumerate(flags):
+                if flag == "--match-head-commit" and i + 1 < len(flags):
+                    sha = flags[i + 1]
+                elif flag.startswith("--match-head-commit="):
+                    sha = flag.split("=", 1)[1]
+            merges.append((method, sha))
+    return merges
+
+
 def wants(event):
-    """What the tool call does: 'ready', 'create-not-draft', or None for anything else."""
+    """What the tool call does, as (action, detail). action is 'ready', 'merge', 'auto-merge',
+    'create-not-draft', or None for anything else. A merge's detail is [(method, head sha)]."""
     tool, args = event.get("tool_name") or "", event.get("tool_input") or {}
     if tool.startswith("mcp__") and tool.endswith("__update_pull_request"):
-        return "ready" if args.get("draft") is False else None
+        return ("ready" if args.get("draft") is False else None), None
     if tool.startswith("mcp__") and tool.endswith("__create_pull_request"):
-        return None if args.get("draft") is True else "create-not-draft"
+        return (None if args.get("draft") is True else "create-not-draft"), None
+    if tool.startswith("mcp__") and tool.endswith("__merge_pull_request"):
+        return "merge", [(args.get("merge_method"), args.get("expectedHeadSha"))]
+    if tool.startswith("mcp__") and tool.endswith("__enable_pr_auto_merge"):
+        return "auto-merge", None
     if tool == "Bash":
         command = str(args.get("command") or "").replace("\\\n", " ")  # join continuations
+        merges = gh_merges(command)
+        if merges == "auto":
+            return "auto-merge", None
+        if merges:
+            return "merge", merges
         if marks_ready(command):
-            return "ready"
+            return "ready", None
         if creates_without_draft(command):
-            return "create-not-draft"
-    return None
+            return "create-not-draft", None
+    return None, None
+
+
+def check_merge(cwd, merges):
+    head = git(cwd, "rev-parse", "HEAD")
+    for method, sha in merges:
+        if method != "merge":
+            block(
+                "Merge with a merge commit (merge_method: merge, or gh pr merge --merge) so the "
+                "red/green history survives. " + LOOP
+            )
+        if sha != head:
+            block(
+                f"Pin the merge to the reviewed commit: expectedHeadSha (or gh pr merge "
+                f"--match-head-commit) must be HEAD, {head}. " + LOOP
+            )
 
 
 def check_ready(cwd):
@@ -208,12 +263,16 @@ def check_ready(cwd):
 
 
 def gate(event):
-    action = wants(event)
+    action, detail = wants(event)
     if action is None:
         return
     if action == "create-not-draft":
         block("Open the pull request as a draft. It is marked ready only after review. " + LOOP)
+    if action == "auto-merge":
+        block("No auto-merge: merge directly once review and CI have passed. " + LOOP)
     try:
+        if action == "merge":
+            check_merge(event.get("cwd"), detail)
         check_ready(event.get("cwd"))
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         block(f"The review gate failed ({error!r}), so it is blocking to be safe. " + LOOP)

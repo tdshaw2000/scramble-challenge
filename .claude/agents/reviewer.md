@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Senior-engineer code review of the current branch against main, before a PR is marked ready. Finds correctness, security and test-coverage problems. Read-only. Use it at the end of every piece of work, as described under "Review loop" in CLAUDE.md.
+description: Senior-engineer code review of the current branch against main, before a PR is marked ready and merged. Finds correctness, security and test-coverage problems. Read-only. Use it at the end of every piece of work, as described under "Review loop" in CLAUDE.md.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
