@@ -48,6 +48,13 @@ def rank[R: Rankable](entries: Sequence[R]) -> list[tuple[int, R]]:
     return ranked
 
 
+def round_winners[R: Rankable](entries: Sequence[R]) -> list[R]:
+    """Everyone in first place wins the round (ties share it); a DNF never wins."""
+    return [
+        entry for position, entry in rank(entries) if position == 1 and entry.time_ms is not None
+    ]
+
+
 def _ranked_time(entry: Rankable) -> int | None:
     return None if entry.time_ms is None else hundredths(entry.time_ms)
 
