@@ -11,6 +11,8 @@ class Config:
     # How many proxies (e.g. Caddy) sit in front of the app. Their X-Forwarded-* headers
     # are only trusted when this is above 0, so share links get the public https address.
     TRUSTED_PROXIES = 0
+    # Threads for tests and the dev server; production runs under gunicorn's gevent worker.
+    SOCKETIO_ASYNC_MODE = "threading"
 
 
 class TestingConfig(Config):
@@ -20,6 +22,8 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
+    SOCKETIO_ASYNC_MODE = "gevent"
+
     def __init__(self):
         self.SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URL"]
         self.TNOODLE_URL = os.environ.get("TNOODLE_URL", "http://localhost:2014")

@@ -13,8 +13,8 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
-# Threading mode: works under gunicorn's gthread worker with simple-websocket.
-socketio = SocketIO(async_mode="threading")
+# The async mode comes from config (SOCKETIO_ASYNC_MODE) in create_app.
+socketio = SocketIO()
 
 
 @event.listens_for(Engine, "connect")
