@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 
-from app.game import DEFAULT_PUZZLE, PUZZLE_NAMES, default_puzzle, rank, round_is_over
+from app.game import (
+    DEFAULT_PUZZLE,
+    PUZZLE_NAMES,
+    default_puzzle,
+    rank,
+    round_is_over,
+    round_winners,
+)
 
 
 @dataclass
@@ -105,3 +112,23 @@ def test_round_is_not_over_while_a_connected_player_is_still_going():
 
 def test_finished_players_who_have_since_left_do_not_matter():
     assert round_is_over(connected={"a"}, finished={"a", "gone"}) is True
+
+
+def winners(*entries):
+    return {entry.name for entry in round_winners(list(entries))}
+
+
+def test_the_fastest_player_wins_the_round():
+    assert winners(Entry("slow", 20_000), Entry("fast", 9_000)) == {"fast"}
+
+
+def test_players_tied_for_first_all_win():
+    assert winners(Entry("a", 9_001), Entry("b", 9_009), Entry("c", 11_000)) == {"a", "b"}
+
+
+def test_nobody_wins_a_round_where_everyone_dnfs():
+    assert winners(Entry("a", None), Entry("b", None)) == set()
+
+
+def test_nobody_wins_a_round_with_no_results():
+    assert winners() == set()
