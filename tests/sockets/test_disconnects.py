@@ -124,3 +124,15 @@ def test_joining_an_ended_challenge_is_told_it_ended(app, challenge, connect, cl
     received = tom.get_received()
     assert [e["name"] for e in received] == ["challenge_ended"]
     assert challenge.co_player.connected is False
+
+
+def test_a_browser_without_a_player_is_also_told_the_challenge_ended(
+    app, challenge, connect, clock
+):
+    join(connect("cookie-co"), challenge).disconnect()
+    clock.advance(seconds=app.config["CO_GRACE_SECONDS"])
+    sockets.end_abandoned_challenges()
+
+    stranger = join(connect(), challenge)
+
+    assert [e["name"] for e in stranger.get_received()] == ["challenge_ended"]
