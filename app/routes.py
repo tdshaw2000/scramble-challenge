@@ -1,4 +1,5 @@
 import secrets
+from urllib.parse import urlsplit
 
 from flask import (
     Blueprint,
@@ -62,7 +63,18 @@ def chosen_skin():
     skin = request.cookies.get(SKIN_COOKIE_NAME)
     if skin not in skins:
         skin = current_app.config["THEME"]
-    return {"skin": skin, "skins": skins, "skin_next": request.full_path.rstrip("?")}
+    return {"skin": skin, "skins": skins, "skin_next": skin_return_path()}
+
+
+def skin_return_path() -> str:
+    """Where the skin menu goes back to. A page drawn after a failed form (a POST) has no
+    GET of its own, so go back to the page the form was on, or home."""
+    if request.method == "GET":
+        return request.full_path.rstrip("?")
+    referrer = urlsplit(request.referrer or "")
+    if referrer.netloc == request.host and is_local_path(referrer.path):
+        return referrer.path
+    return "/"
 
 
 def is_local_path(url: str) -> bool:

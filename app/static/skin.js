@@ -15,10 +15,11 @@
     event.preventDefault();
     const data = new FormData(form);
     data.set("skin", choice.value);
-    // The reply is a redirect, which "manual" leaves opaque; the buttons only offer skins
-    // the server knows, so any answer counts as saved.
+    // A saved choice is answered with a redirect, which "manual" leaves opaque. Anything
+    // else means it wasn't saved, so fall back to the ordinary post, which shows why.
     fetch(form.action, { method: "POST", body: data, redirect: "manual" })
-      .then(() => {
+      .then((response) => {
+        if (response.type !== "opaqueredirect") throw new Error("skin not saved");
         stylesheet.href = choice.dataset.themeCss;
         for (const option of form.querySelectorAll(".skin-option")) {
           if (option === choice) option.setAttribute("aria-current", "true");
@@ -26,7 +27,7 @@
         }
         picker.open = false;
       })
-      // No network: post the form the ordinary way. submit() leaves out the pressed
+      // Not saved in place: post the form the ordinary way. submit() leaves out the pressed
       // button, so the choice goes in a hidden field.
       .catch(() => {
         const field = document.createElement("input");
