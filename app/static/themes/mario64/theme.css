@@ -304,3 +304,14 @@ body::after {
 .end-challenge { margin-top: 16px; }
 .confirm { margin-top: 16px; padding: 12px; border: 3px solid var(--gold); border-radius: 16px; }
 .confirm-text { margin: 0 0 4px; font-weight: 700; text-align: center; }
+
+/* Skin picker: a small gear in the header's top-right corner. */
+.site-header { position: relative; z-index: 2; }
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: pointer; font-size: 2.1rem; line-height: 1; padding: 4px; color: #fff; opacity: 0.85; text-shadow: 0 1px 0 var(--outline); }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-picker[open] .skin-picker-toggle { opacity: 1; }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 150px; background: #121840; border: 3px solid var(--dialog-edge); border-radius: 14px; padding: 8px; box-shadow: 0 6px 0 rgba(0,0,0,0.25); }
+.skin-menu-title { margin: 0 4px 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.skin-option { display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; padding: 8px; border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 700; }
+.skin-option[aria-current="true"]::after { content: " \2713"; color: var(--gold); }

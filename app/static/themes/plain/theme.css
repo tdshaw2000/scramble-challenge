@@ -28,7 +28,7 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 [data-puzzle="minx"] .scramble-text { font-size: min(1.2rem, calc((100vw - 64px) / 26)); }
 [data-puzzle="666"] .scramble-text, [data-puzzle="777"] .scramble-text { font-size: 1rem; }
 .scramble-image { display: block; width: 100%; max-width: 320px; max-height: 240px; object-fit: contain; margin: 0 auto 16px; }
-.overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; user-select: none; }
+.overlay { position: fixed; inset: 0; z-index: 10; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; user-select: none; }
 .countdown { font-size: 30vmin; font-weight: 700; margin: 0; }
 .solving { font-size: 2rem; margin: 0; }
 .finished { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; }
@@ -63,3 +63,14 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
   .admin-rounds::before { content: "Rounds: "; }
 }
 .admin-code-value { font-family: ui-monospace, monospace; font-weight: 700; }
+
+/* Skin picker: a small gear in the header's top-right corner. */
+.site-header { position: relative; z-index: 2; }
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: pointer; font-size: 1.5rem; line-height: 1; padding: 6px; color: var(--muted); }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 150px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.skin-menu-title { margin: 0 6px 4px; font-size: 0.8rem; color: var(--muted); }
+.skin-option { display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; padding: 8px 6px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.skin-option[aria-current="true"] { font-weight: 700; }
+.skin-option[aria-current="true"]::after { content: " \2713"; color: var(--accent); }

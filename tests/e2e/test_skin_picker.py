@@ -22,9 +22,12 @@ def test_choosing_a_skin_switches_it_without_reloading_and_remembers_it(new_play
         "href", "/static/themes/plain/theme.css"
     )
     assert tom.evaluate("window.__sameLoad") is True
-    expect(tom.get_by_role("button", name="Plain")).to_have_attribute("aria-current", "true")
-    expect(tom.get_by_role("button", name="Mario 64")).not_to_have_attribute("aria-current", "true")
     expect(tom.locator(".skin-picker")).not_to_have_attribute("open", "")
+    # The menu is closed now, so look the options up by value rather than by role.
+    expect(tom.locator('.skin-option[value="plain"]')).to_have_attribute("aria-current", "true")
+    expect(tom.locator('.skin-option[value="mario64"]')).not_to_have_attribute(
+        "aria-current", "true"
+    )
 
     tom.reload()
 
