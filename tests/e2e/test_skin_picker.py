@@ -71,3 +71,16 @@ def test_the_timer_screen_covers_the_gear(new_player, live_server, skin):
 
     expect(tom.locator("#overlay")).to_be_visible()
     assert gear_is_covered(tom)
+
+
+def test_tapping_outside_the_menu_closes_it(new_player):
+    tom = new_player()
+    tom.goto("/")
+
+    tom.get_by_label("Change skin").click()
+    expect(tom.get_by_role("button", name="Plain")).to_be_visible()
+
+    tom.mouse.click(20, 700)
+
+    expect(tom.get_by_role("button", name="Plain")).to_be_hidden()
+    assert stylesheet(tom) == "/static/themes/mario64/theme.css"
