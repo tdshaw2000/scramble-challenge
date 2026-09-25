@@ -411,12 +411,24 @@ def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
     assert amy.evaluate("window.__spaceDefaultPrevented") == [True, True]
 
 
-def test_space_does_nothing_before_inspection_starts(tom_and_amy):
+def test_space_still_presses_a_focused_button_outside_the_timer(tom_and_amy):
     tom, amy, _ = tom_and_amy
     tom.get_by_role("button", name="Start round").click()
-    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+    amy.get_by_role("button", name="Start inspection").focus()
 
     amy.keyboard.press("Space")
 
-    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
-    expect(amy.locator("#overlay")).to_be_hidden()
+    expect(amy.locator("#countdown")).to_have_text("15")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+
+def test_space_with_ctrl_alt_or_meta_is_left_alone(tom_and_amy):
+    # Those are usually shortcuts (switching input language, Spotlight), not timer presses.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    for shortcut in ("Control+Space", "Alt+Space", "Meta+Space"):
+        amy.keyboard.press(shortcut)
+
+    expect(amy.locator("#countdown")).to_have_text("15")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
