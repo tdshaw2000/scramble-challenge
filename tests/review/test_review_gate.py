@@ -337,3 +337,17 @@ def test_review_state_lives_inside_git_so_it_is_never_committed(repo):
     review(repo)
 
     assert git(repo, "status", "--porcelain") == ""
+
+
+def test_marking_ready_outside_a_git_repo_is_blocked_not_crashed(tmp_path):
+    result = run(
+        "gate",
+        {
+            "cwd": str(tmp_path),
+            "tool_name": "mcp__github__update_pull_request",
+            "tool_input": {"draft": False},
+        },
+    )
+
+    assert result.returncode == BLOCKED
+    assert "git" in result.stderr
