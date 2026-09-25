@@ -1,7 +1,8 @@
 {% extends "admin/base.html" %}
 {% block admin_content %}
 <section class="card admin-card">
-  <h2 class="card-title">Challenge {{ challenge.slug }}</h2>
+  <h2 class="card-title">Challenge</h2>
+  <p class="admin-code">Code <span class="admin-code-value">{{ challenge.slug }}</span></p>
   <p class="admin-meta">Started {{ challenge.created_at | uk_time }} · {{ status }}</p>
   <ul class="players">
     {% for p in challenge.players %}
