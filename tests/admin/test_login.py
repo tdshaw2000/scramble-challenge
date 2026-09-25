@@ -1,3 +1,6 @@
+from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
+
 import pytest
 
 from app import create_app
@@ -61,7 +64,8 @@ def test_login_cookie_is_hidden_from_scripts_and_lasts_a_month(client):
     set_cookie = response.headers["Set-Cookie"]
     assert "HttpOnly" in set_cookie
     assert "SameSite=Lax" in set_cookie
-    assert "Max-Age=2592000" in set_cookie  # 30 days
+    expires = parsedate_to_datetime(set_cookie.split("Expires=")[1].split(";")[0])
+    assert abs(expires - (datetime.now(UTC) + timedelta(days=30))) < timedelta(minutes=1)
 
 
 def test_login_cookie_is_https_only_in_production(monkeypatch):

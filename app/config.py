@@ -13,6 +13,12 @@ class Config:
     TRUSTED_PROXIES = 0
     # Threads for tests and the dev server; production runs under gunicorn's gevent worker.
     SOCKETIO_ASYNC_MODE = "threading"
+    # The admin area (/admin) exists only when both are set. The hash comes from
+    # werkzeug.security.generate_password_hash; the key signs the login cookie.
+    ADMIN_PASSWORD_HASH = None
+    SECRET_KEY = None
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 30
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 
 class TestingConfig(Config):
@@ -23,11 +29,14 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     SOCKETIO_ASYNC_MODE = "gevent"
+    SESSION_COOKIE_SECURE = True
 
     def __init__(self):
         self.SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URL"]
         self.TNOODLE_URL = os.environ.get("TNOODLE_URL", "http://localhost:2014")
         self.TRUSTED_PROXIES = int(os.environ.get("TRUSTED_PROXIES", "0"))
+        self.ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH")
+        self.SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 CONFIGS = {
