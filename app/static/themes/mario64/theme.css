@@ -131,6 +131,9 @@ body::after {
 .button-primary { width: 100%; background: var(--gold); box-shadow: 0 6px 0 var(--gold-dark), 0 6px 0 3px var(--outline); }
 .button-primary:active { box-shadow: 0 2px 0 var(--gold-dark), 0 2px 0 3px var(--outline); }
 .button-danger { width: 100%; margin-top: 8px; color: #fff; background: var(--red); box-shadow: 0 6px 0 var(--red-dark), 0 6px 0 3px var(--outline); }
+.button-two-line { line-height: 1.1; padding-top: 10px; padding-bottom: 10px; }
+.button-subline { font-size: 0.8em; }
+.button-cancel { width: 100%; margin-top: 12px; }
 
 .notice {
   padding: 12px 16px;
@@ -296,3 +299,8 @@ body::after {
 }
 .finished[data-result="dnf"] { color: var(--red); }
 @keyframes pop { from { transform: scale(0.3); opacity: 0; } }
+
+/* The owner's End challenge button, and its "are you sure?" box, under the round results. */
+.end-challenge { margin-top: 16px; }
+.confirm { margin-top: 16px; padding: 12px; border: 3px solid var(--gold); border-radius: 16px; }
+.confirm-text { margin: 0 0 4px; font-weight: 700; text-align: center; }

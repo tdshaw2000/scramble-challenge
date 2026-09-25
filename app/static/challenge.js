@@ -116,6 +116,14 @@
     if ($("end-round")) $("end-round").hidden = !visible;
   }
 
+  // The owner can end the challenge only from a finished round's results; the server
+  // refuses it at any other time. Confirming first stops a stray tap ending it for everyone.
+  function setEndChallengeVisible(visible) {
+    if (!$("end-challenge")) return;
+    $("end-challenge").hidden = !visible;
+    $("end-challenge-confirm").hidden = true;
+  }
+
   function stopTicker() {
     clearInterval(ticker);
     ticker = null;
@@ -150,6 +158,7 @@
     renderResults([]);
     showMessage("");
     setEndRoundVisible(true);
+    setEndChallengeVisible(false);
     setPhase("scramble");
   });
 
@@ -160,6 +169,7 @@
     renderResults(update.results);
     setText("results-heading", roundNumber ? `Round ${roundNumber} results` : "Last round's results");
     setEndRoundVisible(false);
+    setEndChallengeVisible(true);
     // The player's own time finishes showing first; see showFinished.
     if (phase === "finished") roundEndedWhileFinished = true;
     else setPhase("results");
@@ -198,6 +208,12 @@
       socket.emit("start_round", { puzzle: $("puzzle").value });
     });
     $("end-round").addEventListener("click", () => socket.emit("end_round", {}));
+    $("end-challenge").addEventListener("click", () => {
+      $("end-challenge").hidden = true;
+      $("end-challenge-confirm").hidden = false;
+    });
+    $("end-challenge-no").addEventListener("click", () => setEndChallengeVisible(true));
+    $("end-challenge-yes").addEventListener("click", () => socket.emit("end_challenge", {}));
     $("share-link-button").addEventListener("click", async () => {
       const url = $("share-link").value;
       if (navigator.share) {

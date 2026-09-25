@@ -9,6 +9,12 @@
     <ol id="leaderboard" class="leaderboard"></ol>
     {% if player.is_co %}
     <button type="button" id="end-round" class="button button-danger" hidden>End round</button>
+    <button type="button" id="end-challenge" class="button button-primary button-two-line end-challenge" hidden>End challenge<br><span class="button-subline">show results</span></button>
+    <div id="end-challenge-confirm" class="confirm" hidden>
+      <p class="confirm-text">End the challenge for everyone? This can't be undone.</p>
+      <button type="button" id="end-challenge-yes" class="button button-danger">Yes, end it</button>
+      <button type="button" id="end-challenge-no" class="button button-cancel">Cancel</button>
+    </div>
     {% endif %}
   </section>
 
