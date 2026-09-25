@@ -68,3 +68,24 @@ def test_script_makes_the_file_readable_only_by_its_owner(script, tmp_path):
 def test_script_refuses_short_passwords(script, tmp_path, password):
     with pytest.raises(ValueError, match="at least 12"):
         script.write_env_file(tmp_path / "admin.env", password)
+
+
+def test_script_hands_the_file_to_the_given_owner_so_the_deploy_can_read_it(script, tmp_path):
+    # Compose reads env_file as the user running it (the runner's "ubuntu" account),
+    # so a root-only file would break every deploy.
+    env_file = tmp_path / "admin.env"
+
+    script.write_env_file(env_file, "correct horse", owner=(1234, 5678))
+
+    assert (env_file.stat().st_uid, env_file.stat().st_gid) == (1234, 5678)
+
+
+@pytest.mark.parametrize(
+    ("environ", "owner"),
+    [
+        ({"SUDO_UID": "1000", "SUDO_GID": "1001"}, (1000, 1001)),
+        ({}, None),  # not run with sudo: the file stays with whoever ran it
+    ],
+)
+def test_script_gives_the_file_to_whoever_ran_sudo(script, environ, owner):
+    assert script.sudo_owner(environ) == owner
