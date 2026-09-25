@@ -9,6 +9,8 @@ from tests.e2e.conftest import control
 from tests.e2e.test_game import join, start_challenge
 
 # Real TNoodle 1.2.3 output, so the layout is tested against true lengths.
+# Diagram sizes (width, height) are TNoodle's too: Square-1's is twice as tall as wide.
+DIAGRAMS = {"6x6": (250, 188), "7x7": (290, 218), "Megaminx": (304, 146), "Square-1": (122, 244)}
 SCRAMBLES = {
     "6x6": "L F2 Dw2 B2 R' Uw Rw2 Dw D2 L' Lw' Fw2 L2 U 3Rw 3Uw Bw L2 Lw Uw' D2 Lw' D2 R2 B' 3Uw Rw' U Dw2 Bw' 3Fw' Dw2 B' Bw' U Uw2 3Fw U Rw U Dw' D F2 Lw2 Uw2 Bw' F U' 3Uw Uw F Rw F2 R' Lw F' Dw' 3Uw 3Fw' B Rw' Dw2 Rw2 3Fw' B Rw2 F2 3Uw F' Bw' Rw2 U2 F 3Fw2 D L' 3Fw Uw' F2 3Fw2",  # noqa: E501
     "7x7": "Dw2 3Rw2 3Lw2 Dw2 U' 3Uw' Rw2 R Fw' R2 3Dw F2 3Bw' 3Rw' D2 Fw 3Lw2 U 3Rw' Fw B2 D2 3Dw2 Fw2 3Dw Uw' Fw' 3Bw Lw2 Dw 3Lw Bw2 3Bw L2 3Uw' L Uw 3Bw Dw D' Lw 3Bw2 3Dw Lw' Rw2 B' 3Dw 3Uw L' 3Uw 3Dw' Rw2 3Lw' U' 3Lw2 3Rw2 R' Uw Bw' Fw2 3Bw 3Uw Bw2 B Rw2 3Uw L2 3Dw' U D2 F2 Lw B R2 3Bw' F' 3Rw F2 3Bw L' 3Uw' Rw2 3Bw' Fw2 F' 3Uw Bw2 U 3Fw Bw2 B 3Rw Lw2 3Bw Fw Dw' R 3Uw' B2 3Bw",  # noqa: E501
@@ -18,10 +20,12 @@ SCRAMBLES = {
 
 
 def start_round_with(live_server, page, label, text):
-    control(live_server, "next-scramble", text=urllib.parse.quote(text))
+    width, height = DIAGRAMS[label]
+    control(live_server, "next-scramble", text=urllib.parse.quote(text), width=width, height=height)
     page.get_by_label("Puzzle").select_option(label=label)
     page.get_by_role("button", name="Start round").click()
     expect(page.locator("#scramble-text")).to_have_text(text.replace("\n", " "))
+    page.wait_for_function("document.getElementById('scramble-image').naturalWidth > 0")
 
 
 def test_everyone_sees_which_puzzle_the_round_is_for(new_player, live_server):
@@ -36,7 +40,9 @@ def test_everyone_sees_which_puzzle_the_round_is_for(new_player, live_server):
 
 
 @pytest.mark.parametrize("label", SCRAMBLES)
-def test_long_scrambles_fit_on_a_phone_screen_without_scrolling(new_player, live_server, label):
+def test_long_scrambles_leave_the_diagram_and_start_button_on_the_first_screen(
+    new_player, live_server, label
+):
     tom = new_player()
     start_challenge(tom)
 
@@ -44,10 +50,10 @@ def test_long_scrambles_fit_on_a_phone_screen_without_scrolling(new_player, live
 
     fits = tom.evaluate(
         """() => {
-          const box = document.getElementById("scramble-text").getBoundingClientRect();
+          const button = document.getElementById("start-inspection").getBoundingClientRect();
           return {
             sideways: document.documentElement.scrollWidth <= window.innerWidth,
-            onFirstScreen: box.bottom <= window.innerHeight,
+            onFirstScreen: button.bottom <= window.innerHeight,
           };
         }"""
     )

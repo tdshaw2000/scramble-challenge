@@ -24,7 +24,13 @@ def advance_clock():
 
 @control.post("/next-scramble")
 def next_scramble():
-    control.app.extensions["tnoodle"].next_text = request.args["text"]
+    tnoodle = control.app.extensions["tnoodle"]
+    tnoodle.next_text = request.args["text"]
+    width, height = request.args["width"], request.args["height"]
+    tnoodle.next_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+        f'width="{width}px" height="{height}px"><rect width="100%" height="100%"/></svg>'
+    )
     return jsonify(ok=True)
 
 
