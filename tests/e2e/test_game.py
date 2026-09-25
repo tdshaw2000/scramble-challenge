@@ -13,6 +13,9 @@ def start_challenge(page, name="Tom"):
     page.get_by_label("Your name").fill(name)
     page.get_by_role("button", name="Start new challenge").click()
     expect(page.locator("#players")).to_contain_text(name)
+    # The player list is drawn by the server, so it shows before challenge.js has run.
+    # Start round is enabled only once the script has run and the socket has joined.
+    expect(page.get_by_role("button", name="Start round")).to_be_enabled()
     return page.get_by_label("Share link").input_value()
 
 
