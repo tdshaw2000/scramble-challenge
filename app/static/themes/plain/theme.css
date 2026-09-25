@@ -30,3 +30,11 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .result .name { flex: 1; }
 .result .time { font-variant-numeric: tabular-nums; }
 .result-dnf .time { color: var(--bad); }
+.admin-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--muted); font-size: 0.9rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th, .admin-table td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }

@@ -16,6 +16,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from app import services
 from app.extensions import db
 from app.models import Challenge, ChallengeStatus
 
@@ -37,6 +38,22 @@ def uk_time(moment: datetime) -> str:
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=UTC)
     return moment.astimezone(UK).strftime("%-d %b %Y, %H:%M")
+
+
+@bp.app_template_filter("solve_time")
+def solve_time(time_ms: int | None) -> str:
+    """Same look as formatTime in challenge.js: 9.87, 1:05.43, or DNF."""
+    if time_ms is None:
+        return "DNF"
+    minutes, hundredths = divmod((time_ms + 5) // 10, 6000)  # hundredths, halves rounded up
+    seconds = f"{hundredths // 100}.{hundredths % 100:02d}"
+    return f"{minutes}:{seconds:0>5}" if minutes else seconds
+
+
+@bp.app_template_filter("ordinal")
+def ordinal(n: int) -> str:
+    suffix = "th" if 11 <= n % 100 <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
 
 
 @bp.before_request
@@ -92,4 +109,12 @@ def home():
 @bp.get("/challenges/<slug>")
 @login_required
 def challenge(slug: str):
-    abort(404)
+    challenge = services.get_challenge(slug)
+    if challenge is None:
+        abort(404)
+    return render_template(
+        "admin/challenge.html",
+        challenge=challenge,
+        status=STATUS_LABELS[challenge.status],
+        leaderboards={rnd.id: services.leaderboard(rnd) for rnd in challenge.rounds},
+    )
