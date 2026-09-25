@@ -234,8 +234,10 @@
 
   // On a keyboard the spacebar does the same, while the blank screen is showing. It must not
   // scroll the page or press a focused button, and a held key's repeats are not new presses.
+  // Space with Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
   document.addEventListener("keydown", (event) => {
-    if (event.code !== "Space" || (phase !== "inspecting" && phase !== "solving")) return;
+    if (event.code !== "Space" || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (phase !== "inspecting" && phase !== "solving") return;
     event.preventDefault();
     if (!event.repeat) pressTimer();
   });

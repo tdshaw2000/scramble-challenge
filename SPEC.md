@@ -135,11 +135,11 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Inspection (per player, after they press Start inspection)**
 - Screen goes blank except a large 15→0 countdown
-- Tap/click anywhere transitions to solving
+- Tap/click anywhere, or press Space, transitions to solving
 
 **Solving (per player)**
 - Blank screen, timer running (not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator)
-- Tap/click anywhere stops the timer, submits `stop_solve`, returns to leaderboard
+- Tap/click anywhere, or press Space, stops the timer, submits `stop_solve`, returns to leaderboard
 
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
