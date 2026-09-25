@@ -3,7 +3,7 @@ import re
 import pytest
 
 from app import services
-from app.models import Player
+from app.models import ChallengeStatus, Player
 
 
 def rows(html: str, css_class: str) -> list[str]:
@@ -116,3 +116,17 @@ def test_joining_an_ended_challenge_goes_to_its_summary_without_adding_a_player(
 
     assert response.headers["Location"] == summary_url(played)
     assert db.session.scalar(db.select(Player).filter_by(display_name="Bob")) is None
+
+
+def test_the_summary_depends_only_on_the_challenge_having_ended_not_on_why(
+    client, db, challenge
+):
+    # A future manual "End challenge" should get the same page as the owner leaving.
+    challenge.status = ChallengeStatus.ENDED
+    db.session.commit()
+
+    response = client.get(summary_url(challenge))
+
+    assert response.status_code == 200
+    assert "This challenge has ended" in response.data.decode()
+    assert "owner left" not in response.data.decode()
