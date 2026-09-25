@@ -111,7 +111,20 @@
 
   socket.on("connect", () => socket.emit("join_challenge", { challenge_slug: game.dataset.slug }));
 
-  socket.on("player_list", renderPlayers);
+  // The owner may start a round only while this page has joined the challenge; before that
+  // the server rejects it. app/sockets.py sends player_list only to the challenge's room, so
+  // receiving it means this socket has joined. After a disconnect the page must rejoin, and
+  // Socket.IO would send a buffered click before the rejoin, so the button waits again.
+  function setStartRoundEnabled(enabled) {
+    if ($("start-round")) $("start-round").disabled = !enabled;
+  }
+
+  socket.on("player_list", (players) => {
+    renderPlayers(players);
+    setStartRoundEnabled(true);
+  });
+
+  socket.on("disconnect", () => setStartRoundEnabled(false));
 
   socket.on("round_started", (round) => {
     roundNumber = round.round_number;
