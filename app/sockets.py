@@ -56,13 +56,13 @@ def on_join_challenge(data):
     challenge = services.get_challenge((data or {}).get("challenge_slug", ""))
     if challenge is None:
         return game_error("Challenge not found.")
+    if challenge.status == ChallengeStatus.ENDED:
+        # However it ended, the page reloads and the server sends it to the summary.
+        return emit("challenge_ended", {})
     # Identity comes from the browser's own cookie, never from the payload.
     player = services.player_for_cookie(challenge, request.cookies.get(COOKIE_NAME))
     if player is None:
         return game_error("Enter your name to join first.")
-    if challenge.status == ChallengeStatus.ENDED:
-        # However it ended, the page reloads and the server sends it to the summary.
-        return emit("challenge_ended", {})
 
     services.player_joined(player)
     join_room(challenge.slug)
