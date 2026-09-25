@@ -10,7 +10,12 @@ class Config:
     THEME = "mario64"
     # Skins a player can pick from the gear menu (folder name: label). THEME is the default.
     # The folder name is what the skin cookie stores, so renaming a label is safe.
-    THEMES = {"mario64": "Mario 64", "plain": "Minimal", "neon80s": "VHS Nights"}
+    THEMES = {
+        "mario64": "Mario 64",
+        "plain": "Minimal",
+        "monkeyisland2": "Monkey",
+        "neon80s": "VHS Nights",
+    }
     # How many proxies (e.g. Caddy) sit in front of the app. Their X-Forwarded-* headers
     # are only trusted when this is above 0, so share links get the public https address.
     TRUSTED_PROXIES = 0

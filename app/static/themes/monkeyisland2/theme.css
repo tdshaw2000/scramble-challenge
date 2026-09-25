@@ -1,0 +1,344 @@
+/* "monkeyisland2" theme: an early-90s pirate point-and-click feel built from CSS alone (no game
+   assets). A pixel-art harbour at night (harbour.webp, supplied by the owner), black verb-panel
+   boxes with violet pixel borders, parchment inputs, wooden-plank buttons and pieces-of-eight
+   medals. Swap themes via THEME in app/config.py. */
+
+@font-face {
+  font-family: "Pixelify Sans";
+  src: url("fonts/pixelify-sans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "VT323";
+  src: url("fonts/vt323.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --sky: #0b0b3c;
+  --panel: #07061a;
+  --verb: #8a7dff;
+  --verb-dark: #4a3fb0;
+  --text: #e6e0ff;
+  --muted: #a99be8;
+  --cyan: #5ff2f2;
+  --yellow: #ffd23f;
+  --orange: #ff8a1c;
+  --outline: #1a0a00;
+  --wood: #8a4f24;
+  --wood-light: #b06c34;
+  --wood-dark: #4d2810;
+  --parchment: #f3e2b6;
+  --ink: #3a1d08;
+  --red: #c4231c;
+  --red-dark: #6e0d08;
+  --green: #5cf05c;
+  --pixel: "Pixelify Sans", "Courier New", monospace;
+  --mono: "VT323", "Courier New", monospace; /* clear B/8 and 0/O for scrambles and times */
+  /* Notched corners, so boxes look drawn in square pixels. */
+  --notch: polygon(
+    0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
+    calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
+  );
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font: 22px/1.3 var(--mono);
+  color: var(--text);
+  cursor: crosshair;
+  background: var(--sky);
+}
+
+/* The pixel-art harbour at night, pinned to the screen behind everything. A fixed layer rather
+   than background-attachment: fixed, which iPhones ignore. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--sky) url("harbour.webp") center bottom / cover no-repeat;
+}
+
+/* Title: chunky pixel letters in a sunset gradient with a dark outline, like a 90s logo. */
+.site-header { padding: 22px 12px 8px; text-align: center; }
+.site-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.3em;
+  text-decoration: none;
+  font: 700 2.9rem/1 var(--pixel);
+  letter-spacing: 0.02em;
+}
+.site-title-letter {
+  display: inline-block;
+  color: transparent;
+  background: linear-gradient(#fff3a8 0 30%, var(--yellow) 30% 55%, var(--orange) 55% 80%, #d8480e 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  /* Shadow down and right only: an outline all round would close the gaps in C and e. */
+  filter: drop-shadow(3px 3px 0 var(--outline)) drop-shadow(2px 2px 0 #000);
+}
+.site-title-letter:nth-child(odd) { transform: translateY(-2px); }
+.site-title-letter:nth-child(3n) { transform: translateY(2px); }
+
+.page { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; }
+
+/* Verb-panel boxes: black, with a violet pixel border. */
+.card {
+  background: var(--panel);
+  border: 4px solid var(--verb);
+  clip-path: var(--notch);
+  padding: 18px 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: inset 0 0 0 4px var(--verb-dark);
+}
+.card-title {
+  margin: 0 0 12px;
+  font: 700 1.7rem/1.1 var(--pixel);
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 #7a3a00;
+  letter-spacing: 0.02em;
+}
+
+.field { display: block; margin-bottom: 14px; }
+.field-label { display: block; margin-bottom: 4px; color: var(--cyan); }
+.field-input {
+  width: 100%;
+  padding: 12px 14px;
+  font: 1.2rem/1.2 var(--mono);
+  color: var(--ink);
+  background: var(--parchment);
+  border: 3px solid var(--wood-dark);
+  border-radius: 0;
+  clip-path: var(--notch);
+}
+.field-input:focus { outline: 3px solid var(--yellow); outline-offset: -6px; }
+
+/* Buttons are verbs on the panel; the main action is a wooden plank. */
+.button {
+  display: inline-block;
+  padding: 12px 18px;
+  font: 700 1.3rem/1 var(--pixel);
+  letter-spacing: 0.03em;
+  color: var(--verb);
+  background: var(--panel);
+  border: 3px solid var(--verb-dark);
+  border-radius: 0;
+  clip-path: var(--notch);
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+.button:hover, .button:focus-visible { color: var(--text); border-color: var(--verb); outline: none; }
+.button:active { color: var(--yellow); transform: translateY(2px); }
+.button-primary {
+  width: 100%;
+  color: #fff3d0;
+  text-shadow: 2px 2px 0 var(--wood-dark);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(0, 0, 0, 0.18) 46px 48px),
+    linear-gradient(var(--wood-light) 0 20%, var(--wood) 20% 55%, #7a4420 55% 80%, #683818 80%);
+  border-color: var(--wood-dark);
+}
+.button-primary:hover, .button-primary:focus-visible { color: #fff; border-color: var(--outline); }
+.button-primary:active { color: var(--yellow); }
+.button-primary:disabled { opacity: 0.55; }
+.button-danger {
+  width: 100%;
+  margin-top: 8px;
+  color: #ffe6d8;
+  text-shadow: 2px 2px 0 var(--red-dark);
+  background: linear-gradient(#e0473c 0 25%, var(--red) 25% 75%, #9a1812 75%);
+  border-color: var(--red-dark);
+}
+.button-two-line { line-height: 1.15; padding-top: 10px; padding-bottom: 10px; }
+.button-subline { font-size: 0.8em; }
+.button-cancel { width: 100%; margin-top: 12px; }
+
+.notice {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--parchment);
+  border: 3px solid var(--wood-dark);
+  clip-path: var(--notch);
+}
+.notice-error { color: var(--red-dark); }
+
+/* Players: little skull-and-bones flags; the owner's is gold. */
+.players { list-style: none; padding: 0; margin: 0 0 14px; }
+.player { padding: 4px 0 4px 30px; position: relative; }
+.player::before { content: "☠"; position: absolute; left: 4px; color: var(--text); }
+.player-co::before { color: var(--yellow); }
+.player-away { opacity: 0.45; }
+
+.share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.share .field { margin-bottom: 0; }
+.share .field-input { font-size: 0.9rem; }
+.waiting { margin: 0; color: var(--muted); }
+
+.scramble-text {
+  margin: 0 0 14px;
+  padding: 12px;
+  font: 1.5rem/1.4 var(--mono);
+  word-spacing: 0.3em;
+  color: var(--ink);
+  background: var(--parchment);
+  border: 3px solid var(--wood-dark);
+  clip-path: var(--notch);
+  white-space: pre-line; /* Megaminx scrambles come as one line per row */
+}
+/* Megaminx rows must not wrap, so shrink the text to fit the widest row on a phone. */
+[data-puzzle="minx"] .scramble-text {
+  padding-inline: 6px;
+  font-size: min(1.5rem, calc((100vw - 100px) / 22));
+  word-spacing: normal;
+}
+/* Big-cube scrambles run to 100 moves: a smaller size keeps the diagram on screen. */
+[data-puzzle="666"] .scramble-text,
+[data-puzzle="777"] .scramble-text {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  word-spacing: normal;
+}
+.scramble-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 240px; /* Square-1's diagram is twice as tall as wide */
+  object-fit: contain;
+  margin: 0 auto 18px;
+  padding: 10px;
+  background: var(--parchment);
+  clip-path: var(--notch);
+}
+
+/* Inspection and solving: the whole screen is the tap target. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none; /* a finger drifting while held must not become a scroll */
+  -webkit-touch-callout: none;
+  background:
+    linear-gradient(rgba(6, 6, 30, 0.72), rgba(6, 6, 30, 0.72)),
+    var(--sky) url("harbour.webp") center bottom / cover no-repeat;
+}
+.countdown {
+  margin: 0;
+  font: 700 40vmin/1 var(--pixel);
+  color: var(--yellow);
+  text-shadow: 6px 6px 0 #7a3a00, 12px 12px 0 #000;
+}
+.solving {
+  margin: 0;
+  font: 700 3rem/1 var(--pixel);
+  color: var(--text);
+  text-shadow: 3px 3px 0 var(--verb-dark);
+  animation: bob 1s steps(2) infinite alternate;
+}
+/* Space is held during inspection: letting go will start the solve. */
+.game[data-ready] .countdown { color: var(--green); }
+.overlay-hint { margin-top: 24px; color: var(--cyan); opacity: 0.8; }
+@keyframes bob { to { transform: translateY(-8px); } }
+
+/* Leaderboard: gold, silver and bronze pieces of eight. */
+.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
+.result, .standing {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 2px dotted var(--verb-dark);
+}
+.result:last-child, .standing:last-child { border-bottom: 0; }
+.result .position, .standing .position {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  font: 700 1rem/1 var(--pixel);
+  color: var(--outline);
+  background: #6d6592;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+}
+.result-position-1 .position, .standing-position-1 .position { background: linear-gradient(135deg, #fff3a8 0 25%, var(--yellow) 25% 65%, #c08a00 65%); }
+.result-position-2 .position, .standing-position-2 .position { background: linear-gradient(135deg, #ffffff 0 25%, #c9cbe0 25% 65%, #7f84a0 65%); }
+.result-position-3 .position, .standing-position-3 .position { background: linear-gradient(135deg, #ffd0a0 0 25%, #d0823e 25% 65%, #8c4e1c 65%); }
+.result .time { font: 1.6rem/1 var(--mono); color: var(--yellow); }
+.result-dnf .time { color: #ff6a5c; }
+
+/* Summary of an ended challenge */
+.summary .button { display: block; box-sizing: border-box; text-align: center; text-decoration: none; }
+.summary-ended { text-align: center; }
+.summary-ended .card-title { margin: 0; }
+.summary-standings .button { width: 100%; margin-top: 12px; }
+
+/* Admin area */
+.admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.admin-nav a { font: 700 1.15rem var(--pixel); color: var(--yellow); text-shadow: 2px 2px 0 var(--outline); }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--muted); font-size: 0.9rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th { text-align: left; color: var(--cyan); padding: 6px 8px 6px 0; white-space: nowrap; }
+.admin-table td { padding: 8px 8px 8px 0; border-top: 2px dotted var(--verb-dark); white-space: nowrap; }
+.admin-table a, .admin-pages a { color: var(--yellow); font-weight: 700; }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }
+
+/* On a phone each challenge becomes a small block instead of a wide table row. */
+@media (max-width: 600px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; grid-template-columns: 1fr auto; padding: 10px 0; border-top: 2px dotted var(--verb-dark); }
+  .admin-table td { border: 0; padding: 2px 0; white-space: normal; }
+  .admin-table td:nth-child(even) { text-align: right; }
+  .admin-players::before { content: "Players: "; }
+  .admin-rounds::before { content: "Rounds: "; }
+}
+.admin-code-value { font-family: var(--mono); }
+
+/* The player's own time, shown for a moment after the solve. */
+.finished {
+  margin: 0;
+  font: 700 24vmin/1 var(--pixel);
+  color: var(--yellow);
+  text-shadow: 5px 5px 0 #7a3a00, 10px 10px 0 #000;
+  animation: pop 0.3s steps(3) both;
+}
+.finished[data-result="dnf"] { color: #ff4a3c; text-shadow: 5px 5px 0 var(--red-dark), 10px 10px 0 #000; }
+@keyframes pop { from { transform: scale(0.4); opacity: 0; } }
+
+/* The owner's End challenge button, and its "are you sure?" box, under the round results. */
+.end-challenge { margin-top: 16px; }
+.confirm { margin-top: 16px; padding: 12px; border: 3px solid var(--yellow); clip-path: var(--notch); }
+.confirm-text { margin: 0 0 4px; text-align: center; color: var(--yellow); }
+
+/* Skin picker: a small gear in the header's top-right corner, opening a verb-panel menu. */
+.site-header { position: relative; z-index: 2; }
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: crosshair; font-size: 2rem; line-height: 1; padding: 4px; color: var(--verb); opacity: 0.85; text-shadow: 2px 2px 0 #000; }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-picker[open] .skin-picker-toggle { opacity: 1; color: var(--text); }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 160px; padding: 8px; background: var(--panel); border: 3px solid var(--verb); clip-path: var(--notch); }
+.skin-menu-title { margin: 0 4px 4px; color: var(--cyan); }
+.skin-option { display: block; width: 100%; padding: 6px 4px; text-align: left; background: none; border: 0; font: 1.1rem/1.2 var(--mono); color: var(--verb); cursor: crosshair; text-decoration: none; }
+.skin-option:hover, .skin-option:focus-visible { color: var(--text); outline: none; }
+.skin-option[aria-current="true"] { color: var(--yellow); }
+.skin-option[aria-current="true"]::after { content: " \2713"; }
