@@ -111,7 +111,12 @@
 
   socket.on("connect", () => socket.emit("join_challenge", { challenge_slug: game.dataset.slug }));
 
-  socket.on("player_list", renderPlayers);
+  // The server sends the player list to the room only once this page has joined it, so that
+  // is when the owner may start a round. Before then the server would reject it.
+  socket.on("player_list", (players) => {
+    renderPlayers(players);
+    if ($("start-round")) $("start-round").disabled = false;
+  });
 
   socket.on("round_started", (round) => {
     roundNumber = round.round_number;
