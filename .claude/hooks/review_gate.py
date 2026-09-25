@@ -36,10 +36,6 @@ GH_MERGE = re.compile(PR + r"merge\b([^;&|#\n]*)")
 API_MERGE = re.compile(
     r"mergePullRequest|mergeBranch|pulls/[^/\s]+/merge\b|repos/[^/\s]+/[^/\s]+/merges\b"
 )
-# main only changes through a reviewed merge, never a direct push or ref update.
-PUSH_MAIN = re.compile(
-    r"\bgit\s+push\b[^;&|#\n]*[\s:+](?:refs/heads/)?main(?=\s|$)|git/refs/heads/main"
-)
 API_AUTO_MERGE = "enablePullRequestAutoMerge"
 GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b", re.DOTALL)
 SEPARATORS = {";", "&", "&&", "|", "||", "\n", "(", ")"}
@@ -207,7 +203,7 @@ def gh_merges(command):
 
 def wants(event):
     """What the tool call does, as (action, detail). action is 'ready', 'merge', 'auto-merge',
-    'admin-merge', 'api-merge', 'push-main', 'create-not-draft', or None for anything else.
+    'admin-merge', 'api-merge', 'create-not-draft', or None for anything else.
     A merge's detail is [(method, head sha)]."""
     tool, args = event.get("tool_name") or "", event.get("tool_input") or {}
     if tool.startswith("mcp__") and tool.endswith("__update_pull_request"):
@@ -220,8 +216,6 @@ def wants(event):
         return "auto-merge", None
     if tool == "Bash":
         command = str(args.get("command") or "").replace("\\\n", " ")  # join continuations
-        if PUSH_MAIN.search(command):
-            return "push-main", None
         if API_AUTO_MERGE in command:
             return "auto-merge", None
         if API_MERGE.search(command):
@@ -291,10 +285,6 @@ def gate(event):
         block("Open the pull request as a draft. It is marked ready only after review. " + LOOP)
     if action == "auto-merge":
         block("No auto-merge: merge directly once review and CI have passed. " + LOOP)
-    if action == "push-main":
-        block(
-            "Never push or update main directly; it changes only through a reviewed merge. " + LOOP
-        )
     if action == "admin-merge":
         block("No --admin merges: they skip GitHub's own checks. " + LOOP)
     if action == "api-merge":

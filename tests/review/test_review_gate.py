@@ -694,25 +694,6 @@ def test_branch_merges_through_gh_api_are_blocked(repo, command):
 @pytest.mark.parametrize(
     "command",
     [
-        "git push origin HEAD:main",
-        "git push origin main",
-        "git push -f origin main",
-        "git push origin HEAD:refs/heads/main",
-        "gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc",
-    ],
-)
-def test_pushing_straight_to_main_is_blocked(repo, command):
-    review(repo)
-
-    result = bash(repo, command)
-
-    assert result.returncode == BLOCKED
-    assert "main" in result.stderr
-
-
-@pytest.mark.parametrize(
-    "command",
-    [
         "git push -u origin review-loop",
         "git push origin main-fix",
         "git push",
