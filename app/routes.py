@@ -20,6 +20,7 @@ bp = Blueprint("main", __name__)
 
 COOKIE_NAME = "scramble_device"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+NAME_COOKIE_NAME = "scramble_name"
 
 
 @bp.get("/healthz")
@@ -37,6 +38,19 @@ def with_device_cookie(response, cookie_id: str):
         COOKIE_NAME, cookie_id, max_age=COOKIE_MAX_AGE, httponly=True, samesite="Lax"
     )
     return response
+
+
+def with_name_cookie(response, display_name: str):
+    response.set_cookie(
+        NAME_COOKIE_NAME, display_name, max_age=COOKIE_MAX_AGE, httponly=True, samesite="Lax"
+    )
+    return response
+
+
+@bp.context_processor
+def remembered_name():
+    name = request.cookies.get(NAME_COOKIE_NAME, "")
+    return {"remembered_name": name[: services.MAX_NAME_LENGTH]}
 
 
 def challenge_or_404(slug: str):
@@ -59,6 +73,7 @@ def create_challenge():
     except services.InvalidInput as error:
         return render_template("landing.html", error=str(error)), 400
     response = redirect(url_for("main.challenge", slug=challenge.slug))
+    with_name_cookie(response, challenge.co_player.display_name)
     return with_device_cookie(response, cookie_id)
 
 
@@ -83,10 +98,11 @@ def join(slug: str):
     challenge = challenge_or_404(slug)
     cookie_id = device_cookie()
     try:
-        services.join_challenge(challenge, request.form.get("display_name", ""), cookie_id)
+        player = services.join_challenge(challenge, request.form.get("display_name", ""), cookie_id)
     except services.InvalidInput as error:
         return render_template("join.html", challenge=challenge, error=str(error)), 400
     response = redirect(url_for("main.challenge", slug=slug))
+    with_name_cookie(response, player.display_name)
     return with_device_cookie(response, cookie_id)
 
 
