@@ -28,7 +28,15 @@ def password_hash(password: str) -> str:
     return f"scrypt:{N}:{R}:{P}${salt}${digest.hex()}"
 
 
-def write_env_file(path, password: str) -> None:
+def sudo_owner(environ) -> tuple[int, int] | None:
+    """The account that ran sudo. It must own the file: docker compose reads env_file
+    as the user running it, which on the server is the runner's account, not root."""
+    if "SUDO_UID" in environ:
+        return int(environ["SUDO_UID"]), int(environ["SUDO_GID"])
+    return None
+
+
+def write_env_file(path, password: str, owner: tuple[int, int] | None = None) -> None:
     if len(password) < MIN_LENGTH:
         raise ValueError(f"The password must be at least {MIN_LENGTH} characters.")
     path = Path(path)
@@ -42,6 +50,8 @@ def write_env_file(path, password: str) -> None:
     with os.fdopen(fd, "w") as file:
         file.write(content)
     os.chmod(path, 0o600)  # in case the file already existed with looser permissions
+    if owner:
+        os.chown(path, *owner)
 
 
 def main() -> int:
@@ -50,7 +60,7 @@ def main() -> int:
         print("The passwords didn't match; nothing changed.")
         return 1
     try:
-        write_env_file(ENV_FILE, password)
+        write_env_file(ENV_FILE, password, owner=sudo_owner(os.environ))
     except ValueError as error:
         print(f"{error} Nothing changed.")
         return 1
