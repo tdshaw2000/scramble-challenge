@@ -126,7 +126,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Waiting room (all players, between rounds)**
 - Players list (live, name + connected status)
-- CO only, additionally: shareable link (copy button), puzzle dropdown, "Start round" button
+- CO only, additionally: shareable link with a "Share" button (the phone's share sheet; copies the link where sharing isn't available), puzzle dropdown, "Start round" button
 - Non-CO players: just see the list and a "waiting for the challenge owner to start a round" message
 
 **Scramble reveal (all players, on `round_started`)**

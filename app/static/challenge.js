@@ -165,7 +165,15 @@
           // Any other refusal falls back to copying, like browsers without sharing.
         }
       }
-      await navigator.clipboard.writeText(url);
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        // No clipboard (plain http) or the browser refused, e.g. Safari after a failed share.
+        $("share-link").focus();
+        $("share-link").select();
+        showMessage("Copy the link above to share it.");
+        return;
+      }
       setText("share-link-button", "Copied!");
       setTimeout(() => setText("share-link-button", "Share"), 2000);
     });
