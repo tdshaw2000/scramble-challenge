@@ -20,7 +20,11 @@ def test_words_use_tiny5_and_scrambles_and_times_stay_clear(new_player, live_ser
 
     for selector in ("body", ".card-title", ".button-primary", ".site-title-letter"):
         assert first_font(tom, selector) == "Tiny5", selector
-    assert tom.evaluate("document.fonts.check('16px Tiny5')")
+    assert tom.evaluate(
+        "[...document.fonts].some(f => f.family === 'Tiny5' && f.status === 'loaded')"
+    )
+    # The share link is a random slug (0/O, l/I/1) that people read out or retype.
+    assert first_font(tom, ".share .field-input") == "VT323"
 
     tom.get_by_role("button", name="Start round").click()
     expect(tom.locator(".scramble-text")).to_be_visible()
