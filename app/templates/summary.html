@@ -2,7 +2,9 @@
 {% block title %}Challenge summary · Scramble Challenge{% endblock %}
 {% block content %}
 <div class="summary">
-  <h1 class="notice summary-heading">This challenge has ended</h1>
+  <section class="card summary-ended">
+    <h1 class="card-title">This challenge has ended</h1>
+  </section>
 
   <section class="card summary-standings">
     <h2 class="card-title">Final standings</h2>
@@ -14,27 +16,37 @@
       </li>
       {% endfor %}
     </ol>
-  </section>
-
-  {% for rnd in challenge.rounds %}
-  <section class="card summary-round">
-    <h2 class="card-title">Round {{ rnd.round_number }}: {{ puzzle_names.get(rnd.puzzle, rnd.puzzle) }}</h2>
-    <p class="scramble-text">{{ rnd.scramble_text }}</p>
-    <img class="scramble-image" alt="Scramble diagram"
-         src="{{ url_for('main.scramble_svg', slug=challenge.slug, round_number=rnd.round_number) }}">
-    {% set results = leaderboards[rnd.id] %}
-    {% if results %}
-    {% include "partials/leaderboard.html" %}
-    {% else %}
-    <p>No results.</p>
+    {% if challenge.rounds %}
+    <button type="button" id="toggle-rounds" class="button"
+            aria-controls="rounds" aria-expanded="false">View rounds</button>
     {% endif %}
   </section>
+
+  {% if challenge.rounds %}
+  <div id="rounds" class="summary-rounds" hidden>
+    {% for rnd in challenge.rounds %}
+    <section class="card summary-round">
+      <h2 class="card-title">Round {{ rnd.round_number }}: {{ puzzle_names.get(rnd.puzzle, rnd.puzzle) }}</h2>
+      <p class="scramble-text">{{ rnd.scramble_text }}</p>
+      <img class="scramble-image" alt="Scramble diagram"
+           src="{{ url_for('main.scramble_svg', slug=challenge.slug, round_number=rnd.round_number) }}">
+      {% set results = leaderboards[rnd.id] %}
+      {% if results %}
+      {% include "partials/leaderboard.html" %}
+      {% else %}
+      <p>No results.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
   {% else %}
   <section class="card summary-round"><p>No rounds were played.</p></section>
-  {% endfor %}
+  {% endif %}
 
   <p class="summary-actions">
     <a class="button button-primary" href="{{ url_for('main.landing') }}">Start a new challenge</a>
   </p>
 </div>
+
+<script src="{{ url_for('static', filename='summary.js') }}"></script>
 {% endblock %}

@@ -128,3 +128,36 @@ def test_the_summary_depends_only_on_the_challenge_having_ended_not_on_why(clien
     assert response.status_code == 200
     assert "This challenge has ended" in response.data.decode()
     assert "owner left" not in response.data.decode()
+
+
+def test_the_ended_message_is_a_card_like_the_standings(client, played):
+    html = client.get(summary_url(played)).data.decode()
+
+    assert re.search(
+        r'<section class="card summary-ended">\s*<h1 class="card-title">'
+        r"This challenge has ended</h1>",
+        html,
+    )
+
+
+def test_the_rounds_start_hidden_behind_a_view_rounds_button_in_the_standings(client, played):
+    html = client.get(summary_url(played)).data.decode()
+    standings = html[
+        html.index("Final standings") : html.index("</section>", html.index("Final standings"))
+    ]
+
+    assert re.search(
+        r'<button type="button" id="toggle-rounds" class="button"\s+'
+        r'aria-controls="rounds" aria-expanded="false">View rounds</button>',
+        standings,
+    )
+    assert re.search(r'<div id="rounds" class="summary-rounds" hidden>', html)
+    assert "summary.js" in html
+
+
+def test_a_challenge_with_no_rounds_has_no_view_rounds_button(app, client, challenge, clock):
+    end_challenge(app, challenge, clock)
+
+    html = client.get(summary_url(challenge)).data.decode()
+
+    assert "View rounds" not in html
