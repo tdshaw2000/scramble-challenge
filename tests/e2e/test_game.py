@@ -384,7 +384,7 @@ def test_space_starts_the_solve_during_inspection_and_stops_it(tom_and_amy):
 
     for page in (tom, amy):
         expect(page.locator("#leaderboard")).to_contain_text("Amy")
-        assert leaderboard(page) == [["1st", "Amy", "7.65"]]
+        assert leaderboard(page) == [["1st", "Amy (0)", "7.65"]]
 
 
 def test_holding_space_waits_and_letting_go_starts_the_solve(tom_and_amy):
@@ -407,7 +407,7 @@ def test_holding_space_waits_and_letting_go_starts_the_solve(tom_and_amy):
     expect(amy.locator("#leaderboard")).to_contain_text("Amy")
     amy.keyboard.up("Space")
 
-    assert leaderboard(amy) == [["1st", "Amy", "6.42"]]
+    assert leaderboard(amy) == [["1st", "Amy (0)", "6.42"]]
 
 
 def test_space_mixes_with_taps(tom_and_amy):
@@ -419,7 +419,7 @@ def test_space_mixes_with_taps(tom_and_amy):
     amy.keyboard.press("Space")
 
     expect(amy.locator("#leaderboard")).to_contain_text("Amy")
-    assert leaderboard(amy) == [["1st", "Amy", "5.00"]]
+    assert leaderboard(amy) == [["1st", "Amy (0)", "5.00"]]
 
 
 def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
@@ -428,6 +428,7 @@ def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
     start_inspecting(tom, amy)
 
     amy.keyboard.press("Space")
+    advance(amy, 3000)
     amy.keyboard.press("Space")
 
     expect(amy.locator("#leaderboard")).to_contain_text("Amy")
