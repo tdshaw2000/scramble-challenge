@@ -16,7 +16,7 @@
 
 {% for rnd in challenge.rounds %}
 <section class="card admin-card">
-  <h2 class="card-title">Round {{ rnd.round_number }}: {{ rnd.puzzle }}</h2>
+  <h2 class="card-title">Round {{ rnd.round_number }}: {{ puzzle_names.get(rnd.puzzle, rnd.puzzle) }}</h2>
   <p class="admin-meta">Started {{ rnd.started_at | uk_time }}</p>
   <p class="scramble-text">{{ rnd.scramble_text }}</p>
   <img class="scramble-image" alt="Scramble picture"

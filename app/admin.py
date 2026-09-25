@@ -16,7 +16,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
-from app import services
+from app import game, services
 from app.extensions import db
 from app.models import Challenge, ChallengeStatus
 
@@ -136,5 +136,6 @@ def challenge(slug: str):
         "admin/challenge.html",
         challenge=challenge,
         status=STATUS_LABELS[challenge.status],
+        puzzle_names=game.PUZZLE_NAMES,
         leaderboards={rnd.id: services.leaderboard(rnd) for rnd in challenge.rounds},
     )
