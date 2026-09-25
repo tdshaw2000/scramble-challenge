@@ -13,7 +13,7 @@ def start_challenge(page, name="Tom"):
     page.get_by_label("Your name").fill(name)
     page.get_by_role("button", name="Start new challenge").click()
     expect(page.locator("#players")).to_contain_text(name)
-    return page.get_by_label("Share link").input_value()
+    return page.get_by_label("Share this link with the other players").input_value()
 
 
 def join(page, link, name):
@@ -67,15 +67,68 @@ def leaderboard(page):
     ]
 
 
-def test_copy_link_button_copies_the_share_link(new_player):
+# Phones share through the Web Share API (navigator.share). The tests replace it with a
+# recorder, or remove it to act like a desktop browser without sharing.
+RECORD_SHARES = """
+  window.__shared = [];
+  Object.defineProperty(navigator, "share", {
+    configurable: true,
+    value: (data) => { window.__shared.push(data); return Promise.resolve(); },
+  });
+"""
+
+CANCEL_SHARES = """
+  Object.defineProperty(navigator, "share", {
+    configurable: true,
+    value: () => Promise.reject(new DOMException("Share canceled", "AbortError")),
+  });
+"""
+
+NO_SHARING = """
+  delete Navigator.prototype.share;
+  delete navigator.share;
+"""
+
+
+def test_share_button_opens_the_phones_share_sheet_with_the_link(new_player):
     tom = new_player()
+    tom.add_init_script(RECORD_SHARES)
+    link = start_challenge(tom)
+
+    tom.get_by_role("button", name="Share").click()
+
+    tom.wait_for_function("window.__shared.length === 1")
+    shared = tom.evaluate("window.__shared[0]")
+    assert shared["url"] == link
+    assert shared["title"] == "Scramble Challenge"
+    assert shared["text"] == "Join my Scramble Challenge"
+
+
+def test_cancelling_the_share_sheet_changes_nothing(new_player):
+    tom = new_player()
+    tom.add_init_script(CANCEL_SHARES)
+    tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    start_challenge(tom)
+    tom.evaluate("navigator.clipboard.writeText('untouched')")
+
+    tom.get_by_role("button", name="Share").click()
+
+    expect(tom.get_by_role("button", name="Share")).to_be_visible()
+    expect(tom.locator("#message")).to_be_hidden()
+    assert tom.evaluate("navigator.clipboard.readText()") == "untouched"
+
+
+def test_share_button_copies_the_link_where_sharing_is_unsupported(new_player):
+    tom = new_player()
+    tom.add_init_script(NO_SHARING)
     tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Copy link").click()
+    tom.get_by_role("button", name="Share").click()
 
     expect(tom.get_by_role("button", name="Copied!")).to_be_visible()
     assert tom.evaluate("navigator.clipboard.readText()") == link
+    expect(tom.get_by_role("button", name="Share")).to_be_visible(timeout=4000)
 
 
 def test_friend_joins_by_link_and_both_lists_update(new_player):
@@ -90,7 +143,7 @@ def test_friend_joins_by_link_and_both_lists_update(new_player):
     expect(amy.locator("#players")).to_contain_text("Tom")
     expect(amy.get_by_text("Waiting for the challenge owner to start a round")).to_be_visible()
     expect(amy.get_by_role("button", name="Start round")).to_be_hidden()
-    expect(amy.get_by_label("Share link")).to_be_hidden()
+    expect(amy.get_by_label("Share this link with the other players")).to_be_hidden()
 
 
 def test_starting_a_round_reveals_the_same_scramble_to_everyone(tom_and_amy):
