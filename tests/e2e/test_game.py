@@ -80,7 +80,10 @@ RECORD_SHARES = """
 CANCEL_SHARES = """
   Object.defineProperty(navigator, "share", {
     configurable: true,
-    value: () => Promise.reject(new DOMException("Share canceled", "AbortError")),
+    value: () => {
+      window.__shareCalled = true;
+      return Promise.reject(new DOMException("Share canceled", "AbortError"));
+    },
   });
 """
 
@@ -95,13 +98,18 @@ def test_share_button_opens_the_phones_share_sheet_with_the_link(new_player):
     tom.add_init_script(RECORD_SHARES)
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share").click()
+    tom.get_by_role("button", name="Share", exact=True).click()
 
     tom.wait_for_function("window.__shared.length === 1")
     shared = tom.evaluate("window.__shared[0]")
     assert shared["url"] == link
     assert shared["title"] == "Scramble Challenge"
     assert shared["text"] == "Join my Scramble Challenge"
+
+
+def settle(page):
+    """Give the click handler's promises time to finish."""
+    page.evaluate("new Promise((resolve) => setTimeout(resolve, 200))")
 
 
 def test_cancelling_the_share_sheet_changes_nothing(new_player):
@@ -111,11 +119,62 @@ def test_cancelling_the_share_sheet_changes_nothing(new_player):
     start_challenge(tom)
     tom.evaluate("navigator.clipboard.writeText('untouched')")
 
-    tom.get_by_role("button", name="Share").click()
+    tom.get_by_role("button", name="Share", exact=True).click()
+    tom.wait_for_function("window.__shareCalled === true")
+    settle(tom)
 
-    expect(tom.get_by_role("button", name="Share")).to_be_visible()
+    expect(tom.get_by_role("button", name="Share", exact=True)).to_be_visible()
     expect(tom.locator("#message")).to_be_hidden()
     assert tom.evaluate("navigator.clipboard.readText()") == "untouched"
+
+
+FAIL_SHARES = """
+  Object.defineProperty(navigator, "share", {
+    configurable: true,
+    value: () => Promise.reject(new DOMException("Not allowed", "NotAllowedError")),
+  });
+"""
+
+
+def test_a_failed_share_copies_the_link_instead(new_player):
+    tom = new_player()
+    tom.add_init_script(FAIL_SHARES)
+    tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    link = start_challenge(tom)
+
+    tom.get_by_role("button", name="Share", exact=True).click()
+
+    expect(tom.get_by_role("button", name="Copied!")).to_be_visible()
+    assert tom.evaluate("navigator.clipboard.readText()") == link
+
+
+# Safari and Firefox refuse clipboard writes once a failed share has used up the tap,
+# and plain-http pages have no clipboard at all.
+NO_SHARING_OR_COPYING = (
+    NO_SHARING
+    + """
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: () => Promise.reject(new DOMException("Not allowed", "NotAllowedError")) },
+  });
+"""
+)
+
+
+def test_when_copying_is_blocked_the_link_is_selected_for_copying_by_hand(new_player):
+    tom = new_player()
+    tom.add_init_script(NO_SHARING_OR_COPYING)
+    link = start_challenge(tom)
+
+    tom.get_by_role("button", name="Share", exact=True).click()
+
+    expect(tom.locator("#message")).to_have_text("Copy the link above to share it.")
+    selected = tom.evaluate(
+        "(() => { const box = document.getElementById('share-link');"
+        " return document.activeElement === box"
+        " ? box.value.slice(box.selectionStart, box.selectionEnd) : null; })()"
+    )
+    assert selected == link
 
 
 def test_share_button_copies_the_link_where_sharing_is_unsupported(new_player):
@@ -124,11 +183,11 @@ def test_share_button_copies_the_link_where_sharing_is_unsupported(new_player):
     tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share").click()
+    tom.get_by_role("button", name="Share", exact=True).click()
 
     expect(tom.get_by_role("button", name="Copied!")).to_be_visible()
     assert tom.evaluate("navigator.clipboard.readText()") == link
-    expect(tom.get_by_role("button", name="Share")).to_be_visible(timeout=4000)
+    expect(tom.get_by_role("button", name="Share", exact=True)).to_be_visible(timeout=4000)
 
 
 def test_friend_joins_by_link_and_both_lists_update(new_player):
