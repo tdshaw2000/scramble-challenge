@@ -148,7 +148,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 - CO only, additionally: "End round" button (visible whenever the round is still active) and, once the round is complete, the puzzle dropdown + "Start round" button to begin the next one
 
 **Challenge summary (everyone, once the challenge has ended)** — at `/c/<slug>/summary`
-- Opens with "This challenge has ended", then the final standings (everyone by points, most first, ties sharing a place and listed by name), then each round in order: puzzle, scramble text and picture, and its results. Names carry final points, e.g. "Amy (2)". A "Start a new challenge" link goes to the landing page.
+- Opens with "This challenge has ended" in a card like the others, text centred, then the final standings (everyone by points, most first, ties sharing a place and listed by name), then each round in order: puzzle, scramble text and picture, and its results. Names carry final points, e.g. "Amy (2)". The rounds start hidden: a "View rounds" button in the standings card shows them and becomes "Hide rounds" (no button when no rounds were played). A "Start a new challenge" link goes to the landing page.
 - Depends only on the challenge having ended, not on how it ended, so any future way of ending (e.g. a manual "End challenge") gets the same page.
 - Anyone with the link can see it. Once a challenge has ended, its challenge link and join form lead here. Before that, the summary address leads back to the challenge.
 
