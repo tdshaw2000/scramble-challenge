@@ -711,3 +711,49 @@ def test_a_finger_that_drifts_while_held_still_starts_the_solve_when_lifted(new_
     touch.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
 
     expect(amy.get_by_text("Solving")).to_be_visible()
+
+
+def test_the_owner_ends_the_challenge_after_a_round_and_everyone_sees_the_summary(tom_and_amy):
+    tom, amy, link = tom_and_amy
+    end_challenge = tom.get_by_role("button", name=re.compile("End challenge"))
+    expect(end_challenge).to_be_hidden()  # no results yet
+    tom.get_by_role("button", name="Start round").click()
+    solve(tom, 8_000)
+    expect(tom.get_by_role("button", name="End round")).to_be_visible()
+    expect(end_challenge).to_be_hidden()  # not while the round is running
+
+    solve(amy, 9_000)
+    expect(end_challenge).to_be_visible()
+    expect(end_challenge).to_have_text(re.compile(r"End challenge\s*show results"))
+    expect(amy.get_by_role("heading", name="Round 1 results")).to_be_visible()
+    expect(amy.get_by_role("button", name=re.compile("End challenge"))).to_have_count(0)
+
+    end_challenge.click()
+    expect(tom.get_by_text("End the challenge for everyone?")).to_be_visible()
+    tom.get_by_role("button", name="Cancel").click()
+    expect(tom.get_by_text("End the challenge for everyone?")).to_be_hidden()
+    expect(amy).to_have_url(link)
+
+    end_challenge.click()
+    tom.get_by_role("button", name="Yes, end it").click()
+
+    for page in (tom, amy):
+        expect(page).to_have_url(f"{link}/summary")
+        expect(page.get_by_role("heading", name="This challenge has ended")).to_be_visible()
+
+
+def test_starting_another_round_puts_the_end_challenge_button_away(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    solve(tom, 8_000)
+    solve(amy, 9_000)
+    end_challenge = tom.get_by_role("button", name=re.compile("End challenge"))
+    end_challenge.click()
+    expect(tom.get_by_text("End the challenge for everyone?")).to_be_visible()
+
+    tom.get_by_role("button", name="Start round").click()
+    solve(tom, 8_000)
+
+    expect(tom.get_by_role("heading", name="Round 2")).to_be_visible()
+    expect(end_challenge).to_be_hidden()
+    expect(tom.get_by_text("End the challenge for everyone?")).to_be_hidden()

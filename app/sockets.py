@@ -149,6 +149,13 @@ def on_end_round(player, data):
     broadcast_round_complete(rnd.challenge, rnd)
 
 
+@socketio.on("end_challenge")
+@player_action
+def on_end_challenge(player, data):
+    services.end_challenge(player.challenge, player)
+    emit("challenge_ended", {}, to=player.challenge.slug)
+
+
 @socketio.on("disconnect")
 def on_disconnect(*_reason):
     player_id = connections.pop(request.sid, None)

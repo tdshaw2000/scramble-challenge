@@ -185,6 +185,17 @@ def end_round(challenge: Challenge, player: Player) -> Round:
     return complete_round(challenge)
 
 
+def end_challenge(challenge: Challenge, player: Player) -> None:
+    """The CO ends the challenge for everyone. Only between rounds, once one has finished,
+    so there is always a result to show and nobody is cut off mid-solve."""
+    require_co(challenge, player)
+    require_not_ended(challenge)
+    if challenge.status != ChallengeStatus.ROUND_RESULTS:
+        raise InvalidState("The challenge can only be ended between rounds, once one has finished.")
+    challenge.status = ChallengeStatus.ENDED
+    db.session.commit()
+
+
 def complete_round(challenge: Challenge) -> Round:
     """Close the current round: every connected player without a result gets a DNF."""
     rnd = challenge.current_round

@@ -109,6 +109,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `inspection_expired` | `{}` | player, mid-inspection | Countdown reached 0: fills `Solve` (`result: dnf`), broadcasts `leaderboard_update` |
 | `stop_solve` | `{ time_ms }` | player, mid-solve | Fills `Solve` (`time_ms`, `result: ok`), broadcasts `leaderboard_update` |
 | `end_round` | `{}` | CO only | Force-ends round: unfinished players marked `dnf`, broadcasts `round_complete` |
+| `end_challenge` | `{}` | CO only, during `round_results` | Ends the challenge for everyone, broadcasts `challenge_ended` |
 
 **Server → Client**
 
@@ -118,7 +119,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
 | `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position, points }] }` | room | Any solve completes (live reordering) |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
-| `challenge_ended` | `{}` | room, or one page joining an ended challenge | The challenge ends (today: the CO doesn't come back within the grace period). The page reloads and lands on the summary |
+| `challenge_ended` | `{}` | room, or one page joining an ended challenge | The challenge ends: the CO ends it, or doesn't come back within the grace period. The page reloads and lands on the summary |
 
 Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consistent with the honour-system stance (no server-side timing enforcement). If that ever changes, the fix is server-side timestamping on `start_solve`/`stop_solve` receipt rather than trusting the client payload — worth a one-line comment in the code flagging this as the trust boundary, so it's an easy toggle later even though v1 doesn't need it.
 
@@ -146,7 +147,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
-- CO only, additionally: "End round" button (visible whenever the round is still active) and, once the round is complete, the puzzle dropdown + "Start round" button to begin the next one
+- CO only, additionally: "End round" button (visible whenever the round is still active) and, once the round is complete, the puzzle dropdown + "Start round" button to begin the next one, and a yellow "End challenge / show results" button at the bottom of the results card. It asks "End the challenge for everyone?" (Yes, end it / Cancel) before ending it
 
 **Challenge summary (everyone, once the challenge has ended)** — at `/c/<slug>/summary`
 - Opens with "This challenge has ended" in a card like the others, text centred, then the final standings (everyone by points, most first, ties sharing a place and listed by name), then each round in order: puzzle, scramble text and picture, and its results. Names carry final points, e.g. "Amy (2)". The rounds start hidden: a "View rounds" button in the standings card shows them and becomes "Hide rounds" (no button when no rounds were played). A "Start a new challenge" link goes to the landing page.
