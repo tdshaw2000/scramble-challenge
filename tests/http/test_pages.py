@@ -115,6 +115,19 @@ def test_joined_player_sees_the_waiting_message_not_co_controls(client, challeng
     assert b"Start round" not in response.data
 
 
+def test_the_players_list_shows_points_after_names(client, challenge, co):
+    client.post(f"/c/{challenge.slug}/join", data={"display_name": "Amy"})
+    services.start_round(challenge, co)
+    services.start_inspection(co)
+    services.start_solve(co)
+    services.stop_solve(co, 9_000)
+    services.complete_round(challenge)
+
+    html = client.get(f"/c/{challenge.slug}").data.decode()
+
+    assert re.findall(r'<li class="player">(.*?)</li>', html) == ["Tom (1) (owner)", "Amy (0)"]
+
+
 def test_join_with_blank_name_redisplays_the_form(client, challenge):
     response = client.post(f"/c/{challenge.slug}/join", data={"display_name": ""})
 
