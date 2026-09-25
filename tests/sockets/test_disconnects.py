@@ -112,11 +112,15 @@ def test_co_refreshing_within_the_grace_period_keeps_the_challenge(
     assert events(amy, "challenge_ended") == []
 
 
-def test_joining_an_ended_challenge_is_refused(app, challenge, connect, clock):
+def test_joining_an_ended_challenge_is_told_it_ended(app, challenge, connect, clock):
+    # A tab that slept through the end hears about it when it reconnects, and its page
+    # then reloads into the summary.
     join(connect("cookie-co"), challenge).disconnect()
     clock.advance(seconds=app.config["CO_GRACE_SECONDS"])
     sockets.end_abandoned_challenges()
 
     tom = join(connect("cookie-co"), challenge)
 
-    assert events(tom, "game_error") == [{"message": "This challenge has ended."}]
+    received = tom.get_received()
+    assert [e["name"] for e in received] == ["challenge_ended"]
+    assert challenge.co_player.connected is False
