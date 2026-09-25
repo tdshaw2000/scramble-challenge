@@ -135,7 +135,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Inspection (per player, after they press Start inspection)**
 - Screen goes blank except a large 15→0 countdown
-- Tap/click anywhere, or press Space, transitions to solving
+- Tap/click anywhere transitions to solving. On a keyboard, hold Space and let go to start (like a real cubing timer)
 
 **Solving (per player)**
 - Blank screen, timer running (not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator)

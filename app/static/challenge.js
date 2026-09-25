@@ -38,6 +38,7 @@
   let inspectionStartedAt = 0;
   let solveStartedAt = 0;
   let ticker = null;
+  let spaceHeldInInspection = false;
 
   function setPhase(next) {
     phase = next;
@@ -195,6 +196,7 @@
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     inspectionStartedAt = performance.now();
+    spaceHeldInInspection = false;
     setText("countdown", INSPECTION_SECONDS);
     $("countdown").hidden = false;
     $("solving").hidden = true;
@@ -232,13 +234,28 @@
 
   $("overlay").addEventListener("pointerdown", pressTimer);
 
-  // On a keyboard the spacebar does the same, while the blank screen is showing. It must not
-  // scroll the page or press a focused button, and a held key's repeats are not new presses.
-  // Space with Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
+  // On a keyboard the spacebar works the timer while the blank screen is showing. Like a
+  // real cubing timer, holding space during inspection gets ready and letting go starts the
+  // solve; pressing it while solving stops the solve at once. Space must not scroll the page
+  // or press a focused button, and a held key's repeats are not new presses. Space with
+  // Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
+  function isTimerSpace(event) {
+    const plain = event.code === "Space" && !event.ctrlKey && !event.altKey && !event.metaKey;
+    return plain && (phase === "inspecting" || phase === "solving");
+  }
+
   document.addEventListener("keydown", (event) => {
-    if (event.code !== "Space" || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (phase !== "inspecting" && phase !== "solving") return;
+    if (!isTimerSpace(event)) return;
     event.preventDefault();
-    if (!event.repeat) pressTimer();
+    if (event.repeat) return;
+    if (phase === "inspecting") spaceHeldInInspection = true;
+    else pressTimer();
+  });
+
+  document.addEventListener("keyup", (event) => {
+    if (!isTimerSpace(event)) return;
+    event.preventDefault();
+    if (phase === "inspecting" && spaceHeldInInspection) pressTimer();
+    spaceHeldInInspection = false;
   });
 })();
