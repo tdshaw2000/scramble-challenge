@@ -12,7 +12,15 @@ def test_joining_marks_the_player_connected_and_broadcasts_the_player_list(chall
     join(client, challenge)
 
     assert events(client, "player_list") == [
-        [{"player_id": str(co.id), "display_name": "Tom", "is_co": True, "connected": True}]
+        [
+            {
+                "player_id": str(co.id),
+                "display_name": "Tom",
+                "is_co": True,
+                "connected": True,
+                "points": 0,
+            }
+        ]
     ]
     assert co.connected is True
 

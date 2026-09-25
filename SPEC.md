@@ -88,6 +88,8 @@ One `Solve` row per (round, player) — created when a player presses Start Insp
 
 Either way: `Round.status = complete`, `ended_at` set, `Challenge.status = round_results`. The CO's screen returns to the puzzle dropdown + "Start round" button (dropdown now defaults to the puzzle just used), ready to repeat.
 
+**Points.** Winning a round is worth one point, and points add up across the challenge. Everyone tied for first gets a point; a round where everyone DNFs awards none. A round counts once it has ended. Points show in brackets after each player's name wherever it appears (players list, leaderboard, admin pages), e.g. "Amy (2)". They are worked out from the finished rounds, not stored.
+
 **Disconnects.** A player who disconnects for any reason (closed tab, lost connection, refresh) mid-round simply misses that round — no reconnect-into-timer logic. They can rejoin for the next round normally.
 
 **CO leaves.** If the CO disconnects, the challenge ends — no ownership transfer in v1. This is an accepted limitation, not a bug to design around.
@@ -112,9 +114,9 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 
 | Event | Payload | Sent to | When |
 |---|---|---|---|
-| `player_list` | `[{ player_id, display_name, is_co, connected }]` | room | Any join/leave/disconnect |
+| `player_list` | `[{ player_id, display_name, is_co, connected, points }]` | room | Any join/leave/disconnect, and after `round_complete` |
 | `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
-| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position }] }` | room | Any solve completes (live reordering) |
+| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position, points }] }` | room | Any solve completes (live reordering) |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
 | `challenge_ended` | `{}` | room | CO disconnects |
 
@@ -158,5 +160,4 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 - **Round history/recall.** Persist all challenges/rounds/solves for later review (schema already supports this — v1 just needs a way to browse it, e.g. an admin-only view).
 - **WCA ID → avatar.** Optional field on join; if present, look up and display the player's WCA avatar. Purely cosmetic, no effect on gameplay logic.
-- **Cumulative scores within a challenge.** Track rounds won (or points by position) across a challenge's lifetime, shown alongside the per-round leaderboard.
 - **Async mode.** A genuinely different interaction model, not a toggle on this one: same challenge link, but players attempt a round whenever they're free rather than all being live simultaneously (closer to the original daily-challenge concept this project evolved from). Would reuse the `Challenge`/`Round`/`Solve` model but replace the socket-driven live flow with an open-window-per-round approach. Treat as a separate build once live mode is solid, not a day-one requirement.

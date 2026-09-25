@@ -246,7 +246,7 @@ def test_letting_the_countdown_reach_zero_is_a_dnf(tom_and_amy):
     expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
     for page in (tom, amy):
         expect(page.locator("#leaderboard")).to_contain_text("Amy")
-        assert leaderboard(page) == [["1st", "Amy", "DNF"]]
+        assert leaderboard(page) == [["1st", "Amy (0)", "DNF"]]
 
 
 def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):
@@ -262,7 +262,7 @@ def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):
 
     for page in (tom, amy):
         expect(page.locator("#leaderboard")).to_contain_text("Amy")
-        assert leaderboard(page) == [["1st", "Amy", "9.87"]]
+        assert leaderboard(page) == [["1st", "Amy (0)", "9.87"]]
 
 
 def test_ties_share_a_position_and_the_round_ends_when_everyone_is_done(tom_and_amy):
@@ -274,7 +274,7 @@ def test_ties_share_a_position_and_the_round_ends_when_everyone_is_done(tom_and_
 
     for page in (tom, amy):
         expect(page.get_by_role("heading", name="Round 1 results")).to_be_visible()
-        assert leaderboard(page) == [["1st", "Amy", "10.00"], ["1st", "Tom", "10.00"]]
+        assert leaderboard(page) == [["1st", "Amy (1)", "10.00"], ["1st", "Tom (1)", "10.00"]]
     expect(tom.get_by_role("button", name="Start round")).to_be_visible()
     expect(tom.get_by_label("Puzzle")).to_have_value("333")
 
@@ -289,8 +289,22 @@ def test_only_the_owner_can_end_a_round_early_and_unfinished_players_get_dnf(tom
 
     for page in (tom, amy):
         expect(page.get_by_role("heading", name="Round 1 results")).to_be_visible()
-        assert leaderboard(page) == [["1st", "Tom", "7.50"], ["2nd", "Amy", "DNF"]]
+        assert leaderboard(page) == [["1st", "Tom (1)", "7.50"], ["2nd", "Amy (0)", "DNF"]]
     expect(tom.get_by_role("button", name="End round")).to_be_hidden()
+
+
+def test_round_wins_add_up_as_points_after_each_name(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    for tom_ms, amy_ms in ((12_000, 9_000), (8_000, 9_500)):
+        tom.get_by_role("button", name="Start round").click()
+        solve(amy, amy_ms)
+        solve(tom, tom_ms)
+        expect(tom.get_by_role("button", name="Start round")).to_be_visible()
+
+    for page in (tom, amy):
+        expect(page.locator("#players")).to_contain_text("Tom (1) (owner)")
+        expect(page.locator("#players")).to_contain_text("Amy (1)")
+        assert leaderboard(page) == [["1st", "Tom (1)", "8.00"], ["2nd", "Amy (1)", "9.50"]]
 
 
 def test_joining_mid_round_gets_the_scramble_straight_away(tom_and_amy, new_player):
@@ -307,7 +321,7 @@ def test_everyone_is_told_when_the_owner_leaves_for_good(tom_and_amy, live_serve
     tom, amy, _ = tom_and_amy
 
     tom.close()
-    expect(amy.locator("#players")).to_contain_text("Tom (owner) (away)")
+    expect(amy.locator("#players")).to_contain_text("Tom (0) (owner) (away)")
     control(live_server, "advance-clock", seconds=30)
     control(live_server, "end-abandoned")
 

@@ -135,7 +135,7 @@ def test_last_player_finishing_completes_the_round_for_everyone(challenge, add_p
 
     received = tom.get_received()
     names = [e["name"] for e in received]
-    assert names == ["leaderboard_update", "round_complete"]
+    assert names == ["leaderboard_update", "round_complete", "player_list"]
     complete = received[1]["args"][0]
     assert [(r["display_name"], r["position"]) for r in complete["results"]] == [
         ("Amy", 1),

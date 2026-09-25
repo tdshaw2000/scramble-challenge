@@ -7,7 +7,7 @@
   <ul class="players">
     {% for p in challenge.players %}
     <li class="player{% if p.is_co %} player-co{% endif %}">
-      {{ p.display_name }}{% if p.is_co %} (owner){% endif %}
+      {{ p.display_name }} ({{ points[p.id] }}){% if p.is_co %} (owner){% endif %}
       <span class="admin-meta">joined {{ p.joined_at | uk_time }}</span>
     </li>
     {% endfor %}
@@ -27,7 +27,7 @@
     {% for r in results %}
     <li class="result result-{{ r.result }} result-position-{{ r.position }}">
       <span class="position">{{ r.position | ordinal }}</span>
-      <span class="name">{{ r.display_name }}</span>
+      <span class="name">{{ r.display_name }} ({{ r.points }})</span>
       <span class="time">{{ r.time_ms | solve_time }}</span>
     </li>
     {% endfor %}

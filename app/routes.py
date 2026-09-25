@@ -87,6 +87,7 @@ def challenge(slug: str):
         "challenge.html",
         challenge=challenge,
         player=player,
+        points=services.points(challenge),
         share_url=url_for("main.challenge", slug=slug, _external=True),
         puzzles={code: game.PUZZLE_NAMES[code] for code in services.SUPPORTED_PUZZLES},
         default_puzzle=services.next_puzzle_default(challenge),

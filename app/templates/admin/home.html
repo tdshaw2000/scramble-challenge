@@ -13,7 +13,7 @@
         <tr class="admin-challenge">
           <td>{{ c.created_at | uk_time }}</td>
           <td><a href="{{ url_for('admin.challenge', slug=c.slug) }}">{{ c.slug }}</a></td>
-          <td>{{ c.co_player.display_name if c.co_player }}</td>
+          <td>{% if c.co_player %}{{ c.co_player.display_name }} ({{ points(c)[c.co_player.id] }}){% endif %}</td>
           <td class="admin-players">{{ c.players | length }}</td>
           <td class="admin-rounds">{{ c.rounds | length }}</td>
           <td>{{ status_labels[c.status] }}</td>
