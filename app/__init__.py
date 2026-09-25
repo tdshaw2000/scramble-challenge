@@ -35,6 +35,6 @@ def create_app(config_name: str = "production", **overrides) -> Flask:
 
     app.register_blueprint(bp)
     app.register_blueprint(admin_bp)
-    socketio.init_app(app, async_mode=app.config["SOCKETIO_ASYNC_MODE"])
+    socketio.init_app(app, async_mode=app.config["SOCKETIO_ASYNC_MODE"], async_handlers=False)
 
     return app

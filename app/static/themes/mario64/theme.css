@@ -220,6 +220,8 @@ body::after {
   text-shadow: 0 5px 0 var(--outline);
   animation: bob 1s ease-in-out infinite alternate;
 }
+/* Space is held during inspection: letting go will start the solve. */
+.game[data-ready] .countdown { color: var(--green); }
 .overlay-hint { margin-top: 24px; font-weight: 700; color: var(--outline); opacity: 0.6; }
 @keyframes bob { to { transform: translateY(-12px) rotate(-3deg); } }
 

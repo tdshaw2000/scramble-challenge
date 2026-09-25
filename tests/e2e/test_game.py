@@ -353,3 +353,135 @@ def test_times_are_truncated_to_hundredths_like_wca(new_player, time_ms, shown):
     start_challenge(page)
 
     assert page.evaluate(f"ScrambleChallenge.formatTime({time_ms})") == shown
+
+
+# On a keyboard, the spacebar does what a tap on the blank screen does.
+# Records, for every spacebar keydown, whether the page stopped the browser's own action
+# (scrolling the page, or pressing a focused button). Listens on window, so it runs after
+# any listener on the document.
+RECORD_SPACE_DEFAULTS = """
+  window.__spaceDefaultPrevented = [];
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "Space") window.__spaceDefaultPrevented.push(event.defaultPrevented);
+  });
+"""
+
+
+def start_inspecting(tom, amy):
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+    expect(amy.locator("#countdown")).to_have_text("15")
+
+
+def test_space_starts_the_solve_during_inspection_and_stops_it(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.keyboard.press("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    advance(amy, 7650)
+    amy.keyboard.press("Space")
+
+    for page in (tom, amy):
+        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        assert leaderboard(page) == [["1st", "Amy (0)", "7.65"]]
+
+
+def test_holding_space_waits_and_letting_go_starts_the_solve(tom_and_amy):
+    # Like a real cubing timer: hold space while getting ready, let go to start. The
+    # key's auto-repeats while it is held are not new presses.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.keyboard.down("Space")
+    amy.keyboard.down("Space")
+    advance(amy, 2000)
+    expect(amy.locator("#countdown")).to_have_text("13")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+    amy.keyboard.up("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    advance(amy, 6420)
+    # Stopping happens the moment space goes down, so no time is added while letting go.
+    amy.keyboard.down("Space")
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    amy.keyboard.up("Space")
+
+    assert leaderboard(amy) == [["1st", "Amy (0)", "6.42"]]
+
+
+def test_space_mixes_with_taps(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.locator("#overlay").click()
+    advance(amy, 5000)
+    amy.keyboard.press("Space")
+
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "5.00"]]
+
+
+def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    amy.evaluate(RECORD_SPACE_DEFAULTS)
+    start_inspecting(tom, amy)
+
+    amy.keyboard.press("Space")
+    advance(amy, 3000)
+    amy.keyboard.press("Space")
+
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    assert amy.evaluate("window.__spaceDefaultPrevented") == [True, True]
+
+
+def test_space_still_presses_a_focused_button_outside_the_timer(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").focus()
+
+    amy.keyboard.press("Space")
+
+    expect(amy.locator("#countdown")).to_have_text("15")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+
+def test_space_with_ctrl_alt_or_meta_is_left_alone(tom_and_amy):
+    # Those are usually shortcuts (switching input language, Spotlight), not timer presses.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    for shortcut in ("Control+Space", "Alt+Space", "Meta+Space"):
+        amy.keyboard.press(shortcut)
+
+    expect(amy.locator("#countdown")).to_have_text("15")
+    expect(amy.get_by_text("Solving")).to_be_hidden()
+
+
+def test_holding_space_marks_the_screen_ready_for_themes(tom_and_amy):
+    # Real timers light up while held, so the player knows letting go will start. The page
+    # sets data-ready on #game; each theme decides how it looks.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+    game = amy.locator("#game")
+
+    amy.keyboard.down("Space")
+    expect(game).to_have_attribute("data-ready", "true")
+
+    amy.keyboard.up("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    expect(game).not_to_have_attribute("data-ready", "true")
+
+
+def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.keyboard.down("Space")
+    advance(amy, 15_000)
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    amy.keyboard.up("Space")
+
+    expect(amy.locator("#overlay")).to_be_hidden()
+    assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]

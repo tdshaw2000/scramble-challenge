@@ -38,10 +38,12 @@
   let inspectionStartedAt = 0;
   let solveStartedAt = 0;
   let ticker = null;
+  let spaceHeldInInspection = false;
 
   function setPhase(next) {
     phase = next;
     game.dataset.phase = next;
+    if (next !== "inspecting") setSpaceHeld(false);
     const show = {
       lobby: ["lobby"],
       scramble: ["scramble"],
@@ -200,6 +202,7 @@
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     inspectionStartedAt = performance.now();
+    setSpaceHeld(false);
     setText("countdown", INSPECTION_SECONDS);
     $("countdown").hidden = false;
     $("solving").hidden = true;
@@ -219,7 +222,7 @@
   });
 
   // A press anywhere on the blank screen starts the solve, and the next one stops it.
-  $("overlay").addEventListener("pointerdown", () => {
+  function pressTimer() {
     if (phase === "inspecting") {
       stopTicker();
       solveStartedAt = performance.now();
@@ -233,5 +236,39 @@
       socket.emit("stop_solve", { time_ms: timeMs });
       setPhase("waiting");
     }
+  }
+
+  $("overlay").addEventListener("pointerdown", pressTimer);
+
+  // On a keyboard the spacebar works the timer while the blank screen is showing. Like a
+  // real cubing timer, holding space during inspection gets ready and letting go starts the
+  // solve; pressing it while solving stops the solve at once. Space must not scroll the page
+  // or press a focused button, and a held key's repeats are not new presses. Space with
+  // Ctrl, Alt or Meta is a shortcut (e.g. switching input language), not a press.
+  // While space is held in inspection, data-ready on #game lets themes light the screen up.
+  function setSpaceHeld(held) {
+    spaceHeldInInspection = held;
+    if (held) game.dataset.ready = "true";
+    else delete game.dataset.ready;
+  }
+
+  function isTimerSpace(event) {
+    const plain = event.code === "Space" && !event.ctrlKey && !event.altKey && !event.metaKey;
+    return plain && (phase === "inspecting" || phase === "solving");
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (!isTimerSpace(event)) return;
+    event.preventDefault();
+    if (event.repeat) return;
+    if (phase === "inspecting") setSpaceHeld(true);
+    else pressTimer();
+  });
+
+  document.addEventListener("keyup", (event) => {
+    if (!isTimerSpace(event)) return;
+    event.preventDefault();
+    if (phase === "inspecting" && spaceHeldInInspection) pressTimer();
+    setSpaceHeld(false);
   });
 })();
