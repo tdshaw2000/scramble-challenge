@@ -113,7 +113,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | Event | Payload | Sent to | When |
 |---|---|---|---|
 | `player_list` | `[{ player_id, display_name, is_co, connected }]` | room | Any join/leave/disconnect |
-| `round_started` | `{ round_id, round_number, puzzle, scramble_text, scramble_svg_url }` | room | CO starts a round |
+| `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
 | `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position }] }` | room | Any solve completes (live reordering) |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
 | `challenge_ended` | `{}` | room | CO disconnects |
@@ -152,7 +152,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 - **Ties share position.** Two players with equal `time_ms` both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
 - **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if their inspection countdown reaches 0. Shown as "DNF" in the leaderboard, sorted after all timed results.
 - **Puzzle defaults.** Round 1 of any challenge always defaults to 3x3 (`333`). Round 2 onward defaults to whatever puzzle was used in the immediately preceding round. CO can always override via the dropdown.
-- **Puzzle list scope (v1).** 3x3 only to start, but the puzzle field and TNoodle integration are built generically so adding more WCA events later (2x2, 4x4, Megaminx, etc.) is a dropdown-list change, not a schema change.
+- **Puzzle list.** The WCA puzzles TNoodle scrambles, without variants: 2x2 to 7x7, Pyraminx, Skewb, Square-1, Megaminx and Clock. The blindfolded (`333ni`, `444ni`, `555ni`), fewest-moves (`333fm`) and fast-4x4 (`444fast`) variants are deliberately left out. The dropdown and round heading show names ("Megaminx"); events and the database use TNoodle codes (`minx`).
 
 ## Future enhancements (explicitly out of v1 scope)
 

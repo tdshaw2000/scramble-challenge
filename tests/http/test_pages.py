@@ -66,6 +66,27 @@ def test_co_sees_share_link_and_puzzle_choice(client):
     assert b'<option value="333" selected>' in response.data
 
 
+def test_puzzle_choice_lists_every_puzzle_by_name(client):
+    location = create(client).headers["Location"]
+
+    page = client.get(location).text
+    options = re.findall(r'<option value="([^"]+)"[^>]*>([^<]+)</option>', page)
+
+    assert options == [
+        ("222", "2x2"),
+        ("333", "3x3"),
+        ("444", "4x4"),
+        ("555", "5x5"),
+        ("666", "6x6"),
+        ("777", "7x7"),
+        ("pyram", "Pyraminx"),
+        ("skewb", "Skewb"),
+        ("sq1", "Square-1"),
+        ("minx", "Megaminx"),
+        ("clock", "Clock"),
+    ]
+
+
 def test_visitor_without_a_player_is_asked_for_a_name(app, client, challenge):
     response = client.get(f"/c/{challenge.slug}")
 

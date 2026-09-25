@@ -81,6 +81,7 @@ def test_joining_mid_round_gets_the_current_scramble(challenge, co, add_player, 
             "round_id": str(rnd.id),
             "round_number": 1,
             "puzzle": "333",
+            "puzzle_name": "3x3",
             "scramble_text": "R U R' U' 1",
             "scramble_svg_url": f"/c/{challenge.slug}/rounds/1/scramble.svg",
         }

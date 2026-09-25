@@ -13,8 +13,7 @@ from app.tnoodle import TNoodleError
 
 MAX_NAME_LENGTH = 50
 
-# v1 offers 3x3 only; more WCA events are a change to this list, not the schema.
-SUPPORTED_PUZZLES = ("333",)
+SUPPORTED_PUZZLES = tuple(game.PUZZLE_NAMES)
 
 
 class GameError(Exception):

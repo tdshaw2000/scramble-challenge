@@ -9,13 +9,18 @@ class FakeTNoodle:
     def __init__(self):
         self.requested: list[str] = []
         self.fail = False
+        # The next scramble's text and diagram, when a test sets them.
+        self.next_text: str | None = None
+        self.next_svg: str | None = None
 
     def generate(self, puzzle: str) -> Scramble:
         if self.fail:
             raise TNoodleError("fake TNoodle is down")
         self.requested.append(puzzle)
         n = len(self.requested)
-        return Scramble(text=f"R U R' U' {n}", svg=f"<svg>{puzzle} {n}</svg>")
+        text, self.next_text = self.next_text or f"R U R' U' {n}", None
+        svg, self.next_svg = self.next_svg or f"<svg>{puzzle} {n}</svg>", None
+        return Scramble(text=text, svg=svg)
 
 
 class FakeClock:

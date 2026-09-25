@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.game import DEFAULT_PUZZLE, default_puzzle, rank, round_is_over
+from app.game import DEFAULT_PUZZLE, PUZZLE_NAMES, default_puzzle, rank, round_is_over
 
 
 @dataclass
@@ -60,6 +60,28 @@ def test_rank_of_nothing_is_empty():
 def test_first_round_defaults_to_3x3():
     assert DEFAULT_PUZZLE == "333"
     assert default_puzzle(previous_puzzle=None) == "333"
+
+
+def test_puzzles_are_the_wca_puzzles_without_variants():
+    assert list(PUZZLE_NAMES) == [
+        "222", "333", "444", "555", "666", "777", "pyram", "skewb", "sq1", "minx", "clock",
+    ]  # fmt: skip
+
+
+def test_puzzles_have_names_people_recognise():
+    assert PUZZLE_NAMES == {
+        "222": "2x2",
+        "333": "3x3",
+        "444": "4x4",
+        "555": "5x5",
+        "666": "6x6",
+        "777": "7x7",
+        "pyram": "Pyraminx",
+        "skewb": "Skewb",
+        "sq1": "Square-1",
+        "minx": "Megaminx",
+        "clock": "Clock",
+    }
 
 
 def test_later_rounds_default_to_the_previous_rounds_puzzle():
