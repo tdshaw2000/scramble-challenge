@@ -40,6 +40,7 @@ services:
     # before every restart. README.md says how to restore one.
     image: ghcr.io/tdshaw2000/scramble-challenge/web:latest
     command: ["python", "-m", "app.backup", "schedule"]
+    init: true  # passes on the stop signal, so a restart does not wait 10s
     restart: unless-stopped
     environment:
       DATABASE_URL: sqlite:////data/scramble.db
