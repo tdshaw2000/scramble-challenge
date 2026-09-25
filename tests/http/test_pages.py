@@ -125,7 +125,11 @@ def test_the_players_list_shows_points_after_names(client, challenge, co):
 
     html = client.get(f"/c/{challenge.slug}").data.decode()
 
-    assert re.findall(r'<li class="player">(.*?)</li>', html) == ["Tom (1) (owner)", "Amy (0)"]
+    # Both joined at the same fake-clock moment, so their order isn't fixed.
+    assert sorted(re.findall(r'<li class="player">(.*?)</li>', html)) == [
+        "Amy (0)",
+        "Tom (1) (owner)",
+    ]
 
 
 def test_join_with_blank_name_redisplays_the_form(client, challenge):
