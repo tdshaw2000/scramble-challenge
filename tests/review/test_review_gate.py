@@ -452,3 +452,51 @@ def test_a_pushed_branch_without_an_upstream_is_told_to_set_one(repo):
 
     assert result.returncode == BLOCKED
     assert "push -u" in result.stderr
+
+
+# --- Round 2 review fixes ---
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'gh pr create --title t --body "Run docker compose up -d first"',
+        "git branch -d old && gh pr create --title t --body b",
+        "gh pr create --draft=false --title t --body b",
+        "gh pr create --title t --body b; gh pr create --draft --title u",
+        "gh pr create --title t\necho --draft",
+        'gh pr create --title "unbalanced',
+        'bash -c "gh pr create --title t --draft"',
+    ],
+)
+def test_a_draft_flag_only_counts_on_its_own_gh_pr_create(repo, command):
+    result = bash(repo, command)
+
+    assert result.returncode == BLOCKED
+    assert "draft" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh pr ready 13 && gh pr ready 12 --undo",
+        "gh pr ready 13  # no --undo",
+        "gh pr \\\n  ready 13",
+        "gh \\\n pr ready 13",
+    ],
+)
+def test_undo_and_line_continuations_do_not_hide_marking_ready(repo, command):
+    assert bash(repo, command).returncode == BLOCKED
+
+
+def test_a_null_command_is_not_a_crash(repo):
+    result = run("gate", {"cwd": str(repo), "tool_name": "Bash", "tool_input": {"command": None}})
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_a_verdict_commit_that_is_not_a_sha_is_never_passed_to_git(repo):
+    result = record(repo, verdict("--output=/tmp/x"))
+
+    assert result.returncode == BLOCKED
+    assert "full sha" in result.stderr
