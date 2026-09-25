@@ -9,9 +9,12 @@
 
   function formatTime(ms) {
     if (ms === null || ms === undefined) return "DNF";
-    const totalSeconds = ms / 1000;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds - minutes * 60).toFixed(2);
+    // Truncate to hundredths like WCA results: 12.349 shows as 12.34, never rounded up.
+    // Whole-number maths only, so floating point can't nudge a time across a boundary.
+    const hundredths = Math.floor(ms / 10);
+    const minutes = Math.floor(hundredths / 6000);
+    const rest = hundredths % 6000;
+    const seconds = `${Math.floor(rest / 100)}.${String(rest % 100).padStart(2, "0")}`;
     return minutes > 0 ? `${minutes}:${seconds.padStart(5, "0")}` : seconds;
   }
 
