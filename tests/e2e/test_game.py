@@ -56,6 +56,24 @@ def tom_and_amy(new_player):
     return tom, amy, link
 
 
+# How long the finished screen shows is a real setTimeout, so on a slow machine a test can't
+# rely on catching it within the second. These patch the page's setTimeout: one records the
+# delays asked for, the other also stretches the one-second screen so a test can look at it.
+RECORD_TIMEOUTS = """
+  window.__timeouts = [];
+  const realSetTimeout = window.setTimeout;
+  window.setTimeout = (fn, ms, ...rest) => {
+    window.__timeouts.push(ms);
+    return realSetTimeout(fn, ms === 1000 && window.__stretch ? 4000 : ms, ...rest);
+  };
+"""
+
+
+def record_timeouts(page, stretch_one_second=False):
+    page.evaluate(RECORD_TIMEOUTS)
+    page.evaluate(f"window.__stretch = {'true' if stretch_one_second else 'false'}")
+
+
 def solve(page, ms):
     page.get_by_role("button", name="Start inspection").click()
     page.locator("#overlay").click()  # start solving
@@ -273,6 +291,7 @@ def test_stopping_shows_the_time_full_screen_for_a_second_then_the_results(tom_a
     amy.get_by_role("button", name="Start inspection").click()
     amy.locator("#overlay").click()
     advance(amy, 12_349)
+    record_timeouts(amy, stretch_one_second=True)
 
     amy.locator("#overlay").click()
 
@@ -281,8 +300,7 @@ def test_stopping_shows_the_time_full_screen_for_a_second_then_the_results(tom_a
     expect(finished).to_have_text("12.34")  # truncated, never rounded
     expect(amy.locator("#game")).to_have_attribute("data-phase", "finished")
     expect(amy.get_by_text("Tap anywhere")).to_be_hidden()
-    amy.wait_for_timeout(500)
-    expect(finished).to_be_visible()
+    assert 1000 in amy.evaluate("window.__timeouts")
 
     expect(amy.locator("#overlay")).to_be_hidden()
     expect(amy.locator("#leaderboard")).to_be_visible()
@@ -292,6 +310,7 @@ def test_stopping_shows_the_time_full_screen_for_a_second_then_the_results(tom_a
 def test_taps_on_the_finished_screen_do_nothing(tom_and_amy):
     tom, amy, _ = tom_and_amy
     start_inspecting(tom, amy)
+    record_timeouts(amy, stretch_one_second=True)
     amy.locator("#overlay").click()
     advance(amy, 5000)
     amy.locator("#overlay").click()
@@ -307,6 +326,7 @@ def test_taps_on_the_finished_screen_do_nothing(tom_and_amy):
 def test_running_out_of_inspection_shows_dnf_for_a_second(tom_and_amy):
     tom, amy, _ = tom_and_amy
     start_inspecting(tom, amy)
+    record_timeouts(amy, stretch_one_second=True)
 
     advance(amy, 15_000)
 
@@ -322,6 +342,7 @@ def test_running_out_of_inspection_shows_dnf_for_a_second(tom_and_amy):
 def test_a_finished_time_is_marked_for_themes(tom_and_amy):
     tom, amy, _ = tom_and_amy
     start_inspecting(tom, amy)
+    record_timeouts(amy, stretch_one_second=True)
     amy.locator("#overlay").click()
     advance(amy, 5000)
     amy.locator("#overlay").click()
@@ -334,12 +355,15 @@ def test_the_last_to_finish_sees_their_time_before_the_round_results(tom_and_amy
     tom.get_by_role("button", name="Start round").click()
     solve(amy, 9_000)
     expect(amy.locator("#overlay")).to_be_hidden()  # Amy's own second is over
+    record_timeouts(tom, stretch_one_second=True)
 
     solve(tom, 10_000)
 
     # Amy is already on the results, so the round has ended for Tom's page too...
     expect(amy.get_by_role("heading", name="Round 1 results")).to_be_visible()
-    tom.wait_for_timeout(300)  # time for the same round_complete to reach Tom's page
+    # Time for the same round_complete to reach Tom's page. His one second is stretched to
+    # four, so his time is still up afterwards even on a slow machine.
+    tom.wait_for_timeout(300)
     # ...but Tom's own time is still showing, not the results.
     expect(tom.locator("#finished")).to_be_visible()
     expect(tom.locator("#finished")).to_have_text("10.00")
