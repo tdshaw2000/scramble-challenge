@@ -456,3 +456,32 @@ def test_space_with_ctrl_alt_or_meta_is_left_alone(tom_and_amy):
 
     expect(amy.locator("#countdown")).to_have_text("15")
     expect(amy.get_by_text("Solving")).to_be_hidden()
+
+
+def test_holding_space_marks_the_screen_ready_for_themes(tom_and_amy):
+    # Real timers light up while held, so the player knows letting go will start. The page
+    # sets data-ready on #game; each theme decides how it looks.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+    game = amy.locator("#game")
+
+    amy.keyboard.down("Space")
+    expect(game).to_have_attribute("data-ready", "true")
+
+    amy.keyboard.up("Space")
+    expect(amy.get_by_text("Solving")).to_be_visible()
+    expect(game).not_to_have_attribute("data-ready", "true")
+
+
+def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    amy.keyboard.down("Space")
+    advance(amy, 15_000)
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    amy.keyboard.up("Space")
+
+    expect(amy.locator("#overlay")).to_be_hidden()
+    assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
