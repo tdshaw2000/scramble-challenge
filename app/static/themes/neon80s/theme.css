@@ -1,0 +1,469 @@
+/* "neon80s" theme: an 80s night drive built from CSS alone (no film or TV assets).
+   A striped synthwave sun over a glowing perspective grid, neon-tube title letters,
+   a red scanner light sweeping under the header, pink-to-orange sunset buttons, a
+   black van with a red stripe for the End challenge button, and red outlined title
+   lettering. Swap themes via THEME in app/config.py. */
+
+@font-face {
+  font-family: "Monoton";
+  src: url("fonts/monoton.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Orbitron";
+  src: url("fonts/orbitron.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("fonts/sharetechmono.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --night: #0b0420;
+  --night-mid: #1d0845;
+  --horizon: #5a0f6e;
+  --pink: #ff2fb4;
+  --cyan: #2ff3ff;
+  --orange: #ff8a2a;
+  --yellow: #ffe45c;
+  --red: #ff2436;
+  --green: #39ff88;
+  --text: #f4ecff;
+  --muted: #b7a5e0;
+  --panel: rgba(12, 5, 34, 0.74);
+  --display: "Orbitron", "Arial Black", Impact, sans-serif;
+  --neon: "Monoton", "Orbitron", Impact, sans-serif;
+  --mono: "Share Tech Mono", ui-monospace, "Courier New", monospace;
+  --title-serif: Georgia, "Times New Roman", serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font: 17px/1.45 var(--mono);
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 120% 40% at 50% 66%, rgba(255, 47, 180, 0.35), transparent 70%),
+    linear-gradient(var(--night) 0%, var(--night-mid) 45%, var(--horizon) 66%, var(--night) 66.2%);
+  background-attachment: fixed;
+}
+
+/* The striped sun, sitting on the horizon. */
+body::before {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: 66vh;
+  width: min(70vw, 360px);
+  aspect-ratio: 1;
+  z-index: -2;
+  transform: translate(-50%, -62%);
+  border-radius: 50%;
+  background: linear-gradient(var(--yellow), var(--orange) 45%, var(--pink) 80%);
+  -webkit-mask: linear-gradient(#000 48%, transparent 48% 52%, #000 52% 60%, transparent 60% 65%, #000 65% 72%, transparent 72% 78%, #000 78% 84%, transparent 84% 91%, #000 91%);
+  mask: linear-gradient(#000 48%, transparent 48% 52%, #000 52% 60%, transparent 60% 65%, #000 65% 72%, transparent 72% 78%, #000 78% 84%, transparent 84% 91%, #000 91%);
+  filter: drop-shadow(0 0 30px rgba(255, 47, 180, 0.7));
+}
+
+/* The glowing grid floor, running off towards the horizon. */
+body::after {
+  content: "";
+  position: fixed;
+  left: -50%;
+  right: -50%;
+  top: 66vh;
+  height: 70vh;
+  z-index: -1;
+  transform-origin: top;
+  transform: perspective(28vh) rotateX(58deg);
+  background:
+    linear-gradient(var(--night) 0, transparent 12%),
+    repeating-linear-gradient(90deg, transparent 0 40px, var(--pink) 40px 42px),
+    repeating-linear-gradient(transparent 0 40px, var(--pink) 40px 42px),
+    var(--night);
+  box-shadow: 0 0 40px rgba(255, 47, 180, 0.6);
+  animation: drive 1.6s linear infinite;
+}
+@keyframes drive { to { background-position: 0 0, 0 0, 0 42px, 0 0; } }
+
+/* Title: neon tubes, pink then cyan, with a red scanner light sweeping underneath. */
+.site-header { position: relative; padding: 26px 12px 22px; text-align: center; }
+.site-title {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  font: 2.35rem/1.05 var(--neon);
+  letter-spacing: 0.04em;
+}
+.site-title-word {
+  color: #ffd6f2;
+  text-shadow: 0 0 4px #fff, 0 0 10px var(--pink), 0 0 22px var(--pink), 0 0 40px var(--pink);
+}
+.site-title-word + .site-title-word {
+  color: #d8fdff;
+  text-shadow: 0 0 4px #fff, 0 0 10px var(--cyan), 0 0 22px var(--cyan), 0 0 40px var(--cyan);
+}
+.site-title-letter { display: inline-block; }
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: min(78vw, 300px);
+  height: 7px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background:
+    radial-gradient(closest-side, #fff 0%, var(--red) 45%, rgba(255, 36, 54, 0.35) 75%, transparent) 0 0 / 34% 100% no-repeat,
+    #1a0206;
+  box-shadow: 0 0 0 2px #2b0a10, 0 0 14px rgba(255, 36, 54, 0.45);
+  animation: scan 1.8s ease-in-out infinite alternate;
+}
+@keyframes scan { from { background-position: 0 0, 0 0; } to { background-position: 100% 0, 0 0; } }
+
+.page { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; }
+
+/* Panels: dark glass edged with a cyan tube. */
+.card {
+  background: var(--panel);
+  border: 2px solid var(--cyan);
+  border-radius: 10px;
+  padding: 18px 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px rgba(47, 243, 255, 0.55), inset 0 0 14px rgba(47, 243, 255, 0.18);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+/* Card titles: red outlined serif capitals with a glow and ruled lines, like an 80s title card. */
+.card-title {
+  margin: 0 0 14px;
+  padding: 4px 0;
+  font: 700 1.6rem/1.1 var(--title-serif);
+  letter-spacing: 0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1.2px var(--red);
+  text-shadow: 0 0 6px rgba(255, 36, 54, 0.9), 0 0 16px rgba(255, 36, 54, 0.6);
+  border-top: 2px solid var(--red);
+  border-bottom: 2px solid var(--red);
+  box-shadow: 0 -6px 8px -6px rgba(255, 36, 54, 0.8), 0 6px 8px -6px rgba(255, 36, 54, 0.8);
+  width: fit-content;
+}
+
+.field { display: block; margin-bottom: 14px; }
+.field-label {
+  display: block;
+  margin-bottom: 4px;
+  font: 600 0.8rem/1.2 var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pink);
+  text-shadow: 0 0 6px rgba(255, 47, 180, 0.7);
+}
+.field-input {
+  width: 100%;
+  padding: 12px 14px;
+  font: 1.15rem/1.2 var(--mono);
+  color: var(--cyan);
+  caret-color: var(--pink);
+  background: #06020f;
+  border: 2px solid var(--pink);
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(255, 47, 180, 0.45), inset 0 0 10px rgba(255, 47, 180, 0.15);
+}
+.field-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 12px rgba(47, 243, 255, 0.7); }
+
+/* Buttons: a neon outline by default, a sunset gradient for the main action. */
+.button {
+  display: inline-block;
+  padding: 13px 18px;
+  font: 800 1.05rem/1 var(--display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(6, 2, 15, 0.8);
+  border: 2px solid var(--cyan);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(47, 243, 255, 0.55), inset 0 0 8px rgba(47, 243, 255, 0.3);
+  text-shadow: 0 0 6px rgba(47, 243, 255, 0.8);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.button:active { transform: translateY(2px); filter: brightness(1.25); }
+.button:disabled { opacity: 0.45; cursor: default; }
+.button-primary {
+  width: 100%;
+  color: #fff;
+  border: 0;
+  background: linear-gradient(90deg, var(--pink), var(--orange));
+  box-shadow: 0 0 14px rgba(255, 47, 180, 0.8), 0 0 28px rgba(255, 138, 42, 0.45);
+  text-shadow: 0 1px 0 rgba(90, 0, 50, 0.6);
+}
+.button-danger {
+  width: 100%;
+  margin-top: 8px;
+  color: #fff;
+  border-color: var(--red);
+  background: linear-gradient(#ff3b4c, #b30012);
+  box-shadow: 0 0 14px rgba(255, 36, 54, 0.8);
+  text-shadow: none;
+}
+.button-two-line { line-height: 1.2; padding-top: 11px; padding-bottom: 11px; }
+.button-subline { font-size: 0.75em; letter-spacing: 0.06em; }
+.button-cancel { width: 100%; margin-top: 12px; }
+
+/* End challenge: a black van with a red stripe along its side. */
+.end-challenge {
+  margin-top: 18px;
+  color: #fff;
+  border: 2px solid #9aa0a8;
+  background: linear-gradient(176deg, #111 0 68%, var(--red) 68% 86%, #111 86%);
+  box-shadow: 0 0 0 2px #111, 0 4px 14px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 1px 2px #000, 0 0 6px #000;
+}
+
+.notice {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: var(--yellow);
+  background: rgba(40, 20, 0, 0.85);
+  border: 2px solid var(--yellow);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(255, 228, 92, 0.5);
+}
+.notice-error { color: #ffd0d4; border-color: var(--red); box-shadow: 0 0 10px rgba(255, 36, 54, 0.6); background: rgba(40, 0, 6, 0.85); }
+
+/* Players: glowing play-arrow markers; the owner's is red. */
+.players { list-style: none; padding: 0; margin: 0 0 14px; }
+.player { padding: 6px 0 6px 28px; position: relative; font-size: 1.1rem; }
+.player::before { content: "\25B6"; position: absolute; left: 4px; top: 8px; font-size: 0.8em; color: var(--pink); text-shadow: 0 0 8px var(--pink); }
+.player-co::before { color: var(--red); text-shadow: 0 0 8px var(--red); }
+.player-away { opacity: 0.45; }
+
+.share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.share .field { margin-bottom: 0; }
+.share .field-input { font-size: 0.9rem; }
+.waiting { margin: 0; color: var(--muted); }
+
+/* Scrambles: cyan text on a black terminal screen. */
+.scramble-text {
+  margin: 0 0 14px;
+  padding: 12px;
+  font: 1.3rem/1.6 var(--mono);
+  word-spacing: 0.25em;
+  color: var(--cyan);
+  text-shadow: 0 0 6px rgba(47, 243, 255, 0.6);
+  background: #03010a;
+  border: 2px solid rgba(47, 243, 255, 0.5);
+  border-radius: 6px;
+  white-space: pre-line; /* Megaminx scrambles come as one line per row */
+}
+/* Megaminx rows must not wrap, so shrink the text to fit the widest row on a phone. */
+[data-puzzle="minx"] .scramble-text {
+  padding-inline: 6px;
+  font-size: min(1.3rem, calc((100vw - 90px) / 24));
+  word-spacing: normal;
+}
+/* Big-cube scrambles run to 100 moves: a smaller size keeps the diagram on screen. */
+[data-puzzle="666"] .scramble-text,
+[data-puzzle="777"] .scramble-text {
+  font-size: 1.05rem;
+  line-height: 1.45;
+  word-spacing: normal;
+}
+.scramble-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 240px; /* Square-1's diagram is twice as tall as wide */
+  object-fit: contain;
+  margin: 0 auto 18px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 14px rgba(47, 243, 255, 0.5);
+}
+
+/* Inspection and solving: the whole screen is the tap target. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none; /* a finger drifting while held must not become a scroll */
+  -webkit-touch-callout: none;
+  background:
+    radial-gradient(ellipse at 50% 80%, rgba(255, 47, 180, 0.35), transparent 60%),
+    linear-gradient(var(--night), var(--night-mid) 65%, var(--horizon) 80%);
+}
+/* The sun and grid again inside the overlay, behind the digits. */
+.overlay::before, .overlay::after { content: ""; position: absolute; z-index: -1; pointer-events: none; }
+.overlay::before {
+  left: 50%;
+  top: 80%;
+  width: min(60vw, 300px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -62%);
+  border-radius: 50%;
+  background: linear-gradient(var(--yellow), var(--orange) 45%, var(--pink) 80%);
+  -webkit-mask: linear-gradient(#000 48%, transparent 48% 52%, #000 52% 60%, transparent 60% 65%, #000 65% 72%, transparent 72% 78%, #000 78% 84%, transparent 84% 91%, #000 91%);
+  mask: linear-gradient(#000 48%, transparent 48% 52%, #000 52% 60%, transparent 60% 65%, #000 65% 72%, transparent 72% 78%, #000 78% 84%, transparent 84% 91%, #000 91%);
+  opacity: 0.45;
+}
+.overlay::after {
+  left: -50%;
+  right: -50%;
+  top: 80%;
+  bottom: -30%;
+  transform-origin: top;
+  transform: perspective(20vh) rotateX(58deg);
+  background:
+    linear-gradient(var(--night) 0, transparent 12%),
+    repeating-linear-gradient(90deg, transparent 0 40px, rgba(255, 47, 180, 0.6) 40px 42px),
+    repeating-linear-gradient(transparent 0 40px, rgba(255, 47, 180, 0.6) 40px 42px),
+    var(--night);
+}
+/* Inspection: big red dashboard digits. */
+.countdown {
+  margin: 0;
+  font: 900 38vmin/1 var(--display);
+  color: #ffe0e3;
+  text-shadow: 0 0 6px var(--red), 0 0 20px var(--red), 0 0 50px var(--red);
+}
+/* Space is held during inspection: letting go will start the solve. */
+.game[data-ready] .countdown {
+  color: #dcffe9;
+  text-shadow: 0 0 6px var(--green), 0 0 20px var(--green), 0 0 50px var(--green);
+}
+/* Solving: the word glows while the scanner light sweeps beneath it. */
+.solving {
+  position: relative;
+  margin: 0;
+  padding-bottom: 28px;
+  font: 900 2.4rem/1 var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d8fdff;
+  text-shadow: 0 0 4px #fff, 0 0 12px var(--cyan), 0 0 30px var(--cyan);
+  animation: flicker 3s linear infinite;
+}
+.solving::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  border-radius: 4px;
+  background:
+    radial-gradient(closest-side, #fff 0%, var(--red) 45%, rgba(255, 36, 54, 0.35) 75%, transparent) 0 0 / 34% 100% no-repeat,
+    #1a0206;
+  box-shadow: 0 0 14px rgba(255, 36, 54, 0.45);
+  animation: scan 1s ease-in-out infinite alternate;
+}
+@keyframes flicker { 0%, 46%, 50%, 100% { opacity: 1; } 48% { opacity: 0.55; } }
+.overlay-hint { margin-top: 26px; color: var(--muted); letter-spacing: 0.08em; }
+
+/* Leaderboard: gold, silver and bronze neon rings. */
+.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
+.result, .standing {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 1.1rem;
+  border-bottom: 1px solid rgba(255, 47, 180, 0.35);
+}
+.result:last-child, .standing:last-child { border-bottom: 0; }
+.result .position, .standing .position {
+  --ring: var(--muted);
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  font: 800 0.85rem/1 var(--display);
+  color: #fff;
+  background: #07020f;
+  border: 2px solid var(--ring);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--ring), inset 0 0 8px var(--ring);
+  text-shadow: 0 0 6px var(--ring);
+}
+.result-position-1 .position, .standing-position-1 .position { --ring: #ffd23a; }
+.result-position-2 .position, .standing-position-2 .position { --ring: #d8e4ff; }
+.result-position-3 .position, .standing-position-3 .position { --ring: #ff9a52; }
+.result .time {
+  font: 800 1.2rem/1 var(--display);
+  letter-spacing: 0.04em;
+  color: var(--yellow);
+  text-shadow: 0 0 8px rgba(255, 228, 92, 0.7);
+}
+.result-dnf .time { color: #ff7b86; text-shadow: 0 0 8px rgba(255, 36, 54, 0.8); }
+
+/* Summary of an ended challenge */
+.summary .button { display: block; box-sizing: border-box; text-align: center; text-decoration: none; }
+.summary-ended { text-align: center; }
+.summary-ended .card-title { margin: 0 auto; }
+.summary-standings .button { width: 100%; margin-top: 12px; }
+
+/* Admin area */
+.admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.admin-nav a { font: 700 1rem var(--display); color: var(--cyan); text-shadow: 0 0 6px var(--cyan); letter-spacing: 0.06em; }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--muted); font-size: 0.9rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th { text-align: left; color: var(--pink); padding: 6px 8px 6px 0; white-space: nowrap; }
+.admin-table td { padding: 8px 8px 8px 0; border-top: 1px solid rgba(47, 243, 255, 0.3); white-space: nowrap; }
+.admin-table a, .admin-pages a { color: var(--cyan); }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }
+
+/* On a phone each challenge becomes a small block instead of a wide table row. */
+@media (max-width: 600px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; grid-template-columns: 1fr auto; padding: 10px 0; border-top: 1px solid rgba(47, 243, 255, 0.3); }
+  .admin-table td { border: 0; padding: 2px 0; white-space: normal; }
+  .admin-table td:nth-child(even) { text-align: right; }
+  .admin-players::before { content: "Players: "; }
+  .admin-rounds::before { content: "Rounds: "; }
+}
+.admin-code-value { font-family: var(--mono); }
+
+/* The player's own time, shown for a moment after the solve. */
+.finished {
+  margin: 0;
+  font: 900 min(20vmin, 17vw)/1 var(--display);
+  color: #fff4c2;
+  text-shadow: 0 0 6px var(--yellow), 0 0 22px var(--orange), 0 0 50px var(--pink);
+  animation: pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.finished[data-result="dnf"] { color: #ffe0e3; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red), 0 0 50px var(--red); }
+@keyframes pop { from { transform: scale(0.3); opacity: 0; } }
+
+/* The "are you sure?" box under the round results. */
+.confirm {
+  margin-top: 16px;
+  padding: 12px;
+  border: 2px solid var(--red);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(255, 36, 54, 0.5);
+}
+.confirm-text { margin: 0 0 4px; text-align: center; font: 700 1rem var(--display); letter-spacing: 0.06em; }
+
+/* Keep the glow but stop the movement for anyone who asks for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  body::after, .site-header::after, .solving, .solving::after, .finished { animation: none; }
+}
