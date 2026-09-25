@@ -26,7 +26,7 @@ class ChallengeStatus(enum.StrEnum):
     WAITING = "waiting"
     ROUND_ACTIVE = "round_active"
     ROUND_RESULTS = "round_results"
-    ENDED = "ended"  # not in SPEC.md: set when the CO has gone for good
+    ENDED = "ended"  # the CO ended it, or has gone for good
 
 
 class RoundStatus(enum.StrEnum):
