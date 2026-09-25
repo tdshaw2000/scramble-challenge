@@ -64,7 +64,7 @@ def test_the_page_offers_each_skin_and_ticks_the_current_one(client):
     assert skin_options(client.get("/").data) == [
         ("mario64", "Mario 64", True),
         ("plain", "Plain", False),
-        ("neon80s", "Night Drive", False),
+        ("neon80s", "VHS Nights", False),
     ]
 
 
@@ -74,7 +74,7 @@ def test_the_tick_follows_the_chosen_skin(client):
     assert skin_options(client.get("/").data) == [
         ("mario64", "Mario 64", False),
         ("plain", "Plain", True),
-        ("neon80s", "Night Drive", False),
+        ("neon80s", "VHS Nights", False),
     ]
 
 
