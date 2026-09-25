@@ -1,4 +1,4 @@
-/* Plain theme: a minimal, readable look. Proves the app runs on any theme.css. */
+/* "Minimal" skin (folder "plain"): a clean, readable look. Proves the app runs on any theme.css. */
 :root { --ink: #1f2933; --muted: #616e7c; --line: #cbd2d9; --accent: #2563eb; --bad: #b91c1c; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
