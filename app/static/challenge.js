@@ -51,7 +51,6 @@
       solving: ["overlay"],
       waiting: ["results"],
       results: ["results", "lobby"],
-      ended: ["results"],
     }[next];
     for (const id of ["lobby", "scramble", "overlay", "results"]) {
       $(id).hidden = !show.includes(id);
@@ -156,11 +155,11 @@
     setPhase("results");
   });
 
+  // However the challenge ended, the server now answers this page's address with the
+  // summary page, so reloading takes everyone there.
   socket.on("challenge_ended", () => {
     stopTicker();
-    setEndRoundVisible(false);
-    setPhase("ended");
-    showMessage("This challenge has ended because the owner left.");
+    window.location.reload();
   });
 
   socket.on("game_error", (error) => showMessage(error.message));

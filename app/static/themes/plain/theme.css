@@ -28,11 +28,12 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .solving { font-size: 2rem; margin: 0; }
 .game[data-ready] .countdown { color: #15803d; }
 .overlay-hint { color: var(--muted); }
-.leaderboard { list-style: none; padding: 0; margin: 0 0 12px; }
-.result { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.result .name { flex: 1; }
+.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
+.result, .standing { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.result .name, .standing .name { flex: 1; }
 .result .time { font-variant-numeric: tabular-nums; }
 .result-dnf .time { color: var(--bad); }
+.summary .button { display: block; text-align: center; text-decoration: none; }
 .admin-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .admin-nav form { margin: 0; }
 .admin-meta { color: var(--muted); font-size: 0.9rem; }

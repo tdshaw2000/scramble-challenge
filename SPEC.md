@@ -118,7 +118,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
 | `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position, points }] }` | room | Any solve completes (live reordering) |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
-| `challenge_ended` | `{}` | room | CO disconnects |
+| `challenge_ended` | `{}` | room, or one page joining an ended challenge | The challenge ends (today: the CO doesn't come back within the grace period). The page reloads and lands on the summary |
 
 Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consistent with the honour-system stance (no server-side timing enforcement). If that ever changes, the fix is server-side timestamping on `start_solve`/`stop_solve` receipt rather than trusting the client payload — worth a one-line comment in the code flagging this as the trust boundary, so it's an easy toggle later even though v1 doesn't need it.
 
@@ -146,6 +146,11 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
 - CO only, additionally: "End round" button (visible whenever the round is still active) and, once the round is complete, the puzzle dropdown + "Start round" button to begin the next one
+
+**Challenge summary (everyone, once the challenge has ended)** — at `/c/<slug>/summary`
+- Opens with "This challenge has ended", then the final standings (everyone by points, most first, ties sharing a place and listed by name), then each round in order: puzzle, scramble text and picture, and its results. Names carry final points, e.g. "Amy (2)". A "Start a new challenge" link goes to the landing page.
+- Depends only on the challenge having ended, not on how it ended, so any future way of ending (e.g. a manual "End challenge") gets the same page.
+- Anyone with the link can see it. Once a challenge has ended, its challenge link and join form lead here. Before that, the summary address leads back to the challenge.
 
 ## Rules reference
 

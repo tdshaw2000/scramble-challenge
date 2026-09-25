@@ -226,8 +226,8 @@ body::after {
 @keyframes bob { to { transform: translateY(-12px) rotate(-3deg); } }
 
 /* Leaderboard: gold, silver and bronze coins. */
-.leaderboard { list-style: none; padding: 0; margin: 0 0 10px; }
-.result {
+.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
+.result, .standing {
   display: grid;
   grid-template-columns: 3.2rem 1fr auto;
   align-items: center;
@@ -236,8 +236,8 @@ body::after {
   border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
   font-weight: 700;
 }
-.result:last-child { border-bottom: 0; }
-.result .position {
+.result:last-child, .standing:last-child { border-bottom: 0; }
+.result .position, .standing .position {
   display: grid;
   place-items: center;
   width: 2.8rem;
@@ -248,11 +248,14 @@ body::after {
   border: 3px solid var(--outline);
   border-radius: 50%;
 }
-.result-position-1 .position { background: radial-gradient(circle at 35% 30%, #fff6b0, var(--gold) 55%, var(--gold-dark)); }
-.result-position-2 .position { background: radial-gradient(circle at 35% 30%, #ffffff, #c9d1e0 55%, #8a94a8); }
-.result-position-3 .position { background: radial-gradient(circle at 35% 30%, #ffd9b0, #d9894a 55%, #9c5a26); }
+.result-position-1 .position, .standing-position-1 .position { background: radial-gradient(circle at 35% 30%, #fff6b0, var(--gold) 55%, var(--gold-dark)); }
+.result-position-2 .position, .standing-position-2 .position { background: radial-gradient(circle at 35% 30%, #ffffff, #c9d1e0 55%, #8a94a8); }
+.result-position-3 .position, .standing-position-3 .position { background: radial-gradient(circle at 35% 30%, #ffd9b0, #d9894a 55%, #9c5a26); }
 .result .time { font: 1.3rem/1 var(--display); letter-spacing: 0.03em; color: var(--gold); }
 .result-dnf .time { color: #ff7b75; }
+
+/* Summary of an ended challenge */
+.summary .button { display: block; box-sizing: border-box; text-align: center; text-decoration: none; }
 
 /* Admin area */
 .admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
