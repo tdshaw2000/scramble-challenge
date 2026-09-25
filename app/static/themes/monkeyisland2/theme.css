@@ -4,9 +4,8 @@
    inputs, wooden-plank buttons and pieces-of-eight medals. Swap themes via THEME in app/config.py. */
 
 @font-face {
-  font-family: "Pixelify Sans";
-  src: url("fonts/pixelify-sans.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: "Tiny5";
+  src: url("fonts/tiny5.woff2") format("woff2");
   font-display: swap;
 }
 @font-face {
@@ -35,7 +34,7 @@
   --red: #c4231c;
   --red-dark: #6e0d08;
   --green: #5cf05c;
-  --pixel: "Pixelify Sans", "Courier New", monospace;
+  --pixel: "Tiny5", "Courier New", monospace; /* closest free lookalike of the old SCUMM game font */
   --mono: "VT323", "Courier New", monospace; /* clear B/8 and 0/O for scrambles and times */
   /* Notched corners, so boxes look drawn in square pixels. */
   --notch: polygon(
@@ -52,13 +51,15 @@
   :root { --harbour: url("harbour-wide.webp"); }
 }
 
+/* Tiny5 has one weight: never fake a bold, which smears pixel letters. */
+html { font-synthesis: none; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
 body {
   margin: 0;
   min-height: 100vh;
-  font: 22px/1.3 var(--mono);
+  font: 22px/1.3 var(--pixel);
   color: var(--text);
   cursor: crosshair;
   background: var(--sky);
@@ -121,7 +122,7 @@ body::before {
 .field-input {
   width: 100%;
   padding: 12px 14px;
-  font: 1.2rem/1.2 var(--mono);
+  font: 1.2rem/1.2 var(--pixel);
   color: var(--ink);
   background: var(--parchment);
   border: 3px solid var(--wood-dark);
@@ -247,7 +248,7 @@ body::before {
 }
 .countdown {
   margin: 0;
-  font: 700 40vmin/1 var(--pixel);
+  font: 40vmin/1 var(--mono);
   color: var(--yellow);
   text-shadow: 6px 6px 0 #7a3a00, 12px 12px 0 #000;
 }
@@ -323,7 +324,7 @@ body::before {
 /* The player's own time, shown for a moment after the solve. */
 .finished {
   margin: 0;
-  font: 700 24vmin/1 var(--pixel);
+  font: 24vmin/1 var(--mono);
   color: var(--yellow);
   text-shadow: 5px 5px 0 #7a3a00, 10px 10px 0 #000;
   animation: pop 0.3s steps(3) both;
@@ -344,7 +345,7 @@ body::before {
 .skin-picker[open] .skin-picker-toggle { opacity: 1; color: var(--text); }
 .skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 160px; padding: 8px; background: var(--panel); border: 3px solid var(--verb); clip-path: var(--notch); }
 .skin-menu-title { margin: 0 4px 4px; color: var(--cyan); }
-.skin-option { display: block; width: 100%; padding: 6px 4px; text-align: left; background: none; border: 0; font: 1.1rem/1.2 var(--mono); color: var(--verb); cursor: crosshair; text-decoration: none; }
+.skin-option { display: block; width: 100%; padding: 6px 4px; text-align: left; background: none; border: 0; font: 1.1rem/1.2 var(--pixel); color: var(--verb); cursor: crosshair; text-decoration: none; }
 .skin-option:hover, .skin-option:focus-visible { color: var(--text); outline: none; }
 .skin-option[aria-current="true"] { color: var(--yellow); }
 .skin-option[aria-current="true"]::after { content: " \2713"; }
