@@ -1,0 +1,339 @@
+"""The review gate hook (.claude/hooks/review_gate.py).
+
+It has two jobs:
+- `record` runs when the reviewer subagent stops, and saves its verdict against the commit it
+  reviewed.
+- `gate` runs before a pull request is opened or marked ready for review, and blocks that until
+  the current commit has passed review.
+
+Each test drives the real script the way Claude Code does: JSON on stdin, a blocking message on
+stderr with exit code 2.
+"""
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = ROOT / ".claude/hooks/review_gate.py"
+BLOCKED = 2
+
+
+def git(repo, *args):
+    return subprocess.run(
+        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+@pytest.fixture
+def repo(tmp_path):
+    """A feature branch with one commit, pushed to a remote."""
+    remote = tmp_path / "remote.git"
+    work = tmp_path / "work"
+    git(tmp_path, "init", "--bare", "-b", "main", str(remote))
+    git(tmp_path, "init", "-b", "main", str(work))
+    git(work, "config", "user.name", "Test")
+    git(work, "config", "user.email", "test@example.com")
+    git(work, "remote", "add", "origin", str(remote))
+    (work / "a.py").write_text("x = 1\n")
+    git(work, "add", ".")
+    git(work, "commit", "-m", "first")
+    git(work, "push", "-u", "origin", "main")
+    git(work, "checkout", "-b", "feature")
+    new_commit(work)
+    return work
+
+
+def new_commit(repo, push=True):
+    path = repo / "a.py"
+    path.write_text(path.read_text() + "y = 2\n")
+    git(repo, "commit", "-am", "change")
+    if push:
+        git(repo, "push", "-u", "origin", "HEAD")
+    return head(repo)
+
+
+def head(repo):
+    return git(repo, "rev-parse", "HEAD")
+
+
+def run(mode, payload):
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), mode],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+    )
+
+
+def verdict(commit, blocking=0, suggestions=0, judgment_calls=0):
+    finding = {"file": "a.py", "line": 1, "summary": "s", "detail": "d"}
+    body = {
+        "commit": commit,
+        "blocking": [finding] * blocking,
+        "suggestions": [finding] * suggestions,
+        "judgment_calls": [{"question": "q", "options": ["a", "b"]}] * judgment_calls,
+    }
+    return f"Review notes.\n\n```json\n{json.dumps(body, indent=2)}\n```\n"
+
+
+def record(repo, message, agent_type="reviewer", stop_hook_active=False):
+    return run(
+        "record",
+        {
+            "hook_event_name": "SubagentStop",
+            "cwd": str(repo),
+            "agent_type": agent_type,
+            "agent_id": "a1",
+            "stop_hook_active": stop_hook_active,
+            "last_assistant_message": message,
+        },
+    )
+
+
+def review(repo, blocking=0, **counts):
+    result = record(repo, verdict(head(repo), blocking=blocking, **counts))
+    assert result.returncode == 0, result.stderr
+
+
+def mark_ready(repo):
+    return run(
+        "gate",
+        {
+            "hook_event_name": "PreToolUse",
+            "cwd": str(repo),
+            "tool_name": "mcp__github__update_pull_request",
+            "tool_input": {"owner": "o", "repo": "r", "pullNumber": 1, "draft": False},
+        },
+    )
+
+
+def bash(repo, command):
+    return run(
+        "gate",
+        {
+            "hook_event_name": "PreToolUse",
+            "cwd": str(repo),
+            "tool_name": "Bash",
+            "tool_input": {"command": command},
+        },
+    )
+
+
+# --- The gate: marking a PR ready for review ---
+
+
+def test_marking_ready_is_blocked_until_the_commit_has_been_reviewed(repo):
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "reviewer" in result.stderr
+
+
+def test_marking_ready_is_allowed_once_the_commit_passes_review(repo):
+    review(repo)
+
+    assert mark_ready(repo).returncode == 0
+
+
+def test_suggestions_and_judgment_calls_do_not_block(repo):
+    review(repo, suggestions=2, judgment_calls=1)
+
+    assert mark_ready(repo).returncode == 0
+
+
+def test_blocking_findings_block_and_say_which_round_this_is(repo):
+    review(repo, blocking=2)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "round 1 of 3" in result.stderr
+
+
+def test_a_new_commit_needs_a_new_review(repo):
+    review(repo)
+    new_commit(repo)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "reviewer" in result.stderr
+
+
+def test_a_fix_that_passes_re_review_is_allowed(repo):
+    review(repo, blocking=1)
+    new_commit(repo)
+    review(repo)
+
+    assert mark_ready(repo).returncode == 0
+
+
+def test_after_three_rounds_with_blocking_findings_it_stops_and_hands_over(repo):
+    for _ in range(3):
+        review(repo, blocking=1)
+        new_commit(repo)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "Stop" in result.stderr
+    assert "draft" in result.stderr
+
+
+def test_a_third_round_that_passes_is_still_allowed(repo):
+    for _ in range(2):
+        review(repo, blocking=1)
+        new_commit(repo)
+    review(repo)
+
+    assert mark_ready(repo).returncode == 0
+
+
+def test_rounds_are_counted_per_branch(repo):
+    for _ in range(3):
+        review(repo, blocking=1)
+        new_commit(repo)
+    git(repo, "checkout", "-b", "other-feature")
+    new_commit(repo)
+    review(repo)
+
+    assert mark_ready(repo).returncode == 0
+
+
+def test_uncommitted_changes_block_marking_ready(repo):
+    review(repo)
+    (repo / "a.py").write_text("changed but not committed\n")
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "uncommitted" in result.stderr
+
+
+def test_untracked_files_block_marking_ready(repo):
+    review(repo)
+    (repo / "new.py").write_text("unreviewed\n")
+
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_an_unpushed_commit_blocks_marking_ready(repo):
+    new_commit(repo, push=False)
+    review(repo)
+
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "push" in result.stderr
+
+
+def test_gh_pr_ready_is_gated_too(repo):
+    assert bash(repo, "gh pr ready 12").returncode == BLOCKED
+    review(repo)
+    assert bash(repo, "gh pr ready 12").returncode == 0
+
+
+def test_gh_pr_ready_undo_is_not_gated(repo):
+    assert bash(repo, "gh pr ready 12 --undo").returncode == 0
+
+
+# --- The gate: opening a PR ---
+
+
+def test_opening_a_pr_that_is_not_a_draft_is_blocked(repo):
+    result = run(
+        "gate",
+        {
+            "cwd": str(repo),
+            "tool_name": "mcp__github__create_pull_request",
+            "tool_input": {"title": "t", "head": "feature", "base": "main"},
+        },
+    )
+
+    assert result.returncode == BLOCKED
+    assert "draft" in result.stderr
+
+
+def test_opening_a_draft_pr_is_allowed_without_a_review(repo):
+    result = run(
+        "gate",
+        {
+            "cwd": str(repo),
+            "tool_name": "mcp__github__create_pull_request",
+            "tool_input": {"title": "t", "head": "feature", "base": "main", "draft": True},
+        },
+    )
+
+    assert result.returncode == 0
+
+
+def test_gh_pr_create_needs_the_draft_flag(repo):
+    assert bash(repo, "gh pr create --title t --body b").returncode == BLOCKED
+    assert bash(repo, "gh pr create --draft --title t --body b").returncode == 0
+
+
+# --- The gate leaves everything else alone ---
+
+
+@pytest.mark.parametrize(
+    "tool_name, tool_input",
+    [
+        ("Bash", {"command": "uv run pytest"}),
+        ("Bash", {"command": "echo 'gh pr ready' is how you mark it"}),
+        ("mcp__github__update_pull_request", {"title": "new title"}),
+        ("mcp__github__update_pull_request", {"draft": True}),
+        ("Read", {"file_path": "/x"}),
+    ],
+)
+def test_other_tool_calls_pass_through(repo, tool_name, tool_input):
+    result = run("gate", {"cwd": str(repo), "tool_name": tool_name, "tool_input": tool_input})
+
+    assert result.returncode == 0, result.stderr
+
+
+# --- Recording the reviewer's verdict ---
+
+
+def test_a_verdict_without_the_json_block_sends_the_reviewer_back(repo):
+    result = record(repo, "Looks good to me!")
+
+    assert result.returncode == BLOCKED
+    assert "```json" in result.stderr
+
+
+def test_a_verdict_for_another_commit_sends_the_reviewer_back(repo):
+    result = record(repo, verdict("0" * 40))
+
+    assert result.returncode == BLOCKED
+    assert head(repo) in result.stderr
+
+
+def test_a_second_bad_verdict_is_let_go_but_not_recorded(repo):
+    result = record(repo, "still no block", stop_hook_active=True)
+
+    assert result.returncode == 0
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_other_subagents_are_not_recorded(repo):
+    result = record(repo, verdict(head(repo)), agent_type="Explore")
+
+    assert result.returncode == 0
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_the_last_json_block_is_the_verdict(repo):
+    message = 'Example:\n```json\n{"blocking": []}\n```\n' + verdict(head(repo))
+
+    assert record(repo, message).returncode == 0
+    assert mark_ready(repo).returncode == 0
+
+
+def test_review_state_lives_inside_git_so_it_is_never_committed(repo):
+    review(repo)
+
+    assert git(repo, "status", "--porcelain") == ""
