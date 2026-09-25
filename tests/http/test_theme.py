@@ -30,7 +30,9 @@ def test_each_theme_is_a_single_css_file(theme):
 
 
 def test_every_bundled_font_has_its_licence_beside_it():
-    fonts = list((APP / "static" / "themes").rglob("*.woff2"))
+    themes = APP / "static" / "themes"
+    fonts = [f for ext in ("woff2", "woff", "ttf", "otf") for f in themes.rglob(f"*.{ext}")]
+    assert fonts
     for font in fonts:
         assert (font.parent / f"LICENSE-{font.stem}.txt").is_file(), font.name
 
