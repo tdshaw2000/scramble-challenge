@@ -116,7 +116,10 @@ def test_production_dependencies_include_what_gunicorns_gevent_worker_imports():
     # "packaging", which gunicorn itself doesn't declare. Locally dev tools bring it in.
     exported = subprocess.run(
         ["uv", "export", "--frozen", "--no-dev", "--no-hashes"],
-        cwd=ROOT, capture_output=True, text=True, check=True,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout
     packages = {line.split("==")[0] for line in exported.splitlines() if "==" in line}
     assert {"gunicorn", "gevent", "packaging"} <= packages
