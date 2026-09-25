@@ -113,7 +113,19 @@ def test_an_unknown_skin_is_refused(client):
 
 
 @pytest.mark.parametrize(
-    "next_url", ["", "https://evil.example/", "//evil.example/", "/\\evil.example", "c/abc"]
+    "next_url",
+    [
+        "",
+        "https://evil.example/",
+        "//evil.example/",
+        "/\\evil.example",
+        "c/abc",
+        # Browsers and Werkzeug drop tabs and newlines, which would leave //evil.example.
+        "/\t/evil.example",
+        "/\n/evil.example",
+        "/\r/evil.example",
+        "/ /evil.example",
+    ],
 )
 def test_choosing_a_skin_only_goes_back_to_a_page_on_this_site(client, next_url):
     response = client.post("/skin", data={"skin": "plain", "next": next_url})

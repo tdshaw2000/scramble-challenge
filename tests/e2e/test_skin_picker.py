@@ -87,3 +87,26 @@ def test_tapping_outside_the_menu_closes_it(new_player):
 
     expect(tom.get_by_role("button", name="Plain")).to_be_hidden()
     assert stylesheet(tom) == "/static/themes/mario64/theme.css"
+
+
+def test_if_saving_in_place_fails_the_menu_falls_back_to_a_normal_form_post(new_player):
+    tom = new_player()
+    tom.goto("/")
+    attempts = []
+
+    def fail_the_first_try(route):
+        attempts.append(route.request.post_data)
+        if len(attempts) == 1:
+            route.abort()
+        else:
+            route.continue_()
+
+    tom.route("**/skin", fail_the_first_try)
+
+    tom.get_by_label("Change skin").click()
+    tom.get_by_role("button", name="Plain").click()
+
+    expect(tom.locator('link[rel="stylesheet"]')).to_have_attribute(
+        "href", "/static/themes/plain/theme.css"
+    )
+    assert len(attempts) == 2
