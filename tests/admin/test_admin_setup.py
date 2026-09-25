@@ -64,10 +64,17 @@ def test_script_makes_the_file_readable_only_by_its_owner(script, tmp_path):
     assert stat.S_IMODE(env_file.stat().st_mode) == 0o600
 
 
-@pytest.mark.parametrize("password", ["", "short"])
-def test_script_refuses_short_passwords(script, tmp_path, password):
-    with pytest.raises(ValueError, match="at least 12"):
-        script.write_env_file(tmp_path / "admin.env", password)
+def test_script_accepts_a_password_of_any_length(script, tmp_path):
+    env_file = tmp_path / "admin.env"
+
+    script.write_env_file(env_file, "x")
+
+    assert check_password_hash(read_env(env_file)["ADMIN_PASSWORD_HASH"].strip("'"), "x")
+
+
+def test_script_refuses_an_empty_password(script, tmp_path):
+    with pytest.raises(ValueError, match="can't be empty"):
+        script.write_env_file(tmp_path / "admin.env", "")
 
 
 def test_script_hands_the_file_to_the_given_owner_so_the_deploy_can_read_it(
