@@ -1,5 +1,5 @@
 /* "monkeyisland2" theme: an early-90s pirate point-and-click feel built from CSS alone (no game
-   assets). A foggy night over a shipwreck town on a plank boardwalk, black verb-panel
+   assets). A pixel-art harbour at night (harbour.webp, supplied by the owner), black verb-panel
    boxes with violet pixel borders, parchment inputs, wooden-plank buttons and pieces-of-eight
    medals. Swap themes via THEME in app/config.py. */
 
@@ -16,14 +16,7 @@
 }
 
 :root {
-  --sky: #06141c;
-  --fog: #1f4644;
-  --distant: #081b1e;
-  --water: #0c2624;
-  --plank: #4f321a;
-  --plank-light: #6b4523;
-  --post: #2a1a0b;
-  --rope: #5a3e1e;
+  --sky: #0b0b3c;
   --panel: #07061a;
   --verb: #8a7dff;
   --verb-dark: #4a3fb0;
@@ -62,91 +55,17 @@ body {
   font: 22px/1.3 var(--mono);
   color: var(--text);
   cursor: crosshair;
-  /* A foggy night over a town of shipwrecks: hazy moon, lanterns on a plank boardwalk
-     standing on posts in dark harbour water. Hard colour bands, like a 256-colour palette. */
-  background:
-    radial-gradient(circle at 91% 5%, #e4f2e0 0 14px, rgba(170, 210, 196, 0.18) 15px 24px, rgba(170, 210, 196, 0.08) 25px 36px, transparent 37px),
-    radial-gradient(circle at 44% 83%, #ffd46a 0 4px, rgba(255, 196, 90, 0.28) 5px 24px, transparent 25px),
-    radial-gradient(circle at 82% 83%, #ffd46a 0 4px, rgba(255, 196, 90, 0.28) 5px 24px, transparent 25px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0 2px, transparent 2px 38px) left 0 bottom 10vh / 100% 5vh no-repeat,
-    repeating-linear-gradient(90deg, var(--post) 0 10px, transparent 10px 74px) left 20px bottom 0 / 100% 10vh no-repeat,
-    repeating-linear-gradient(transparent 0 9px, rgba(130, 210, 190, 0.14) 9px 11px) left 0 bottom 0 / 100% 10vh no-repeat,
-    linear-gradient(
-      var(--sky) 0 20%, #0a1e28 20% 38%, #0f2a33 38% 55%, #16373d 55% 68%, var(--fog) 68% 78%,
-      #2a524a 78% 85%, var(--plank-light) 85% 86%, var(--plank) 86% 89%, var(--post) 89% 90%, var(--water) 90%
-    );
-  background-attachment: fixed;
+  background: var(--sky);
 }
 
-/* Distant wrecks and shacks, with a few lit windows, against the fog. */
-html::before {
-  content: "";
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 14vh;
-  height: 48vh;
-  z-index: -1;
-  background:
-    linear-gradient(#e8b84a, #e8b84a) 27% 82% / 6px 8px no-repeat,
-    linear-gradient(#e8b84a, #e8b84a) 39% 70% / 6px 8px no-repeat,
-    linear-gradient(#e8b84a, #e8b84a) 71% 78% / 6px 8px no-repeat,
-    linear-gradient(#e8b84a, #e8b84a) 90% 88% / 6px 8px no-repeat,
-    var(--distant);
-  clip-path: polygon(
-    0 100%, 0 70%, 6% 66%, 10% 64%, 10% 30%, 11% 30%, 11% 62%, 20% 58%, 24% 48%, 30% 56%,
-    34% 55%, 34% 40%, 40% 36%, 44% 42%, 44% 58%, 52% 60%, 55% 50%,
-    55% 12%, 56% 12%, 56% 22%, 62% 22%, 62% 23.5%, 56% 23.5%, 56% 52%,
-    64% 54%, 68% 46%, 76% 44%, 78% 52%, 84% 50%, 84% 26%, 85% 26%, 85% 48%, 92% 56%, 100% 60%, 100% 100%
-  );
-}
-
-/* A sagging rope bridge strung across the town. */
-html::after {
-  content: "";
-  position: fixed;
-  left: -10vw;
-  right: -10vw;
-  bottom: 36vh;
-  height: 7vh;
-  z-index: -1;
-  background:
-    radial-gradient(ellipse 50% 100% at 50% 0, transparent calc(100% - 4px), var(--rope) calc(100% - 4px), var(--rope) 100%, transparent 100%),
-    radial-gradient(ellipse 50% 70% at 50% 0, transparent calc(100% - 3px), var(--rope) calc(100% - 3px), var(--rope) 100%, transparent 100%);
-}
-
-/* In front: a crooked plank shack on the left and a beached hull turned house on the right. */
-body::before, body::after {
-  content: "";
-  position: fixed;
-  z-index: -1;
-}
+/* The pixel-art harbour at night, pinned to the screen behind everything. A fixed layer rather
+   than background-attachment: fixed, which iPhones ignore. */
 body::before {
-  left: -10px;
-  bottom: 14vh;
-  width: min(42vw, 230px);
-  height: 29vh;
-  transform: rotate(-2deg);
-  background:
-    linear-gradient(#ffd46a, #ffb83a) 30% 45% / 22% 16% no-repeat,
-    linear-gradient(#ffd46a, #ffb83a) 78% 72% / 16% 14% no-repeat,
-    linear-gradient(var(--post), var(--post)) 0 60% / 100% 5px no-repeat,
-    repeating-linear-gradient(90deg, #6a4424 0 18px, #573619 18px 30px, var(--post) 30px 32px);
-  clip-path: polygon(0 100%, 0 22%, 48% 0, 100% 26%, 96% 100%);
-}
-body::after {
-  right: -20px;
-  bottom: 13vh;
-  width: min(48vw, 270px);
-  height: 25vh;
-  transform: rotate(3deg);
-  background:
-    radial-gradient(circle at 26% 66%, #ffd46a 0 9px, var(--post) 10px 13px, transparent 14px),
-    radial-gradient(circle at 50% 66%, #ffd46a 0 9px, var(--post) 10px 13px, transparent 14px),
-    radial-gradient(circle at 74% 66%, #ffd46a 0 9px, var(--post) 10px 13px, transparent 14px),
-    linear-gradient(transparent 44%, #7a2a1c 44% 50%, transparent 50%),
-    repeating-linear-gradient(#5b3a1e 0 12px, #45290f 12px 22px, var(--post) 22px 24px);
-  clip-path: polygon(0 40%, 30% 30%, 30% 10%, 60% 0, 62% 28%, 100% 20%, 100% 100%, 12% 100%, 4% 80%);
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--sky) url("harbour.webp") center bottom / cover no-repeat;
 }
 
 /* Title: chunky pixel letters in a sunset gradient with a dark outline, like a 90s logo. */
@@ -317,11 +236,8 @@ body::after {
   touch-action: none; /* a finger drifting while held must not become a scroll */
   -webkit-touch-callout: none;
   background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0 2px, transparent 2px 38px) left 0 bottom 10vh / 100% 5vh no-repeat,
-    linear-gradient(
-      var(--sky) 0 30%, #0f2a33 30% 55%, #16373d 55% 72%, var(--fog) 72% 85%,
-      var(--plank-light) 85% 86%, var(--plank) 86% 89%, var(--post) 89% 90%, var(--water) 90%
-    );
+    linear-gradient(rgba(6, 6, 30, 0.72), rgba(6, 6, 30, 0.72)),
+    var(--sky) url("harbour.webp") center bottom / cover no-repeat;
 }
 .countdown {
   margin: 0;

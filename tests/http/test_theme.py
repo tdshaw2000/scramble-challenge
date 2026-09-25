@@ -39,6 +39,13 @@ def test_bundled_fonts_ship_with_their_licence(theme):
         assert (fonts / f"LICENSE-{font.stem}.txt").is_file(), font.name
 
 
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_file_a_theme_points_to_exists(theme):
+    folder = APP / "static" / "themes" / theme
+    for url in re.findall(r'url\("([^"]+)"\)', (folder / "theme.css").read_text()):
+        assert (folder / url).is_file(), url
+
+
 def test_templates_contain_no_styling():
     for template in (APP / "templates").rglob("*.html"):
         text = template.read_text()
