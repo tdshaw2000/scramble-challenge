@@ -1,7 +1,7 @@
-/* "monkeyisland2" theme: an early-90s pirate point-and-click feel built from CSS alone (no game
-   assets). A pixel-art harbour at night (harbour.webp, supplied by the owner), black verb-panel
-   boxes with violet pixel borders, parchment inputs, wooden-plank buttons and pieces-of-eight
-   medals. Swap themes via THEME in app/config.py. */
+/* "monkeyisland2" theme: an early-90s pirate point-and-click feel, in CSS plus the owner's own
+   pixel-art harbour at night (harbour.webp, and harbour-wide.webp for landscape screens) and
+   two OFL fonts; no game assets. Black verb-panel boxes with violet pixel borders, parchment
+   inputs, wooden-plank buttons and pieces-of-eight medals. Swap themes via THEME in app/config.py. */
 
 @font-face {
   font-family: "Pixelify Sans";
@@ -17,6 +17,7 @@
 
 :root {
   --sky: #0b0b3c;
+  --harbour: url("harbour.webp"); /* tall picture, for phones held upright */
   --panel: #07061a;
   --verb: #8a7dff;
   --verb-dark: #4a3fb0;
@@ -46,6 +47,11 @@
   );
 }
 
+/* Landscape phones and desktops get the owner's wide version of the same scene. */
+@media (min-aspect-ratio: 1/1) {
+  :root { --harbour: url("harbour-wide.webp"); }
+}
+
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
@@ -65,7 +71,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--sky) url("harbour.webp") center bottom / cover no-repeat;
+  background: var(--sky) var(--harbour) center bottom / cover no-repeat;
 }
 
 /* Title: chunky pixel letters in a sunset gradient with a dark outline, like a 90s logo. */
@@ -237,7 +243,7 @@ body::before {
   -webkit-touch-callout: none;
   background:
     linear-gradient(rgba(6, 6, 30, 0.72), rgba(6, 6, 30, 0.72)),
-    var(--sky) url("harbour.webp") center bottom / cover no-repeat;
+    var(--sky) var(--harbour) center bottom / cover no-repeat;
 }
 .countdown {
   margin: 0;
