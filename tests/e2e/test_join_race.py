@@ -24,3 +24,31 @@ def test_start_round_is_enabled_once_the_page_has_joined(new_player, live_server
     start_challenge(tom)
 
     expect(tom.get_by_role("button", name="Start round")).to_be_enabled()
+
+
+# Keeps a handle on the page's socket so a test can drop its connection.
+CAPTURE_SOCKET = """
+  let realIo;
+  Object.defineProperty(window, "io", {
+    configurable: true,
+    get() { return realIo; },
+    set(io) {
+      realIo = Object.assign((...args) => (window.__socket = io(...args)), io);
+    },
+  });
+"""
+
+
+def test_start_round_is_disabled_again_while_reconnecting(new_player, live_server):
+    tom = new_player()
+    tom.add_init_script(CAPTURE_SOCKET)
+    start_challenge(tom)
+    button = tom.get_by_role("button", name="Start round")
+    expect(button).to_be_enabled()
+
+    tom.route("**/socket.io/**", lambda route: route.abort())
+    tom.evaluate("window.__socket.io.engine.close()")
+
+    expect(button).to_be_disabled()
+    tom.unroute("**/socket.io/**")
+    expect(button).to_be_enabled()
