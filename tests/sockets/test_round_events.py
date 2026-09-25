@@ -194,3 +194,45 @@ def test_inspection_expiring_without_inspecting_is_reported(challenge, joined):
     tom.emit("inspection_expired", {})
 
     assert events(tom, "game_error") == [{"message": "No inspection in progress."}]
+
+
+def test_co_ending_the_challenge_sends_everyone_to_the_summary(challenge, add_player, joined):
+    add_player("Amy", connected=False)
+    tom, amy = joined("cookie-co", "cookie-Amy")
+    tom.emit("start_round", {})
+    tom.emit("end_round", {})
+    tom.get_received()
+    amy.get_received()
+
+    tom.emit("end_challenge", {})
+
+    for client in (tom, amy):
+        assert events(client, "challenge_ended") == [{}]
+    assert challenge.status == ChallengeStatus.ENDED
+
+
+def test_only_the_co_can_end_the_challenge(challenge, add_player, joined):
+    add_player("Amy", connected=False)
+    tom, amy = joined("cookie-co", "cookie-Amy")
+    tom.emit("start_round", {})
+    tom.emit("end_round", {})
+    tom.get_received()
+
+    amy.emit("end_challenge", {})
+
+    assert events(amy, "game_error") == [{"message": "Only the challenge owner can do that."}]
+    assert events(tom, "challenge_ended") == []
+    assert challenge.status == ChallengeStatus.ROUND_RESULTS
+
+
+def test_ending_the_challenge_mid_round_is_refused(challenge, joined):
+    [tom] = joined("cookie-co")
+    tom.emit("start_round", {})
+    tom.get_received()
+
+    tom.emit("end_challenge", {})
+
+    assert events(tom, "game_error") == [
+        {"message": "The challenge can only be ended between rounds, once one has finished."}
+    ]
+    assert events(tom, "challenge_ended") == []
