@@ -34,6 +34,21 @@ services:
       timeout: 5s
       retries: 3
 
+  backup:
+    # The web image, running app/backup.py: a snapshot of the database every night at
+    # 03:00 UK time, kept on its own volume. The deploy also uses it for a snapshot
+    # before every restart. README.md says how to restore one.
+    image: ghcr.io/tdshaw2000/scramble-challenge/web:latest
+    command: ["python", "-m", "app.backup", "schedule"]
+    init: true  # passes on the stop signal, so a restart does not wait 10s
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: sqlite:////data/scramble.db
+      BACKUP_DIR: /backups
+    volumes:
+      - data:/data
+      - backups:/backups
+
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -50,4 +65,5 @@ services:
 
 volumes:
   data:
+  backups:
   caddy_data:

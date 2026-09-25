@@ -90,3 +90,12 @@ def test_published_image_names_match_docker_compose(workflow, compose):
             "tdshaw2000/scramble-challenge", "${{ github.repository }}"
         )
         assert name in text, f"publish job never pushes {name}"
+
+
+def test_ci_smoke_test_proves_a_snapshot_can_be_taken_and_listed(workflow):
+    run = commands(workflow["jobs"]["smoke"])
+
+    up = run.index("docker compose up")
+    snapshot = run.index("python -m app.backup snapshot predeploy")
+    listed = run.index("python -m app.backup list")
+    assert up < snapshot < listed

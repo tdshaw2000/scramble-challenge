@@ -55,6 +55,10 @@ jobs:
       - run: docker compose build
       - run: docker compose up -d
       - run: scripts/smoke-test.sh
+      - name: Take and list a database snapshot
+        run: |
+          docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
+          docker compose run --rm --no-deps backup python -m app.backup list | grep '^predeploy-'
       - if: failure()
         run: docker compose logs
       - if: always()
@@ -126,6 +130,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: docker compose pull
+      # A consistent copy of the live database, taken with the new image, to roll back to.
+      - run: docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
       - run: docker compose up -d --remove-orphans
       - run: scripts/smoke-test.sh
       - if: failure()
