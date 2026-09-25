@@ -237,6 +237,24 @@ def points(challenge: Challenge) -> dict[uuid.UUID, int]:
     return totals
 
 
+def standings(challenge: Challenge) -> list[dict]:
+    """Everyone by points, most first; equal points share a place (1, 1, 3), listed by name."""
+    totals = points(challenge)
+    ordered = sorted(challenge.players, key=lambda p: (-totals[p.id], p.display_name.casefold()))
+    rows: list[dict] = []
+    for index, player in enumerate(ordered):
+        tied = index and totals[player.id] == rows[-1]["points"]
+        rows.append(
+            {
+                "player_id": str(player.id),
+                "display_name": player.display_name,
+                "points": totals[player.id],
+                "position": rows[-1]["position"] if tied else index + 1,
+            }
+        )
+    return rows
+
+
 def leaderboard(rnd: Round) -> list[dict]:
     rows = _rows(rnd)
     totals = points(rnd.challenge)
