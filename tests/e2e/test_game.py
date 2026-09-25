@@ -317,15 +317,22 @@ def test_joining_mid_round_gets_the_scramble_straight_away(tom_and_amy, new_play
     expect(bob.get_by_role("button", name="Start inspection")).to_be_visible()
 
 
-def test_everyone_is_told_when_the_owner_leaves_for_good(tom_and_amy, live_server):
-    tom, amy, _ = tom_and_amy
+def test_everyone_goes_to_the_summary_when_the_challenge_ends(tom_and_amy, live_server):
+    tom, amy, link = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    solve(amy, 9_000)
+    solve(tom, 12_000)
+    expect(amy.get_by_role("heading", name="Round 1 results")).to_be_visible()
 
     tom.close()
     expect(amy.locator("#players")).to_contain_text("Tom (0) (owner) (away)")
     control(live_server, "advance-clock", seconds=30)
     control(live_server, "end-abandoned")
 
-    expect(amy.get_by_text("This challenge has ended")).to_be_visible()
+    expect(amy).to_have_url(f"{link}/summary")
+    expect(amy.get_by_role("heading", name="This challenge has ended")).to_be_visible()
+    expect(amy.locator(".standing")).to_have_text(["1st Amy (1)", "2nd Tom (0)"])
+    expect(amy.locator(".result")).to_have_text(["1st Amy (1) 9.00", "2nd Tom (0) 12.00"])
 
 
 def test_times_over_a_minute_show_minutes(new_player):
