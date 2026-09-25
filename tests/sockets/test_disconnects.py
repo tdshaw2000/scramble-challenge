@@ -68,6 +68,7 @@ def test_leaving_as_the_last_unfinished_player_completes_the_round(challenge, ad
         "player_list",
         "leaderboard_update",
         "round_complete",
+        "player_list",
     ]
 
 
