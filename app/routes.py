@@ -14,7 +14,7 @@ from sqlalchemy import text
 
 from app import game, services
 from app.extensions import db
-from app.models import Round
+from app.models import ChallengeStatus, Round
 
 bp = Blueprint("main", __name__)
 
@@ -80,6 +80,8 @@ def create_challenge():
 @bp.get("/c/<slug>")
 def challenge(slug: str):
     challenge = challenge_or_404(slug)
+    if challenge.status == ChallengeStatus.ENDED:
+        return redirect(url_for("main.summary", slug=slug))
     player = services.player_for_cookie(challenge, request.cookies.get(COOKIE_NAME))
     if player is None:
         return render_template("join.html", challenge=challenge)
@@ -97,6 +99,8 @@ def challenge(slug: str):
 @bp.post("/c/<slug>/join")
 def join(slug: str):
     challenge = challenge_or_404(slug)
+    if challenge.status == ChallengeStatus.ENDED:
+        return redirect(url_for("main.summary", slug=slug))
     cookie_id = device_cookie()
     try:
         player = services.join_challenge(challenge, request.form.get("display_name", ""), cookie_id)
@@ -105,6 +109,21 @@ def join(slug: str):
     response = redirect(url_for("main.challenge", slug=slug))
     with_name_cookie(response, player.display_name)
     return with_device_cookie(response, cookie_id)
+
+
+@bp.get("/c/<slug>/summary")
+def summary(slug: str):
+    """What happened in an ended challenge. Anyone with the link can see it."""
+    challenge = challenge_or_404(slug)
+    if challenge.status != ChallengeStatus.ENDED:
+        return redirect(url_for("main.challenge", slug=slug))
+    return render_template(
+        "summary.html",
+        challenge=challenge,
+        standings=services.standings(challenge),
+        puzzle_names=game.PUZZLE_NAMES,
+        leaderboards={rnd.id: services.leaderboard(rnd) for rnd in challenge.rounds},
+    )
 
 
 @bp.get("/c/<slug>/rounds/<int:round_number>/scramble.svg")

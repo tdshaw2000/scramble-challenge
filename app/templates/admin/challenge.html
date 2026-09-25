@@ -23,15 +23,7 @@
        src="{{ url_for('main.scramble_svg', slug=challenge.slug, round_number=rnd.round_number) }}">
   {% set results = leaderboards[rnd.id] %}
   {% if results %}
-  <ol class="leaderboard">
-    {% for r in results %}
-    <li class="result result-{{ r.result }} result-position-{{ r.position }}">
-      <span class="position">{{ r.position | ordinal }}</span>
-      <span class="name">{{ r.display_name }} ({{ r.points }})</span>
-      <span class="time">{{ r.time_ms | solve_time }}</span>
-    </li>
-    {% endfor %}
-  </ol>
+  {% include "partials/leaderboard.html" %}
   {% else %}
   <p>No results.</p>
   {% endif %}

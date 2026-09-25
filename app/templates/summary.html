@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Challenge summary · Scramble Challenge{% endblock %}
+{% block content %}
+<div class="summary">
+  <h1 class="notice summary-heading">This challenge has ended</h1>
+
+  <section class="card summary-standings">
+    <h2 class="card-title">Final standings</h2>
+    <ol class="standings">
+      {% for s in standings %}
+      <li class="standing standing-position-{{ s.position }}">
+        <span class="position">{{ s.position | ordinal }}</span>
+        <span class="name">{{ s.display_name }} ({{ s.points }})</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {% for rnd in challenge.rounds %}
+  <section class="card summary-round">
+    <h2 class="card-title">Round {{ rnd.round_number }}: {{ puzzle_names.get(rnd.puzzle, rnd.puzzle) }}</h2>
+    <p class="scramble-text">{{ rnd.scramble_text }}</p>
+    <img class="scramble-image" alt="Scramble diagram"
+         src="{{ url_for('main.scramble_svg', slug=challenge.slug, round_number=rnd.round_number) }}">
+    {% set results = leaderboards[rnd.id] %}
+    {% if results %}
+    {% include "partials/leaderboard.html" %}
+    {% else %}
+    <p>No results.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="card summary-round"><p>No rounds were played.</p></section>
+  {% endfor %}
+
+  <p class="summary-actions">
+    <a class="button button-primary" href="{{ url_for('main.landing') }}">Start a new challenge</a>
+  </p>
+</div>
+{% endblock %}
