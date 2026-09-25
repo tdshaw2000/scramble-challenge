@@ -241,6 +241,10 @@ def test_gh_pr_ready_undo_is_not_gated(repo):
     assert bash(repo, "gh pr ready 12 --undo").returncode == 0
 
 
+def test_gh_pr_ready_undo_on_a_continuation_line_is_not_gated(repo):
+    assert bash(repo, "gh pr ready 12 \\\n  --undo").returncode == 0
+
+
 # --- The gate: opening a PR ---
 
 
