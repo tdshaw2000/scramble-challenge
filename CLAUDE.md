@@ -12,7 +12,7 @@ Every PR is reviewed by the `reviewer` subagent (.claude/agents/reviewer.md) bef
 ready or merged. A hook (.claude/hooks/review_gate.py) enforces this. It blocks opening a PR
 that isn't a draft. It blocks marking ready or merging until the pushed HEAD commit has a
 passing review. It blocks merges that aren't merge commits of that exact commit, and it blocks
-auto-merge.
+auto-merge, --admin merges and merges through gh api.
 
 1. Finish the work, commit, push, and open the PR as a draft.
 2. Run the `reviewer` subagent. Give it the PR number and one line on what the change is for.
@@ -38,4 +38,4 @@ step 6 does. It guards against mistakes, not against an agent that edits its sta
 
 Verdicts live in .git/claude-review/, one file per branch, and are never committed. Rounds are
 counted per commit reviewed. To start a branch's count again (only when the owner says so):
-`rm .git/claude-review/<branch>.json`.
+`rm .git/claude-review/<branch>.json`, with any / in the branch name written as __.

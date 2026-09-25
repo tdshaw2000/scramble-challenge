@@ -30,6 +30,9 @@ LOOP = "See 'Review loop' in CLAUDE.md."
 GH_READY = re.compile(r"\bpr\s+ready\b([^;&|#\n]*)")
 GRAPHQL_READY = "markPullRequestReadyForReview"
 GH_MERGE = re.compile(r"\bpr\s+merge\b([^;&|#\n]*)")
+# Merges the gate can't check for method and pinned head, so they are always blocked.
+API_MERGE = re.compile(r"mergePullRequest|pulls/[^/\s]+/merge\b")
+API_AUTO_MERGE = "enablePullRequestAutoMerge"
 GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b", re.DOTALL)
 SEPARATORS = {";", "&", "&&", "|", "||", "\n", "(", ")"}
 DRAFT_FLAGS = {"--draft", "-d", "--draft=true"}
@@ -164,15 +167,18 @@ def creates_without_draft(command):
 
 
 def gh_merges(command):
-    """(method, head sha) for each gh pr merge in the command, or 'auto' if any uses --auto."""
+    """(method, head sha) for each gh pr merge in the command, or 'auto' or 'admin' if any
+    uses those flags."""
     merges = []
     for line in command.split("\n"):
         if not re.search(r"\bgh\b", line):
             continue
         for match in GH_MERGE.finditer(line):
             flags = match.group(1).split()
-            if "--auto" in flags:
+            if any(f == "--auto" or f.startswith("--auto=") for f in flags):
                 return "auto"
+            if any(f == "--admin" or f.startswith("--admin=") for f in flags):
+                return "admin"
             method = next(
                 (
                     m
@@ -184,9 +190,9 @@ def gh_merges(command):
             sha = None
             for i, flag in enumerate(flags):
                 if flag == "--match-head-commit" and i + 1 < len(flags):
-                    sha = flags[i + 1]
+                    sha = flags[i + 1].strip("'\"")
                 elif flag.startswith("--match-head-commit="):
-                    sha = flag.split("=", 1)[1]
+                    sha = flag.split("=", 1)[1].strip("'\"")
             merges.append((method, sha))
     return merges
 
@@ -205,9 +211,13 @@ def wants(event):
         return "auto-merge", None
     if tool == "Bash":
         command = str(args.get("command") or "").replace("\\\n", " ")  # join continuations
-        merges = gh_merges(command)
-        if merges == "auto":
+        if API_AUTO_MERGE in command:
             return "auto-merge", None
+        if API_MERGE.search(command):
+            return "api-merge", None
+        merges = gh_merges(command)
+        if merges in ("auto", "admin"):
+            return f"{merges}-merge", None
         if merges:
             return "merge", merges
         if marks_ready(command):
@@ -270,6 +280,13 @@ def gate(event):
         block("Open the pull request as a draft. It is marked ready only after review. " + LOOP)
     if action == "auto-merge":
         block("No auto-merge: merge directly once review and CI have passed. " + LOOP)
+    if action == "admin-merge":
+        block("No --admin merges: they skip GitHub's own checks. " + LOOP)
+    if action == "api-merge":
+        block(
+            "Merge with gh pr merge --merge --match-head-commit <HEAD sha>, or the MCP "
+            "merge_pull_request tool, so the review gate can check it. " + LOOP
+        )
     try:
         if action == "merge":
             check_merge(event.get("cwd"), detail)
