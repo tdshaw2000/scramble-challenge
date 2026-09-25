@@ -15,6 +15,8 @@
     event.preventDefault();
     const data = new FormData(form);
     data.set("skin", choice.value);
+    // The reply is a redirect, which "manual" leaves opaque; the buttons only offer skins
+    // the server knows, so any answer counts as saved.
     fetch(form.action, { method: "POST", body: data, redirect: "manual" })
       .then(() => {
         stylesheet.href = choice.dataset.themeCss;
@@ -24,7 +26,16 @@
         }
         picker.open = false;
       })
-      .catch(() => form.submit());
+      // No network: post the form the ordinary way. submit() leaves out the pressed
+      // button, so the choice goes in a hidden field.
+      .catch(() => {
+        const field = document.createElement("input");
+        field.type = "hidden";
+        field.name = "skin";
+        field.value = choice.value;
+        form.append(field);
+        form.submit();
+      });
   });
 
   // A tap anywhere outside the open menu closes it.

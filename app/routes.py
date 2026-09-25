@@ -66,7 +66,11 @@ def chosen_skin():
 
 
 def is_local_path(url: str) -> bool:
-    return url.startswith("/") and not url.startswith(("//", "/\\"))
+    """A path on this site. Whitespace, control characters and backslashes are refused
+    because browsers drop or rewrite them, which can turn "/<tab>/x" into "//x"."""
+    if any(c.isspace() or not c.isprintable() or c == "\\" for c in url):
+        return False
+    return url.startswith("/") and not url.startswith("//")
 
 
 @bp.post("/skin")
