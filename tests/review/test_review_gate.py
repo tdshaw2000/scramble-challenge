@@ -599,3 +599,55 @@ def test_auto_merge_is_blocked(repo, tool_name, tool_input):
 
     assert result.returncode == BLOCKED
     assert "auto-merge" in result.stderr
+
+
+# --- Merge gating, review round 1 fixes ---
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh api -X PUT repos/o/r/pulls/13/merge -f merge_method=merge",
+        "gh api graphql -f query='mutation{mergePullRequest(input:{pullRequestId:\"X\"}){x}}'",
+    ],
+)
+def test_merging_through_gh_api_is_blocked_even_after_review(repo, command):
+    review(repo)
+
+    result = bash(repo, command)
+
+    assert result.returncode == BLOCKED
+    assert "gh pr merge --merge" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh api graphql -f query='mutation{enablePullRequestAutoMerge(input:{}){x}}'",
+        "gh pr merge 13 --merge --auto=true --match-head-commit HEADSHA",
+    ],
+)
+def test_every_form_of_auto_merge_is_blocked(repo, command):
+    review(repo)
+
+    result = bash(repo, command.replace("HEADSHA", head(repo)))
+
+    assert result.returncode == BLOCKED
+    assert "auto-merge" in result.stderr
+
+
+def test_admin_merges_are_blocked(repo):
+    review(repo)
+
+    result = bash(repo, f"gh pr merge 13 --merge --admin --match-head-commit {head(repo)}")
+
+    assert result.returncode == BLOCKED
+    assert "--admin" in result.stderr
+
+
+def test_a_quoted_head_sha_is_accepted(repo):
+    review(repo)
+
+    result = bash(repo, f'gh pr merge 13 --merge --match-head-commit "{head(repo)}"')
+
+    assert result.returncode == 0, result.stderr

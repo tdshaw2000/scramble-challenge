@@ -109,3 +109,9 @@ def test_claude_md_says_claude_merges_with_a_merge_commit():
 
     assert "Never merge" not in text
     assert "merge_method" in text
+
+
+def test_claude_md_says_slashes_in_branch_names_become_double_underscores():
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "__" in text.split("## Review loop")[1]
