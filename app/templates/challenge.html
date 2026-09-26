@@ -33,7 +33,6 @@
     <dialog id="qr-dialog" class="card qr-dialog">
       <h2 class="card-title">Scan to join</h2>
       <img class="qr-image" src="{{ url_for('main.challenge_qr', slug=challenge.slug) }}" alt="QR code for {{ share_url }}">
-      <p class="qr-url">{{ share_url }}</p>
       <form method="dialog"><button class="button button-primary">Close</button></form>
     </dialog>
     <form id="start-form" class="start-form">

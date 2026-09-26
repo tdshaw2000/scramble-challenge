@@ -480,6 +480,5 @@ body::after {
 .share .button { width: 100%; }
 .qr-dialog { box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
 .qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
-.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; }
-.qr-url { color: inherit; overflow-wrap: anywhere; font-size: 0.85rem; margin: 10px 0 12px; }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated;  margin-bottom: 14px; }
 .qr-dialog .button { width: 100%; }

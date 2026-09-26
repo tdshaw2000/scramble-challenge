@@ -234,7 +234,7 @@
         await navigator.clipboard.writeText(url);
       } catch {
         // No clipboard (plain http) or the browser refused, e.g. Safari after a failed share.
-        $("qr-dialog").showModal();
+        showMessage(`Copy this link to share it: ${url}`);
         return;
       }
       setText("share-link-button", "Copied!");
