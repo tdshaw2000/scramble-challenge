@@ -25,8 +25,7 @@ def test_everything_uses_vt323(new_player, live_server):
         "[...document.fonts].some(f => f.family === 'VT323' && f.status === 'loaded')"
     )
     assert not tom.evaluate("[...document.fonts].some(f => f.family === 'Tiny5')")
-    # The share link is a random slug (0/O, l/I/1) that people read out or retype.
-    assert first_font(tom, ".share .field-input") == "VT323"
+    assert first_font(tom, ".share .button") == "VT323"
 
     tom.get_by_role("button", name="Start round").click()
     expect(tom.locator(".scramble-text")).to_be_visible()

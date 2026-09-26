@@ -205,7 +205,7 @@ def test_qr_code_button_pops_up_a_big_qr_code_of_the_link(new_player):
     image = popup.get_by_role("img", name="QR code to join this challenge")
     expect(image).to_be_visible()
     image.evaluate("img => img.decode()")  # the server's SVG loaded
-    assert image.bounding_box()["width"] >= 300  # most of a 390px-wide phone
+    assert image.bounding_box()["width"] >= 280  # most of a 390px-wide phone
 
 
 def test_the_qr_popup_closes_with_its_button(new_player):

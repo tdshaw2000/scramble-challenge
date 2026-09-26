@@ -1,6 +1,8 @@
+import io
 import secrets
 from urllib.parse import urlsplit
 
+import segno
 from flask import (
     Blueprint,
     Response,
@@ -139,6 +141,15 @@ def challenge(slug: str):
         puzzles={code: game.PUZZLE_NAMES[code] for code in services.SUPPORTED_PUZZLES},
         default_puzzle=services.next_puzzle_default(challenge),
     )
+
+
+@bp.get("/c/<slug>/qr.svg")
+def challenge_qr(slug: str):
+    challenge = challenge_or_404(slug)
+    out = io.BytesIO()
+    qr = segno.make(url_for("main.challenge", slug=challenge.slug, _external=True), error="m")
+    qr.save(out, kind="svg", scale=10, border=4, xmldecl=False)
+    return Response(out.getvalue(), mimetype="image/svg+xml")
 
 
 @bp.post("/c/<slug>/join")

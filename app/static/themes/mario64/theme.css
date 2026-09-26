@@ -152,9 +152,6 @@ body::after {
 .player-co::before { color: var(--red); }
 .player-away { opacity: 0.5; }
 
-.share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
-.share .field { margin-bottom: 0; }
-.share .field-input { font-size: 0.9rem; }
 .waiting { margin: 0; color: var(--muted); font-weight: 700; }
 
 .scramble-text {
@@ -315,3 +312,12 @@ body::after {
 .skin-menu-title { margin: 0 4px 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .skin-option { display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; padding: 8px; border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 700; }
 .skin-option[aria-current="true"]::after { content: " \2713"; color: var(--gold); }
+
+/* Share buttons and the QR code popup */
+.share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.share .button { width: 100%; }
+.share-label { grid-column: 1 / -1; margin-bottom: 0; }
+.qr-dialog { box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
+.qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; margin-bottom: 14px; }
+.qr-dialog .button { width: 100%; }
