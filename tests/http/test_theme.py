@@ -24,7 +24,7 @@ def test_the_theme_is_a_config_setting():
     assert stylesheet_links(app.test_client().get("/").data) == ["/static/themes/plain/theme.css"]
 
 
-THEMES = ["mario64", "plain", "neon80s", "monkeyisland2"]
+THEMES = ["mario64", "plain", "neon80s", "monkeyisland2", "dos"]
 
 
 @pytest.mark.parametrize("theme", THEMES)

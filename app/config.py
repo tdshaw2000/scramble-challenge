@@ -13,6 +13,7 @@ class Config:
     # The folder name is what the skin cookie stores, so renaming a label is safe.
     THEMES = {
         "plain": "Minimal",
+        "dos": "DOS",
         "mario64": "Mario",
         "monkeyisland2": "Monkey",
         "neon80s": "VHS",
