@@ -216,7 +216,11 @@
     $("end-challenge-yes").addEventListener("click", () => socket.emit("end_challenge", {}));
     $("qr-button").addEventListener("click", () => $("qr-dialog").showModal());
     $("qr-dialog").addEventListener("click", (event) => {
-      if (event.target === $("qr-dialog")) $("qr-dialog").close(); // a tap on the backdrop
+      // Taps on the backdrop also target the dialog, so tell them apart by position.
+      const box = $("qr-dialog").getBoundingClientRect();
+      const inside = event.clientX >= box.left && event.clientX <= box.right
+        && event.clientY >= box.top && event.clientY <= box.bottom;
+      if (!inside) $("qr-dialog").close();
     });
     $("share-link-button").addEventListener("click", async () => {
       const url = $("share-link-button").dataset.url;

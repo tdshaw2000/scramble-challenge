@@ -213,7 +213,7 @@ def test_the_qr_popup_closes_with_its_button(new_player):
     start_challenge(tom)
     tom.get_by_role("button", name="QR code").click()
 
-    tom.get_by_role("dialog").get_by_role("button", name="Close").click()
+    tom.get_by_role("dialog", name="Scan to join").get_by_role("button", name="Close").click()
 
     expect(tom.get_by_role("dialog")).to_be_hidden()
 
