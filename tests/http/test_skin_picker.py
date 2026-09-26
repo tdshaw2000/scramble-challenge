@@ -29,12 +29,12 @@ def skin_options(html: bytes) -> list[tuple[str, str, bool]]:
 
 
 def test_every_listed_skin_has_a_theme_folder(app):
-    assert list(app.config["THEMES"]) == ["plain", "mario64", "monkeyisland2", "neon80s"]
+    assert list(app.config["THEMES"]) == ["plain", "dos", "mario64", "monkeyisland2", "neon80s"]
     for theme in app.config["THEMES"]:
         assert (APP / "static" / "themes" / theme / "theme.css").is_file()
 
 
-@pytest.mark.parametrize("theme", ["mario64", "plain", "monkeyisland2", "neon80s"])
+@pytest.mark.parametrize("theme", ["mario64", "plain", "monkeyisland2", "neon80s", "dos"])
 def test_every_theme_styles_the_skin_picker(theme):
     css = (APP / "static" / "themes" / theme / "theme.css").read_text()
 
@@ -63,6 +63,7 @@ def test_the_server_setting_is_the_default_skin():
 def test_the_page_offers_each_skin_and_ticks_the_current_one(client):
     assert skin_options(client.get("/").data) == [
         ("plain", "Minimal", False),
+        ("dos", "DOS", False),
         ("mario64", "Mario", True),
         ("monkeyisland2", "Monkey", False),
         ("neon80s", "VHS", False),
@@ -74,6 +75,7 @@ def test_the_tick_follows_the_chosen_skin(client):
 
     assert skin_options(client.get("/").data) == [
         ("plain", "Minimal", True),
+        ("dos", "DOS", False),
         ("mario64", "Mario", False),
         ("monkeyisland2", "Monkey", False),
         ("neon80s", "VHS", False),
@@ -81,7 +83,7 @@ def test_the_tick_follows_the_chosen_skin(client):
 
 
 def test_the_gear_is_on_challenge_pages_too(client, challenge):
-    assert len(skin_options(client.get(f"/c/{challenge.slug}").data)) == 4
+    assert len(skin_options(client.get(f"/c/{challenge.slug}").data)) == 5
 
 
 def test_the_skin_menu_comes_back_to_the_same_page(client, challenge):
