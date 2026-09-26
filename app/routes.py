@@ -141,6 +141,19 @@ def challenge(slug: str):
     )
 
 
+@bp.get("/c/<slug>/qr.svg")
+def challenge_qr(slug: str):
+    import io
+
+    import segno
+
+    challenge = challenge_or_404(slug)
+    out = io.BytesIO()
+    qr = segno.make(url_for("main.challenge", slug=challenge.slug, _external=True), error="m")
+    qr.save(out, kind="svg", scale=10, border=4, dark="#000", light="#fff", xmldecl=False)
+    return Response(out.getvalue(), mimetype="image/svg+xml")
+
+
 @bp.post("/c/<slug>/join")
 def join(slug: str):
     challenge = challenge_or_404(slug)

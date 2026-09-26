@@ -197,9 +197,6 @@ select.field-input:focus { background-color: var(--bright-cyan); }
 .player-co::before { color: var(--yellow); }
 .player-away { color: var(--dark-grey); }
 
-.share { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; margin-bottom: 12px; }
-.share .field { margin-bottom: 0; }
-.share .button::before, .share .button::after { content: none; }
 .waiting { margin: 0; color: var(--bright-cyan); }
 .waiting::after { content: "_"; animation: blink 1.06s steps(1) infinite; }
 
@@ -336,3 +333,12 @@ select.field-input:focus { background-color: var(--bright-cyan); }
 @media (prefers-reduced-motion: reduce) {
   .site-title::after, .waiting::after, .solving::after { animation: none; }
 }
+
+/* QR code + Share URL mockup */
+.share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.share .button { width: 100%; }
+.qr-dialog { margin: auto 24px auto auto; box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
+.qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; }
+.qr-url { color: inherit; overflow-wrap: anywhere; font-size: 0.85rem; margin: 10px 0 12px; }
+.qr-dialog .button { width: 100%; }

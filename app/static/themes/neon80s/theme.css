@@ -247,9 +247,6 @@ body::after {
 .player-co::before { color: var(--red); text-shadow: 0 0 8px var(--red); }
 .player-away { opacity: 0.45; }
 
-.share { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
-.share .field { margin-bottom: 0; }
-.share .field-input { font-size: 0.9rem; }
 .waiting { margin: 0; color: var(--muted); }
 
 /* Scrambles: cyan text on a black terminal screen. */
@@ -477,3 +474,12 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::after, .site-header::after, .solving, .solving::after, .finished { animation: none; }
 }
+
+/* QR code + Share URL mockup */
+.share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.share .button { width: 100%; }
+.qr-dialog { box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
+.qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; }
+.qr-url { color: inherit; overflow-wrap: anywhere; font-size: 0.85rem; margin: 10px 0 12px; }
+.qr-dialog .button { width: 100%; }
