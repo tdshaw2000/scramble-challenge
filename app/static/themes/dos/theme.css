@@ -1,0 +1,338 @@
+/* "dos" theme: an MS-DOS text-mode program, in the style of the blue Turbo Vision and
+   Norton Commander screens. The 16 CGA/VGA colours only, a grey menu bar with red
+   hotkey letters, blue windows with double-line frames and a black drop shadow,
+   green push buttons, a dithered desktop and a function-key status line. Built from
+   CSS alone. The font is the IBM VGA 8x16 text-mode font from VileR's Ultimate Oldschool
+   PC Font Pack (CC BY-SA 4.0). It is a bitmap font drawn on a 16px grid, so every size
+   here is a multiple of 16px (8px for the countdown) to keep it sharp. */
+
+@font-face {
+  font-family: "IBM VGA";
+  src: url("fonts/ibmvga8x16.woff") format("woff");
+  font-display: swap;
+}
+
+:root {
+  /* The CGA palette. */
+  --black: #000000;
+  --blue: #0000aa;
+  --green: #00aa00;
+  --cyan: #00aaaa;
+  --red: #aa0000;
+  --magenta: #aa00aa;
+  --brown: #aa5500;
+  --grey: #aaaaaa;
+  --dark-grey: #555555;
+  --bright-blue: #5555ff;
+  --bright-green: #55ff55;
+  --bright-cyan: #55ffff;
+  --bright-red: #ff5555;
+  --yellow: #ffff55;
+  --white: #ffffff;
+  --text: var(--grey);
+  --dos: "IBM VGA", ui-monospace, "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { font-synthesis: none; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding-bottom: 36px; /* room for the status line */
+  font: 16px/1.5 var(--dos);
+  color: var(--text);
+  /* The desktop: light grey dots over blue, like the ░ shade character. */
+  background:
+    repeating-conic-gradient(var(--dark-grey) 0 25%, var(--blue) 0 50%) 0 0 / 4px 4px,
+    var(--blue);
+}
+
+/* The status line along the bottom of the screen. */
+body::after {
+  content: " F1 Help  F2 Skin  F10 Menu  Alt-X Exit";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 3px 10px;
+  font: 16px/1.5 var(--dos);
+  white-space: pre;
+  overflow: hidden;
+  color: var(--black);
+  background: var(--grey);
+}
+
+/* The menu bar: grey, with the title's first letters picked out in red like hotkeys. */
+.site-header {
+  position: relative;
+  z-index: 2;
+  padding: 6px 52px 4px 12px;
+  background: var(--grey);
+  text-align: left;
+}
+.site-title {
+  display: inline-flex;
+  gap: 0.6em;
+  text-decoration: none;
+  font: 32px/1 var(--dos);
+  color: var(--black);
+}
+.site-title-letter { display: inline-block; }
+.site-title-word .site-title-letter:first-child { color: var(--red); }
+/* A blinking block cursor after the title. */
+.site-title::after {
+  content: "";
+  align-self: flex-end;
+  width: 0.5em;
+  height: 0.18em;
+  margin-bottom: 0.08em;
+  margin-left: -0.45em;
+  background: var(--black);
+  animation: blink 1.06s steps(1) infinite;
+}
+@keyframes blink { 50% { visibility: hidden; } }
+
+.page { max-width: 480px; margin: 0 auto; padding: 22px 18px 40px; }
+
+/* Windows: blue, a white double-line frame, the title set into the top edge, and a black shadow. */
+.card {
+  position: relative;
+  margin: 0 8px 34px 0;
+  padding: 26px 18px 18px;
+  color: var(--grey);
+  background: var(--blue);
+  border: 6px double var(--white);
+  outline: 8px solid var(--blue);
+  box-shadow: 16px 16px 0 8px var(--black);
+  margin-top: 8px;
+}
+.card-title {
+  position: absolute;
+  top: -0.95em;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0 0.4em;
+  font: 400 16px/1.5 var(--dos);
+  white-space: nowrap;
+  color: var(--white);
+  background: var(--blue);
+}
+.card-title::before { content: "[ "; }
+.card-title::after { content: " ]"; }
+
+.field { display: block; margin-bottom: 14px; }
+.field-label { display: block; margin-bottom: 4px; color: var(--yellow); }
+.field-input {
+  width: 100%;
+  padding: 4px 8px;
+  font: 16px/1.5 var(--dos);
+  color: var(--white);
+  caret-color: var(--white);
+  background: var(--cyan);
+  border: 0;
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field-input:focus { outline: none; color: var(--black); background: var(--bright-cyan); }
+select.field-input {
+  /* A green drop-down button with a white arrow at the right end. */
+  background:
+    url("arrow.svg") right 0.45em center / 0.7em auto no-repeat,
+    linear-gradient(var(--green), var(--green)) right / 1.6em 100% no-repeat,
+    var(--cyan);
+  padding-right: 2em;
+}
+select.field-input:focus { background-color: var(--bright-cyan); }
+
+/* Buttons: green blocks with black text and a hard black shadow; pressing drops them into it. */
+.button {
+  display: inline-block;
+  padding: 6px 14px;
+  font: 16px/1 var(--dos);
+  color: var(--black);
+  background: var(--green);
+  border: 0;
+  border-radius: 0;
+  box-shadow: 8px 6px 0 var(--black);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.button::before { content: "\25BA\00A0"; color: var(--white); }
+.button::after { content: "\00A0\25C4"; color: var(--white); }
+.button:active { transform: translate(8px, 6px); box-shadow: none; }
+.button:disabled { color: var(--dark-grey); background: var(--grey); cursor: default; }
+.button:disabled::before, .button:disabled::after { color: var(--dark-grey); }
+.button-primary { width: calc(100% - 8px); padding: 12px 14px; }
+.button-danger { width: calc(100% - 8px); margin-top: 10px; color: var(--white); background: var(--red); }
+.button-danger::before, .button-danger::after { color: var(--yellow); }
+.button-two-line { line-height: 1.1; }
+.button-two-line::before, .button-two-line::after { content: none; }
+.button-subline { font-size: 16px; color: var(--white); }
+.button-cancel { width: calc(100% - 8px); margin-top: 14px; }
+
+/* End challenge: a yellow-on-magenta warning bar. */
+.end-challenge { margin-top: 18px; color: var(--yellow); background: var(--magenta); }
+
+/* Messages: a red error box, like "Abort, Retry, Fail?". */
+.notice {
+  padding: 8px 12px;
+  margin: 0 8px 22px 0;
+  color: var(--black);
+  background: var(--cyan);
+  border: 4px double var(--black);
+  box-shadow: 10px 8px 0 var(--black);
+}
+.notice-error { color: var(--white); background: var(--red); border-color: var(--white); }
+
+/* Players: triangle markers; the owner's is yellow. */
+.players { list-style: none; padding: 0; margin: 0 0 16px; }
+.player { padding: 2px 0 2px 1.4em; position: relative; color: var(--white); }
+.player::before { content: "\25BA"; position: absolute; left: 0; color: var(--bright-cyan); }
+.player-co::before { color: var(--yellow); }
+.player-away { color: var(--dark-grey); }
+
+.share { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; margin-bottom: 12px; }
+.share .field { margin-bottom: 0; }
+.share .button::before, .share .button::after { content: none; }
+.waiting { margin: 0; color: var(--bright-cyan); }
+.waiting::after { content: "_"; animation: blink 1.06s steps(1) infinite; }
+
+/* Scrambles: bright text on black, like a command prompt inside the window. */
+.scramble-text {
+  margin: 0 0 16px;
+  padding: 8px 10px;
+  font: 16px/1.5 var(--dos);
+  word-spacing: 0.2em;
+  color: var(--yellow);
+  background: var(--black);
+  white-space: pre-line; /* Megaminx scrambles come as one line per row */
+}
+.scramble-text::before { content: "C:\\>"; color: var(--grey); margin-right: 0.3em; }
+/* Megaminx rows must not wrap, so shrink the text to fit the widest row on a phone. */
+[data-puzzle="minx"] .scramble-text {
+  padding-inline: 6px;
+  font-size: min(16px, calc((100vw - 110px) / 22));
+  word-spacing: normal;
+}
+[data-puzzle="minx"] .scramble-text::before { content: none; }
+/* Big-cube scrambles run to 100 moves: a smaller size keeps the diagram on screen. */
+[data-puzzle="666"] .scramble-text,
+[data-puzzle="777"] .scramble-text {
+  line-height: 1.25;
+  word-spacing: normal;
+}
+.scramble-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 240px; /* Square-1's diagram is twice as tall as wide */
+  object-fit: contain;
+  margin: 0 auto 20px;
+  padding: 8px;
+  background: var(--grey);
+}
+
+/* Inspection and solving: a black full screen, as if the program had dropped to text mode. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none; /* a finger drifting while held must not become a scroll */
+  -webkit-touch-callout: none;
+  color: var(--grey);
+  background: var(--black);
+}
+/* Inspection: huge bright red digits. */
+.countdown { margin: 0; font: 256px/1 var(--dos); color: var(--bright-red); }
+/* Space is held during inspection: letting go will start the solve. */
+.game[data-ready] .countdown { color: var(--bright-green); }
+.solving { margin: 0; font: 32px/1 var(--dos); color: var(--white); }
+.solving::after { content: "_"; animation: blink 1.06s steps(1) infinite; }
+.overlay-hint { margin-top: 32px; color: var(--dark-grey); }
+
+/* Leaderboard: numbered like a directory listing, times in yellow. */
+.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
+.result, .standing {
+  display: grid;
+  grid-template-columns: 2.4em 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+  color: var(--white);
+}
+.result .position, .standing .position { color: var(--bright-cyan); }
+.result-position-1, .standing-position-1 { color: var(--yellow); }
+.result .time { color: var(--yellow); }
+.result-dnf .time { color: var(--bright-red); }
+
+/* Summary of an ended challenge */
+.summary .button { display: block; box-sizing: border-box; text-align: center; text-decoration: none; }
+.summary-ended { text-align: center; padding: 14px 18px; }
+.summary-ended .card-title { position: static; transform: none; background: none; }
+.summary-standings .button { width: calc(100% - 8px); margin-top: 16px; }
+
+/* Admin area */
+.admin-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.admin-nav a { color: var(--yellow); }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--bright-cyan); }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { text-align: left; color: var(--yellow); padding: 4px 8px 4px 0; white-space: nowrap; }
+.admin-table td { padding: 4px 8px 4px 0; color: var(--white); white-space: nowrap; }
+.admin-table a, .admin-pages a { color: var(--bright-cyan); }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }
+
+/* On a phone each challenge becomes a small block instead of a wide table row. */
+@media (max-width: 600px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; grid-template-columns: 1fr auto; padding: 8px 0; border-top: 1px dashed var(--grey); }
+  .admin-table td { border: 0; padding: 2px 0; white-space: normal; }
+  .admin-table td:nth-child(even) { text-align: right; }
+  .admin-players::before { content: "Players: "; }
+  .admin-rounds::before { content: "Rounds: "; }
+}
+.admin-code-value { font-family: var(--dos); }
+
+/* The player's own time, shown for a moment after the solve. */
+.finished { margin: 0; font: 80px/1 var(--dos); color: var(--yellow); }
+.finished[data-result="dnf"] { color: var(--bright-red); }
+
+/* The "are you sure?" box under the round results: a red dialog. */
+.confirm {
+  margin: 18px 8px 8px 0;
+  padding: 12px;
+  background: var(--red);
+  border: 4px double var(--white);
+  box-shadow: 10px 8px 0 var(--black);
+}
+.confirm-text { margin: 0 0 4px; text-align: center; color: var(--white); }
+.confirm .button-danger { color: var(--black); background: var(--grey); }
+.confirm .button-danger::before, .confirm .button-danger::after { color: var(--red); }
+
+/* Skin picker: a gear at the right end of the menu bar, opening a drop-down menu. */
+.skin-picker { position: absolute; top: 2px; right: 8px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: pointer; font-size: 32px; line-height: 1; padding: 0 4px; color: var(--black); }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-picker[open] .skin-picker-toggle { color: var(--white); background: var(--green); }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 170px; padding: 6px 4px; color: var(--black); background: var(--grey); border: 4px double var(--black); box-shadow: 10px 8px 0 var(--black); }
+.skin-menu-title { margin: 0 6px 4px; color: var(--dark-grey); }
+.skin-option { display: block; width: 100%; padding: 2px 8px; text-align: left; font: 16px/1.5 var(--dos); color: var(--black); background: none; border: 0; border-radius: 0; cursor: pointer; }
+.skin-option:hover, .skin-option:focus-visible { outline: none; color: var(--white); background: var(--green); }
+.skin-option[aria-current="true"]::after { content: " \221A"; }
+
+@media (prefers-reduced-motion: reduce) {
+  .site-title::after, .waiting::after, .solving::after { animation: none; }
+}
