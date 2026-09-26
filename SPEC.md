@@ -59,7 +59,7 @@ One `Solve` row per (round, player) — created when a player presses Start Insp
 
 **Challenge creation**
 1. CO enters name on landing page, presses "Start new challenge" → `Challenge` row created (`status: waiting`), `Player` row created for CO (`is_co: true`), cookie set.
-2. CO's browser shows: shareable link, puzzle dropdown (defaulted to `333`) + "Start round" button, and the live Players list (just themselves so far).
+2. CO's browser shows: "QR code" and "Share URL" buttons for the shareable link, puzzle dropdown (defaulted to `333`) + "Start round" button, and the live Players list (just themselves so far).
 
 **Joining**
 1. Friend opens the link → prompted for a name if they don't already have a cookie for this challenge → `Player` row created, cookie set, joins the challenge's socket room.
@@ -129,7 +129,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Waiting room (all players, between rounds)**
 - Players list (live, name + connected status)
-- CO only, additionally: shareable link with a "Share" button (the phone's share sheet; copies the link where sharing isn't available), puzzle dropdown, "Start round" button
+- CO only, additionally: under "Share with others", a "QR code" button (pops up a big QR code of the link, drawn by the server) and a "Share URL" button (the phone's share sheet; copies the link where sharing isn't available), puzzle dropdown, "Start round" button
 - Non-CO players: just see the list and a "waiting for the challenge owner to start a round" message
 
 **Scramble reveal (all players, on `round_started`)**

@@ -23,7 +23,6 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .notice { padding: 12px; background: #fff7e6; border: 1px solid #f0b429; border-radius: 6px; }
 .players { padding-left: 20px; }
 .player-away { color: var(--muted); }
-.share { margin-bottom: 12px; }
 .scramble-text { font: 1.2rem/1.6 ui-monospace, monospace; white-space: pre-line; }
 [data-puzzle="minx"] .scramble-text { font-size: min(1.2rem, calc((100vw - 64px) / 26)); }
 [data-puzzle="666"] .scramble-text, [data-puzzle="777"] .scramble-text { font-size: 1rem; }
@@ -74,3 +73,12 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .skin-option { display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; padding: 8px 6px; border-radius: 6px; color: var(--ink); text-decoration: none; }
 .skin-option[aria-current="true"] { font-weight: 700; }
 .skin-option[aria-current="true"]::after { content: " \2713"; color: var(--accent); }
+
+/* Share buttons and the QR code popup */
+.share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.share .button { width: 100%; }
+.share-label { grid-column: 1 / -1; margin-bottom: 0; }
+.qr-dialog { box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
+.qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; margin-bottom: 14px; }
+.qr-dialog .button { width: 100%; }

@@ -27,12 +27,15 @@
     </ul>
     {% if player.is_co %}
     <div class="share">
-      <label class="field">
-        <span class="field-label">Share this link with the other players</span>
-        <input id="share-link" class="field-input" readonly value="{{ share_url }}">
-      </label>
-      <button type="button" id="share-link-button" class="button">Share</button>
+      <span class="field-label share-label">Share with others</span>
+      <button type="button" id="qr-button" class="button">QR code</button>
+      <button type="button" id="share-link-button" class="button" data-url="{{ share_url }}">Share URL</button>
     </div>
+    <dialog id="qr-dialog" class="card qr-dialog" aria-labelledby="qr-heading">
+      <h2 id="qr-heading" class="card-title">Scan to join</h2>
+      <img class="qr-image" src="{{ url_for('main.challenge_qr', slug=challenge.slug) }}" alt="QR code to join this challenge">
+      <form method="dialog"><button class="button button-primary">Close</button></form>
+    </dialog>
     <form id="start-form" class="start-form">
       <label class="field">
         <span class="field-label">Puzzle</span>

@@ -214,8 +214,16 @@
     });
     $("end-challenge-no").addEventListener("click", () => setEndChallengeVisible(true));
     $("end-challenge-yes").addEventListener("click", () => socket.emit("end_challenge", {}));
+    $("qr-button").addEventListener("click", () => $("qr-dialog").showModal());
+    $("qr-dialog").addEventListener("click", (event) => {
+      // Taps on the backdrop also target the dialog, so tell them apart by position.
+      const box = $("qr-dialog").getBoundingClientRect();
+      const inside = event.clientX >= box.left && event.clientX <= box.right
+        && event.clientY >= box.top && event.clientY <= box.bottom;
+      if (!inside) $("qr-dialog").close();
+    });
     $("share-link-button").addEventListener("click", async () => {
-      const url = $("share-link").value;
+      const url = $("share-link-button").dataset.url;
       if (navigator.share) {
         try {
           await navigator.share({ title: "Scramble Challenge", text: "Join my Scramble Challenge", url });
@@ -230,13 +238,11 @@
         await navigator.clipboard.writeText(url);
       } catch {
         // No clipboard (plain http) or the browser refused, e.g. Safari after a failed share.
-        $("share-link").focus();
-        $("share-link").select();
-        showMessage("Copy the link above to share it.");
+        showMessage(`Copy this link to share it: ${url}`);
         return;
       }
       setText("share-link-button", "Copied!");
-      setTimeout(() => setText("share-link-button", "Share"), 2000);
+      setTimeout(() => setText("share-link-button", "Share URL"), 2000);
     });
   }
 

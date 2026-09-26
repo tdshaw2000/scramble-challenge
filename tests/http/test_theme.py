@@ -57,3 +57,11 @@ def test_templates_contain_no_styling():
 def test_scripts_never_set_styles_directly():
     for script in (APP / "static").glob("*.js"):
         assert ".style" not in script.read_text(), script.name
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_styles_the_share_buttons_and_qr_popup(theme):
+    css = (APP / "static" / "themes" / theme / "theme.css").read_text()
+
+    for selector in (".share-label", ".qr-dialog", ".qr-dialog::backdrop", ".qr-image"):
+        assert selector in css, selector

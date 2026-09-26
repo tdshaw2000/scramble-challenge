@@ -1,4 +1,7 @@
+import io
 import re
+
+import segno
 
 from app import services
 from app.routes import COOKIE_NAME
@@ -7,6 +10,12 @@ from app.routes import COOKIE_NAME
 def cookie(client):
     found = client.get_cookie(COOKIE_NAME)
     return found.value if found else None
+
+
+def svg_of(qr):
+    out = io.BytesIO()
+    qr.save(out, kind="svg", scale=10, border=4, xmldecl=False)
+    return out.getvalue()
 
 
 def create(client, name="Tom"):
@@ -184,3 +193,45 @@ def test_socket_client_script_is_served(client):
 
     assert response.status_code == 200
     assert b"join_challenge" in response.data
+
+
+def test_co_gets_qr_code_and_share_url_buttons_instead_of_a_link_box(client):
+    location = create(client).headers["Location"]
+
+    page = client.get(location).text
+
+    assert "Share with others" in page
+    assert re.search(r'<button[^>]*id="qr-button"[^>]*>QR code</button>', page)
+    assert re.search(
+        rf'<button[^>]*id="share-link-button"[^>]*data-url="http://localhost{location}"'
+        r"[^>]*>Share URL</button>",
+        page,
+    )
+    assert 'id="share-link"' not in page
+    assert f'src="{location}/qr.svg"' in page
+
+
+def test_other_players_get_no_share_buttons(client):
+    location = create(client).headers["Location"]
+    client.delete_cookie(COOKIE_NAME)
+    client.post(f"{location}/join", data={"display_name": "Amy"})
+
+    page = client.get(location).text
+
+    assert 'id="qr-button"' not in page
+    assert 'id="share-link-button"' not in page
+
+
+def test_qr_code_is_an_svg_of_the_challenge_link(client):
+    location = create(client).headers["Location"]
+
+    response = client.get(f"{location}/qr.svg")
+
+    assert response.status_code == 200
+    assert response.mimetype == "image/svg+xml"
+    expected = segno.make(f"http://localhost{location}", error="m")
+    assert response.data == svg_of(expected)
+
+
+def test_qr_code_for_an_unknown_challenge_is_not_found(client):
+    assert client.get("/c/nope/qr.svg").status_code == 404
