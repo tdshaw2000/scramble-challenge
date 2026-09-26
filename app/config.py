@@ -8,13 +8,14 @@ class Config:
     CO_GRACE_SECONDS = 30
     # Folder under static/themes/ holding theme.css. Swap the look by changing this.
     THEME = "mario64"
-    # Skins a player can pick from the gear menu (folder name: label). THEME is the default.
+    # Skins a player can pick from the gear menu (folder name: label), in menu order.
+    # THEME is the default, wherever it sits in the list.
     # The folder name is what the skin cookie stores, so renaming a label is safe.
     THEMES = {
-        "mario64": "Mario 64",
         "plain": "Minimal",
+        "mario64": "Mario",
         "monkeyisland2": "Monkey",
-        "neon80s": "VHS Nights",
+        "neon80s": "VHS",
     }
     # How many proxies (e.g. Caddy) sit in front of the app. Their X-Forwarded-* headers
     # are only trusted when this is above 0, so share links get the public https address.

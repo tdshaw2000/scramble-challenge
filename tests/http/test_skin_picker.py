@@ -29,7 +29,7 @@ def skin_options(html: bytes) -> list[tuple[str, str, bool]]:
 
 
 def test_every_listed_skin_has_a_theme_folder(app):
-    assert list(app.config["THEMES"]) == ["mario64", "plain", "monkeyisland2", "neon80s"]
+    assert list(app.config["THEMES"]) == ["plain", "mario64", "monkeyisland2", "neon80s"]
     for theme in app.config["THEMES"]:
         assert (APP / "static" / "themes" / theme / "theme.css").is_file()
 
@@ -62,10 +62,10 @@ def test_the_server_setting_is_the_default_skin():
 
 def test_the_page_offers_each_skin_and_ticks_the_current_one(client):
     assert skin_options(client.get("/").data) == [
-        ("mario64", "Mario 64", True),
         ("plain", "Minimal", False),
+        ("mario64", "Mario", True),
         ("monkeyisland2", "Monkey", False),
-        ("neon80s", "VHS Nights", False),
+        ("neon80s", "VHS", False),
     ]
 
 
@@ -73,10 +73,10 @@ def test_the_tick_follows_the_chosen_skin(client):
     client.set_cookie(SKIN_COOKIE_NAME, "plain")
 
     assert skin_options(client.get("/").data) == [
-        ("mario64", "Mario 64", False),
         ("plain", "Minimal", True),
+        ("mario64", "Mario", False),
         ("monkeyisland2", "Monkey", False),
-        ("neon80s", "VHS Nights", False),
+        ("neon80s", "VHS", False),
     ]
 
 
