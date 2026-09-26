@@ -316,6 +316,7 @@ body::after {
 /* QR code + Share URL mockup */
 .share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .share .button { width: 100%; }
+.share-label { grid-column: 1 / -1; margin-bottom: 0; }
 .qr-dialog { box-sizing: border-box; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
 .qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 .qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated;  margin-bottom: 14px; }
