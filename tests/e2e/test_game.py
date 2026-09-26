@@ -218,6 +218,18 @@ def test_the_qr_popup_closes_with_its_button(new_player):
     expect(tom.get_by_role("dialog")).to_be_hidden()
 
 
+def test_a_tap_inside_the_qr_popups_edge_keeps_it_open(new_player):
+    tom = new_player()
+    start_challenge(tom)
+    tom.get_by_role("button", name="QR code").click()
+    box = tom.get_by_role("dialog").bounding_box()
+
+    tom.mouse.click(box["x"] + 12, box["y"] + 12)
+    tom.mouse.click(box["x"] + box["width"] - 12, box["y"] + box["height"] - 12)
+
+    expect(tom.get_by_role("dialog")).to_be_visible()
+
+
 def test_the_qr_popup_closes_with_a_tap_outside_it(new_player):
     tom = new_player()
     start_challenge(tom)
