@@ -498,7 +498,8 @@ body::after {
 .penalty:disabled { opacity: 0.45; cursor: default; transform: none; }
 
 /* Show time toggle under Start inspection: cyan outline when off, glowing green when on. */
-.show-time { width: 100%; margin-top: 14px; }
+/* Same height as the borderless Start inspection button: 2px less padding for the border. */
+.show-time { width: 100%; margin-top: 14px; padding-top: 11px; padding-bottom: 11px; }
 .show-time[aria-pressed="true"] {
   color: #fff;
   border-color: var(--green);
