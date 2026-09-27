@@ -12,9 +12,9 @@ def results(html: bytes) -> list[str]:
     return [" ".join(re.sub(r"<[^>]+>", " ", row).split()) for row in found]
 
 
-def finish(player, time_ms):
+def finish(player, time_ms, plus_two=False):
     services.start_inspection(player)
-    services.start_solve(player)
+    services.start_solve(player, plus_two=plus_two)
     services.stop_solve(player, time_ms)
 
 
@@ -99,6 +99,16 @@ def test_shows_each_rounds_results_ranked_with_times_and_dnfs(
     assert results(html) == ["1st Tom (1) 9.87", "2nd Ann (0) 1:05.43", "3rd Bob (0) DNF"]
 
 
+def test_a_plus_two_shows_the_counted_time_with_a_plus_like_wca(admin, challenge, co, ann):
+    services.start_round(challenge, co)
+    finish(ann, 10_340, plus_two=True)
+    finish(co, 13_000)
+
+    html = admin.get(f"/admin/challenges/{challenge.slug}").data
+
+    assert results(html) == ["1st Ann (1) 12.34+", "2nd Tom (0) 13.00"]
+
+
 def test_a_round_still_in_progress_leaves_out_unfinished_solves(admin, challenge, co, ann):
     services.start_round(challenge, co)
     finish(ann, 12_000)
@@ -136,3 +146,9 @@ def test_solve_times_are_shown_like_the_live_results(time_ms, shown):
     from app.admin import solve_time
 
     assert solve_time(time_ms) == shown
+
+
+def test_a_plus_two_time_is_shown_with_a_plus():
+    from app.admin import solve_time
+
+    assert solve_time(12_340, plus_two=True) == "12.34+"

@@ -125,7 +125,7 @@ def on_start_inspection(player, data):
 @socketio.on("start_solve")
 @player_action
 def on_start_solve(player, data):
-    services.start_solve(player)
+    services.start_solve(player, plus_two=data.get("plus_two", False))
 
 
 @socketio.on("inspection_expired")

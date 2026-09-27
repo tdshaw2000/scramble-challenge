@@ -131,3 +131,34 @@ def test_inspection_running_out_for_the_last_player_completes_the_round(rnd, co,
     services.inspection_expired(other)
 
     assert rnd.ended_at is not None
+
+
+# WCA inspection: the countdown runs 15 seconds, starting in the 2 after it is a +2, and
+# after 17 the attempt is a DNF. The browser decides which (like time_ms, honour system).
+def test_a_solve_started_in_time_has_no_penalty(rnd, co):
+    services.start_inspection(co)
+    services.start_solve(co)
+
+    solve = services.stop_solve(co, time_ms=10_000)
+
+    assert solve.plus_two is False
+
+
+def test_a_solve_started_after_15_seconds_of_inspection_records_a_plus_two(rnd, co):
+    services.start_inspection(co)
+    services.start_solve(co, plus_two=True)
+
+    solve = services.stop_solve(co, time_ms=10_000)
+
+    assert solve.plus_two is True
+    assert solve.time_ms == 10_000  # the time as timed; the +2 is added when it counts
+    assert solve.result == SolveResult.OK
+
+
+@pytest.mark.parametrize("bad", ["yes", 1, None])
+def test_plus_two_must_be_true_or_false(rnd, co, bad):
+    services.start_inspection(co)
+
+    with pytest.raises(services.InvalidInput):
+        services.start_solve(co, plus_two=bad)
+    assert services.find_solve(rnd, co).started_solve_at is None

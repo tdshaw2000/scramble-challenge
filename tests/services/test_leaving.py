@@ -114,3 +114,15 @@ def test_an_active_round_is_closed_when_the_challenge_ends(challenge, co, add_pl
 
     assert rnd.status == RoundStatus.COMPLETE
     assert challenge.status == ChallengeStatus.ENDED
+
+
+def test_leaving_after_a_late_start_is_a_plain_dnf(challenge, co, add_player):
+    amy, _bob = add_player("Amy"), add_player("Bob")
+    rnd = services.start_round(challenge, co)
+    services.start_inspection(amy)
+    services.start_solve(amy, plus_two=True)
+
+    services.player_left(amy)
+
+    [solve] = [s for s in rnd.solves if s.player == amy]
+    assert (solve.result, solve.plus_two) == (SolveResult.DNF, False)

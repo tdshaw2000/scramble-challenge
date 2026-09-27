@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
@@ -119,6 +119,9 @@ class Solve(db.Model):
     time_ms: Mapped[int | None]
     # None while the solve is in progress; set to ok or dnf once it has an outcome.
     result: Mapped[SolveResult | None] = mapped_column(enum_column(SolveResult))
+    # WCA inspection: the solve started between 15 and 17 seconds in, so 2 seconds are added
+    # when it counts. time_ms stays the time as timed.
+    plus_two: Mapped[bool] = mapped_column(default=False, server_default=false())
     started_inspection_at: Mapped[datetime | None]
     started_solve_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]

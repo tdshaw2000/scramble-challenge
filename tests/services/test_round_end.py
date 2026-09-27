@@ -106,6 +106,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "player_id": str(amy.id),
             "display_name": "Amy",
             "time_ms": 10_000,
+            "plus_two": False,
             "result": "ok",
             "position": 1,
             "points": 0,
@@ -114,6 +115,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "player_id": str(bob.id),
             "display_name": "Bob",
             "time_ms": 10_000,
+            "plus_two": False,
             "result": "ok",
             "position": 1,
             "points": 0,
@@ -122,6 +124,7 @@ def test_leaderboard_ranks_finished_solves_and_skips_ones_in_progress(challenge,
             "player_id": str(co.id),
             "display_name": "Tom",
             "time_ms": 12_500,
+            "plus_two": False,
             "result": "ok",
             "position": 3,
             "points": 0,
@@ -139,3 +142,15 @@ def test_leaderboard_lists_dnfs_last(challenge, co, add_player):
         ("Amy", "ok", 1),
         ("Tom", "dnf", 2),
     ]
+
+
+def test_a_late_start_cut_off_by_end_round_is_a_plain_dnf(challenge, co, add_player):
+    amy = add_player("Amy")
+    rnd = services.start_round(challenge, co)
+    services.start_inspection(amy)
+    services.start_solve(amy, plus_two=True)
+
+    services.end_round(challenge, co)
+
+    [row] = [r for r in services.leaderboard(rnd) if r["display_name"] == "Amy"]
+    assert (row["result"], row["time_ms"], row["plus_two"]) == ("dnf", None, False)

@@ -104,6 +104,46 @@ def test_a_finished_solve_updates_everyones_leaderboard(challenge, add_player, j
         ]
 
 
+def test_a_solve_started_late_in_inspection_counts_with_a_plus_two(challenge, add_player, joined):
+    add_player("Amy", connected=False)
+    tom, amy = joined("cookie-co", "cookie-Amy")
+    tom.emit("start_round", {})
+    tom.get_received()
+    amy.emit("start_inspection", {})
+    amy.emit("start_solve", {"plus_two": True})
+    amy.get_received()
+
+    amy.emit("stop_solve", {"time_ms": 9_500})
+
+    for client in (tom, amy):
+        [update] = events(client, "leaderboard_update")
+        assert [(r["display_name"], r["time_ms"], r["plus_two"]) for r in update["results"]] == [
+            ("Amy", 11_500, True)
+        ]
+
+
+def test_a_solve_started_without_saying_has_no_penalty(challenge, joined):
+    [tom] = joined("cookie-co")
+    tom.emit("start_round", {})
+    tom.get_received()
+
+    solve(tom, 9_500)
+
+    [update] = events(tom, "leaderboard_update")
+    assert [(r["time_ms"], r["plus_two"]) for r in update["results"]] == [(9_500, False)]
+
+
+def test_a_bad_plus_two_is_reported(challenge, joined):
+    [tom] = joined("cookie-co")
+    tom.emit("start_round", {})
+    tom.emit("start_inspection", {})
+    tom.get_received()
+
+    tom.emit("start_solve", {"plus_two": "yes"})
+
+    assert events(tom, "game_error") == [{"message": "plus_two must be true or false."}]
+
+
 def test_bad_solve_messages_are_reported_to_the_sender(challenge, joined):
     [tom] = joined("cookie-co")
     tom.emit("start_round", {})

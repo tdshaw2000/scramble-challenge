@@ -51,7 +51,8 @@ This is a spiritual sibling to tnoodle-scratch but a new project, not an extensi
 - `player_id` (FK → Player)
 - `time_ms` (nullable — null means DNF)
 - `result`: `ok` | `dnf`
-- `started_inspection_at`, `started_solve_at`, `finished_at` (raw timestamps — useful for later, e.g. inspection-overrun penalties if ever added; not used for anything in v1 beyond computing `time_ms`)
+- `plus_two` (bool, default false — the solve started between 15 and 17 seconds into inspection; `time_ms` stays the time as timed, and 2 seconds are added wherever the time counts or shows)
+- `started_inspection_at`, `started_solve_at`, `finished_at` (raw timestamps — not used for anything beyond computing `time_ms`; the browser decides the inspection penalty)
 
 One `Solve` row per (round, player) — created when a player presses Start Inspection, filled in when they stop the timer, left with `time_ms = null, result = dnf` if the round ends before they finish.
 
@@ -73,8 +74,8 @@ One `Solve` row per (round, player) — created when a player presses Start Insp
 4. All connected players' screens switch to: scramble text + image, "Start inspection" button.
 
 **Per-player solve flow** (independent per player — no synchronised countdown across players)
-1. Player scrambles their physical puzzle, presses "Start inspection" → 15→0 countdown, screen otherwise blank.
-2. A press anywhere starts the solve timer. If the countdown reaches 0 first, the attempt is a DNF (a house rule, simpler than WCA's +2-then-DNF).
+1. Player scrambles their physical puzzle, presses "Start inspection" → 15→1 countdown, screen otherwise blank.
+2. A press anywhere starts the solve timer. WCA inspection rules apply: starting within 15 seconds has no penalty; starting between 15 and 17 seconds is a +2 (2 seconds added to the time); after 17 seconds without starting, the attempt is a DNF.
 3. A subsequent press anywhere stops it → `Solve` row filled with `time_ms`, `result: ok`.
 4. Player's screen returns to the Players list / live leaderboard for this round.
 
@@ -105,8 +106,8 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `join_challenge` | `{ challenge_slug, cookie_id, display_name }` | anyone | Joins room; creates `Player` if new; broadcasts `player_list` |
 | `start_round` | `{ puzzle }` | CO only | Generates scramble, creates `Round`, broadcasts `round_started` |
 | `start_inspection` | `{}` | player, during `round_active` | Records `started_inspection_at` |
-| `start_solve` | `{}` | player, mid-inspection | Records `started_solve_at` (client-side inspection countdown; this just marks the transition) |
-| `inspection_expired` | `{}` | player, mid-inspection | Countdown reached 0: fills `Solve` (`result: dnf`), broadcasts `leaderboard_update` |
+| `start_solve` | `{ plus_two }` | player, mid-inspection | Records `started_solve_at` and `plus_two` (true if the solve started between 15 and 17 seconds into inspection; defaults to false). The inspection countdown runs in the browser, which decides the penalty (honour system, like `time_ms`) |
+| `inspection_expired` | `{}` | player, mid-inspection | 17 seconds of inspection passed: fills `Solve` (`result: dnf`), broadcasts `leaderboard_update` |
 | `stop_solve` | `{ time_ms }` | player, mid-solve | Fills `Solve` (`time_ms`, `result: ok`), broadcasts `leaderboard_update` |
 | `end_round` | `{}` | CO only | Force-ends round: unfinished players marked `dnf`, broadcasts `round_complete` |
 | `end_challenge` | `{}` | CO only, during `round_results` | Ends the challenge for everyone, broadcasts `challenge_ended` |
@@ -117,7 +118,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 |---|---|---|---|
 | `player_list` | `[{ player_id, display_name, is_co, connected, points }]` | room | Any join/leave/disconnect, and after `round_complete` |
 | `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
-| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, result, position, points }] }` | room | Any solve completes (live reordering) |
+| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, plus_two, result, position, points }] }` | room | Any solve completes (live reordering). `time_ms` here is the counted time, with any +2 already added |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
 | `challenge_ended` | `{}` | room, or one page joining an ended challenge | The challenge ends: the CO ends it, or doesn't come back within the grace period. The page reloads and lands on the summary |
 
@@ -137,13 +138,13 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 - "Start inspection" button
 
 **Inspection (per player, after they press Start inspection)**
-- Screen goes blank except a large 15→0 countdown
+- Screen goes blank except a large 15→1 countdown. Once 15 seconds have passed it shows "+2" until 17 seconds, when the attempt becomes a DNF
 - Hold a finger (or the mouse button, or Space) anywhere and let go to start solving, like a real cubing timer. While held, the screen shows it is ready
 
 **Solving (per player)**
 - Blank screen, timer running (not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator)
 - Tap/click anywhere, or press Space, stops the timer, submits `stop_solve`, then shows the player's own time (truncated to hundredths) full screen for one second, with no label, and returns to leaderboard. Taps and Space do nothing during that second. If the round ends meanwhile (they were last to finish), the results wait until the second is up; if the next round starts meanwhile, its scramble shows at once.
-- Letting inspection reach zero shows "DNF" the same way. A DNF given by End Round does not (the results already show it).
+- A +2 time shows with the 2 seconds added and a "+" after it, e.g. "12.34+". Letting 17 seconds of inspection pass shows "DNF" the same way. A DNF given by End Round does not (the results already show it).
 
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
@@ -158,8 +159,9 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 - **Same scramble per round, always.** Generated once when the round starts, stored on the `Round`, never regenerated per player.
 - **One attempt per player per round.** No retries within a round.
-- **Ties share position.** Two players whose `time_ms` match to the hundredth (times are truncated, not rounded, as in WCA results) both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
-- **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if their inspection countdown reaches 0. Shown as "DNF" in the leaderboard, sorted after all timed results.
+- **Ties share position.** Two players whose counted times (with any +2 added) match to the hundredth (times are truncated, not rounded, as in WCA results) both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
+- **+2.** Starting the solve between 15 and 17 seconds into inspection adds 2 seconds, as in WCA rules. The penalised time is what ranks, ties (after truncating to hundredths) and wins points, and it shows WCA-style with a "+" after it ("12.34+") in the leaderboard, summary and admin pages.
+- **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if 17 seconds of inspection pass without them starting (WCA's rule). Shown as "DNF" in the leaderboard, sorted after all timed results.
 - **Puzzle defaults.** Round 1 of any challenge always defaults to 3x3 (`333`). Round 2 onward defaults to whatever puzzle was used in the immediately preceding round. CO can always override via the dropdown.
 - **Puzzle list.** The WCA puzzles TNoodle scrambles, without variants: 2x2 to 7x7, Pyraminx, Skewb, Square-1, Megaminx and Clock. The blindfolded (`333ni`, `444ni`, `555ni`), fewest-moves (`333fm`) and fast-4x4 (`444fast`) variants are deliberately left out. The dropdown and round heading show names ("Megaminx"); events and the database use TNoodle codes (`minx`).
 

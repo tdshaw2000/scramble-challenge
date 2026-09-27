@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from app.game import (
     DEFAULT_PUZZLE,
     PUZZLE_NAMES,
+    counted_time,
     default_puzzle,
     rank,
     round_is_over,
@@ -132,3 +133,16 @@ def test_nobody_wins_a_round_where_everyone_dnfs():
 
 def test_nobody_wins_a_round_with_no_results():
     assert winners() == set()
+
+
+# WCA inspection: starting the solve between 15 and 17 seconds adds two seconds.
+def test_a_plus_two_adds_two_seconds_to_the_time():
+    assert counted_time(10_340, plus_two=True) == 12_340
+
+
+def test_a_time_without_a_penalty_counts_as_it_is():
+    assert counted_time(10_340, plus_two=False) == 10_340
+
+
+def test_a_dnf_stays_a_dnf_whatever_the_penalty():
+    assert counted_time(None, plus_two=True) is None

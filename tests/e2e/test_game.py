@@ -296,12 +296,59 @@ def test_inspection_counts_down_from_15_on_a_blank_screen(tom_and_amy):
     expect(amy.locator("#countdown")).to_have_text("1")
 
 
-def test_letting_the_countdown_reach_zero_is_a_dnf(tom_and_amy):
+# WCA inspection: after the 15-second countdown there are 2 more seconds to start, at the
+# cost of 2 seconds on the time (a +2). After 17 seconds the attempt is a DNF.
+def test_after_15_seconds_the_countdown_shows_plus_two_instead_of_a_dnf(tom_and_amy):
     tom, amy, _ = tom_and_amy
     tom.get_by_role("button", name="Start round").click()
     amy.get_by_role("button", name="Start inspection").click()
 
     advance(amy, 15_000)
+
+    expect(amy.locator("#countdown")).to_have_text("+2")
+    expect(amy.locator("#overlay")).to_be_visible()
+    expect(amy.locator("#message")).not_to_contain_text("DNF")
+    advance(amy, 1_900)
+    expect(amy.locator("#countdown")).to_have_text("+2")
+
+
+def test_starting_between_15_and_17_seconds_adds_two_seconds(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+    advance(amy, 16_000)
+    record_timeouts(amy, stretch_one_second=True)
+
+    amy.locator("#overlay").click()  # start solving, late
+    advance(amy, 10_349)
+    amy.locator("#overlay").click()  # stop
+
+    expect(amy.locator("#finished")).to_have_text("12.34+")
+    for page in (tom, amy):
+        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        assert leaderboard(page) == [["1st", "Amy (0)", "12.34+"]]
+
+
+def test_starting_just_before_15_seconds_has_no_penalty(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+    advance(amy, 14_900)
+
+    amy.locator("#overlay").click()
+    advance(amy, 10_000)
+    amy.locator("#overlay").click()
+
+    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "10.00"]]
+
+
+def test_letting_17_seconds_of_inspection_pass_is_a_dnf(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()
+    amy.get_by_role("button", name="Start inspection").click()
+
+    advance(amy, 17_000)
 
     expect(amy.locator("#overlay")).to_be_hidden()
     expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
@@ -371,7 +418,7 @@ def test_running_out_of_inspection_shows_dnf_for_a_second(tom_and_amy):
     start_inspecting(tom, amy)
     record_timeouts(amy, stretch_one_second=True)
 
-    advance(amy, 15_000)
+    advance(amy, 17_000)
 
     finished = amy.locator("#finished")
     expect(finished).to_be_visible()
@@ -522,6 +569,14 @@ def test_times_over_a_minute_show_minutes(new_player):
     assert page.evaluate("ScrambleChallenge.formatTime(null)") == "DNF"
 
 
+def test_a_plus_two_time_shows_with_a_plus_like_wca(new_player):
+    page = new_player()
+    start_challenge(page)
+
+    assert page.evaluate("ScrambleChallenge.formatTime(12340, true)") == "12.34+"
+    assert page.evaluate("ScrambleChallenge.formatTime(12340, false)") == "12.34"
+
+
 @pytest.mark.parametrize(
     ("time_ms", "shown"),
     [
@@ -663,13 +718,33 @@ def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom
     start_inspecting(tom, amy)
 
     amy.keyboard.down("Space")
-    advance(amy, 15_000)
+    advance(amy, 17_000)
     expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
     expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
     amy.keyboard.up("Space")
 
     expect(amy.locator("#overlay")).to_be_hidden()
     # The leaderboard comes from the server, so wait for it before reading it.
+    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
+
+
+def test_a_start_just_after_17_seconds_is_a_dnf_even_before_the_countdown_notices(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    # The countdown only looks every 100 ms, so press and lift in the same moment the
+    # clock passes 17 seconds, before it can notice.
+    amy.evaluate(
+        """() => {
+          window.__fakeNow += 17050;
+          const overlay = document.getElementById("overlay");
+          overlay.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+          overlay.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+        }"""
+    )
+
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
     expect(amy.locator("#leaderboard")).to_contain_text("DNF")
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
 
