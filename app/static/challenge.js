@@ -108,7 +108,7 @@
   }
 
   function renderResults(results) {
-    const list = $("leaderboard");
+    const list = $("result-list");
     list.replaceChildren();
     for (const r of results) {
       const li = element("li", `result result-${r.result} result-position-${r.position}`);
