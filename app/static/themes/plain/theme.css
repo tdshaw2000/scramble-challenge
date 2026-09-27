@@ -34,7 +34,7 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .finished[data-result="dnf"] { color: #b91c1c; }
 .game[data-ready] .countdown { color: #15803d; }
 .overlay-hint { color: var(--muted); }
-.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
+.result-list, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
 .result, .standing { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .result .name, .standing .name { flex: 1; }
 .result .time { font-variant-numeric: tabular-nums; }

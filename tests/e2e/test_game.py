@@ -84,7 +84,7 @@ def solve(page, ms):
 def leaderboard(page):
     return [
         [row.locator(f".{part}").inner_text() for part in ("position", "name", "time")]
-        for row in page.locator("#leaderboard li").all()
+        for row in page.locator("#result-list li").all()
     ]
 
 
@@ -325,7 +325,7 @@ def test_starting_between_15_and_17_seconds_adds_two_seconds(tom_and_amy):
 
     expect(amy.locator("#finished")).to_have_text("12.34+")
     for page in (tom, amy):
-        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        expect(page.locator("#result-list")).to_contain_text("Amy")
         assert leaderboard(page) == [["1st", "Amy (0)", "12.34+"]]
 
 
@@ -339,7 +339,7 @@ def test_starting_just_before_15_seconds_has_no_penalty(tom_and_amy):
     advance(amy, 10_000)
     amy.locator("#overlay").click()
 
-    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
     assert leaderboard(amy) == [["1st", "Amy (0)", "10.00"]]
 
 
@@ -353,7 +353,7 @@ def test_letting_17_seconds_of_inspection_pass_is_a_dnf(tom_and_amy):
     expect(amy.locator("#overlay")).to_be_hidden()
     expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
     for page in (tom, amy):
-        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        expect(page.locator("#result-list")).to_contain_text("Amy")
         assert leaderboard(page) == [["1st", "Amy (0)", "DNF"]]
 
 
@@ -369,7 +369,7 @@ def test_solving_shows_no_running_time_and_stopping_posts_it(tom_and_amy):
     amy.locator("#overlay").click()
 
     for page in (tom, amy):
-        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        expect(page.locator("#result-list")).to_contain_text("Amy")
         assert leaderboard(page) == [["1st", "Amy (0)", "9.87"]]
 
 
@@ -393,7 +393,7 @@ def test_stopping_shows_the_time_full_screen_for_a_second_then_the_leaderboard(t
     assert 1000 in amy.evaluate("window.__timeouts")
 
     expect(amy.locator("#overlay")).to_be_hidden()
-    expect(amy.locator("#leaderboard")).to_be_visible()
+    expect(amy.locator("#result-list")).to_be_visible()
     assert leaderboard(amy) == [["1st", "Amy (0)", "12.34"]]
 
 
@@ -623,7 +623,7 @@ def test_space_starts_the_solve_during_inspection_and_stops_it(tom_and_amy):
     amy.keyboard.press("Space")
 
     for page in (tom, amy):
-        expect(page.locator("#leaderboard")).to_contain_text("Amy")
+        expect(page.locator("#result-list")).to_contain_text("Amy")
         assert leaderboard(page) == [["1st", "Amy (0)", "7.65"]]
 
 
@@ -644,7 +644,7 @@ def test_holding_space_waits_and_letting_go_starts_the_solve(tom_and_amy):
     advance(amy, 6420)
     # Stopping happens the moment space goes down, so no time is added while letting go.
     amy.keyboard.down("Space")
-    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
     amy.keyboard.up("Space")
 
     assert leaderboard(amy) == [["1st", "Amy (0)", "6.42"]]
@@ -658,7 +658,7 @@ def test_space_mixes_with_taps(tom_and_amy):
     advance(amy, 5000)
     amy.keyboard.press("Space")
 
-    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
     assert leaderboard(amy) == [["1st", "Amy (0)", "5.00"]]
 
 
@@ -671,7 +671,7 @@ def test_space_does_not_scroll_the_page_while_timing(tom_and_amy):
     advance(amy, 3000)
     amy.keyboard.press("Space")
 
-    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
     assert amy.evaluate("window.__spaceDefaultPrevented") == [True, True]
 
 
@@ -725,7 +725,7 @@ def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom
 
     expect(amy.locator("#overlay")).to_be_hidden()
     # The leaderboard comes from the server, so wait for it before reading it.
-    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
+    expect(amy.locator("#result-list")).to_contain_text("DNF")
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
 
 
@@ -745,7 +745,7 @@ def test_a_start_just_after_17_seconds_is_a_dnf_even_before_the_countdown_notice
     )
 
     expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
-    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
+    expect(amy.locator("#result-list")).to_contain_text("DNF")
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
 
 
@@ -773,7 +773,7 @@ def test_holding_a_finger_down_waits_and_lifting_it_starts_the_solve(tom_and_amy
     advance(amy, 4310)
     # Stopping happens the moment the finger goes down, so lifting it adds no time.
     press_overlay(amy)
-    expect(amy.locator("#leaderboard")).to_contain_text("Amy")
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
     amy.mouse.up()
 
     assert leaderboard(amy) == [["1st", "Amy (0)", "4.31"]]

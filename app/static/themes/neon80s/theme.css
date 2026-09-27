@@ -374,7 +374,7 @@ body::after {
 .overlay-hint { margin-top: 26px; color: var(--muted); letter-spacing: 0.08em; }
 
 /* Leaderboard: gold, silver and bronze neon rings. */
-.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
+.result-list, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
 .result, .standing {
   display: grid;
   grid-template-columns: 3.2rem 1fr auto;

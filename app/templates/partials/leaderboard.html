@@ -1,5 +1,5 @@
 {# One round's results as a list, used by the summary and admin pages. Needs `results`. #}
-<ol class="leaderboard">
+<ol class="result-list">
   {% for r in results %}
   <li class="result result-{{ r.result }} result-position-{{ r.position }}">
     <span class="position">{{ r.position | ordinal }}</span>

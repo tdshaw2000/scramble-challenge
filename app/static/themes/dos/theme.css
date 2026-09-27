@@ -260,7 +260,7 @@ select.field-input:focus { background-color: var(--bright-cyan); }
 .overlay-hint { margin-top: 32px; color: var(--dark-grey); }
 
 /* Leaderboard: numbered like a directory listing, times in yellow. */
-.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
+.result-list, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
 .result, .standing {
   display: grid;
   grid-template-columns: 2.4em 1fr auto;

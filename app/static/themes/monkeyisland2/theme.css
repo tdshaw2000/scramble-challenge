@@ -258,7 +258,7 @@ body::before {
 @keyframes bob { to { transform: translateY(-8px); } }
 
 /* Leaderboard: gold, silver and bronze pieces of eight. */
-.leaderboard, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
+.result-list, .standings { list-style: none; padding: 0; margin: 0 0 10px; }
 .result, .standing {
   display: grid;
   grid-template-columns: 3.2rem 1fr auto;
