@@ -338,6 +338,14 @@
     document.cookie = `${SHOW_TIME_COOKIE}=${value}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
   });
 
+  // Each digit gets its own span, so a theme whose font has digits of different widths can
+  // give them all one width and keep the decimal point still while the time runs.
+  function showRunningTime(ms) {
+    const shown = ms === null ? "" : formatTime(ms);
+    const parts = [...shown].map((c) => element("span", /\d/.test(c) ? "digit" : "separator", c));
+    $("running-time").replaceChildren(...parts);
+  }
+
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     // If the screen lock was refused when the round started, ask again from this tap.
@@ -390,11 +398,11 @@
       $("countdown").hidden = true;
       // The running time is the solve alone, like a real timer: any +2 is added at the end.
       $("solving").hidden = showTime();
-      setText("running-time", showTime() ? formatTime(0) : "");
+      showRunningTime(showTime() ? 0 : null);
       setPhase("solving");
       if (showTime()) {
         ticker = setInterval(
-          () => setText("running-time", formatTime(performance.now() - solveStartedAt)),
+          () => showRunningTime(performance.now() - solveStartedAt),
           RUNNING_TIME_MS,
         );
       }
