@@ -94,3 +94,11 @@ def test_every_theme_styles_the_penalty_toggles(theme):
 
     for selector in (".penalties", '.penalty[aria-pressed="true"]', ".penalty:disabled"):
         assert selector in css, selector
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_styles_the_show_time_toggle_and_the_running_time(theme):
+    css = (APP / "static" / "themes" / theme / "theme.css").read_text()
+
+    for selector in (".show-time", '.show-time[aria-pressed="true"]', ".running-time"):
+        assert selector in css, selector
