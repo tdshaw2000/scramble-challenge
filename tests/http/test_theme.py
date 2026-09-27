@@ -80,6 +80,9 @@ def test_pressing_the_timer_screen_never_selects_text_on_any_phone(theme):
     # callout is the iPhone's long-press copy menu.
     rule = css_rule((APP / "static" / "themes" / theme / "theme.css").read_text(), ".overlay")
 
-    for declaration in ("-webkit-user-select: none", "user-select: none",
-                        "-webkit-touch-callout: none"):
+    for declaration in (
+        "-webkit-user-select: none",
+        "user-select: none",
+        "-webkit-touch-callout: none",
+    ):
         assert re.search(rf"(?<![-\w]){declaration};", rule), declaration

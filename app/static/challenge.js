@@ -43,6 +43,8 @@
   let heldInInspection = false;
   let finishedTimer = null;
   let roundEndedWhileFinished = false;
+  let roundLive = false;
+  let wakeLock = null; // the screen lock held, or a marker while one is being asked for
 
   function setPhase(next) {
     clearTimeout(finishedTimer);
@@ -141,6 +143,45 @@
     if ($("start-round")) $("start-round").disabled = !enabled;
   }
 
+  // Keeps the phone's screen from dimming while a round is on, where the browser allows it
+  // (the Screen Wake Lock API). Browsers drop the lock whenever the page is hidden, so it is
+  // asked for again on coming back. Old phones and battery saver just dim as before.
+  async function keepScreenAwake() {
+    if (!roundLive || !navigator.wakeLock || document.visibilityState !== "visible") return;
+    if (wakeLock) return;
+    const asking = {};
+    wakeLock = asking;
+    let lock = null;
+    try {
+      lock = await navigator.wakeLock.request("screen");
+    } catch {
+      // Refused: nothing to do, the screen may dim.
+    }
+    if (wakeLock !== asking) {
+      // The round ended while asking.
+      if (lock) lock.release().catch(() => {});
+      return;
+    }
+    wakeLock = lock;
+    if (lock) lock.addEventListener("release", () => {
+      if (wakeLock === lock) wakeLock = null;
+    });
+  }
+
+  function letScreenSleep() {
+    const lock = wakeLock;
+    wakeLock = null;
+    if (lock && lock.release) lock.release().catch(() => {});
+  }
+
+  function setRoundLive(live) {
+    roundLive = live;
+    if (live) keepScreenAwake();
+    else letScreenSleep();
+  }
+
+  document.addEventListener("visibilitychange", keepScreenAwake);
+
   socket.on("player_list", (players) => {
     renderPlayers(players);
     setStartRoundEnabled(true);
@@ -160,12 +201,14 @@
     setEndRoundVisible(true);
     setEndChallengeVisible(false);
     setPhase("scramble");
+    setRoundLive(true);
   });
 
   socket.on("leaderboard_update", (update) => renderResults(update.results));
 
   socket.on("round_complete", (update) => {
     stopTicker();
+    setRoundLive(false);
     renderResults(update.results);
     setText("results-heading", roundNumber ? `Round ${roundNumber} results` : "Last round's results");
     setEndRoundVisible(false);
@@ -179,6 +222,7 @@
   // summary page, so reloading takes everyone there.
   socket.on("challenge_ended", () => {
     stopTicker();
+    setRoundLive(false);
     window.location.reload();
   });
 
@@ -248,6 +292,8 @@
 
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
+    // If the screen lock was refused when the round started, ask again from this tap.
+    keepScreenAwake();
     inspectionStartedAt = performance.now();
     setHeld(false);
     setText("countdown", INSPECTION_SECONDS);
