@@ -730,6 +730,19 @@ def test_a_long_press_does_not_open_the_phones_menu(tom_and_amy):
     assert not_prevented is False
 
 
+def test_pressing_the_timer_screen_does_not_start_selecting_text(tom_and_amy):
+    # Backs up the themes' no-select styles for any browser that ignores them.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    not_prevented = amy.evaluate(
+        "document.getElementById('countdown').dispatchEvent("
+        "new Event('selectstart', { bubbles: true, cancelable: true }))"
+    )
+
+    assert not_prevented is False
+
+
 def test_a_finger_that_drifts_while_held_still_starts_the_solve_when_lifted(new_player):
     # Real touch events, as a phone sends them. A finger rarely stays perfectly still, and
     # the browser must not take a small drift over as a scroll (which cancels the press).
