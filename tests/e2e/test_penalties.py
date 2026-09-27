@@ -25,8 +25,11 @@ def test_only_your_own_row_has_the_toggles(tom_and_amy):  # noqa: F811
     expect(row.get_by_role("button", name="+2")).to_be_visible()
     expect(row.get_by_role("button", name="DNF")).to_be_visible()
     expect(row.get_by_role("button", name="+2")).to_have_attribute("aria-pressed", "false")
+    solve(tom, 13_000)
     expect(own_row(tom, "Amy")).to_be_visible()
-    expect(tom.locator("#result-list").get_by_role("button")).to_have_count(0)
+    expect(own_row(tom, "Amy").get_by_role("button")).to_have_count(0)
+    expect(own_row(tom, "Tom").get_by_role("button")).to_have_count(2)
+    expect(own_row(amy, "Tom").get_by_role("button")).to_have_count(0)
 
 
 def test_plus_two_toggles_on_and_off_for_everyone(tom_and_amy):  # noqa: F811

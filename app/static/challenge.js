@@ -39,6 +39,7 @@
 
   const $ = (id) => document.getElementById(id);
   const isCo = game.dataset.isCo === "true";
+  const playerId = game.dataset.playerId;
   const socket = io();
 
   let roundNumber = null;
@@ -117,8 +118,28 @@
         element("span", "name", nameWithPoints(r)),
         element("span", "time", formatTime(r.time_ms, r.plus_two)),
       );
+      if (r.player_id === playerId && r.timed) li.append(penaltyToggles(r));
       list.appendChild(li);
     }
+  }
+
+  // The player's own timed solve gets +2 and DNF toggles until the next round starts.
+  // The server keeps the timed solve, so turning a DNF off brings the time (and any +2)
+  // back. +2 can't change while DNF is on. Each tap sends the whole new state.
+  function penaltyToggles(r) {
+    const dnf = r.result === "dnf";
+    const toggles = element("span", "penalties");
+    const toggle = (label, pressed, next) => {
+      const button = element("button", `button penalty penalty-${label === "+2" ? "plus-two" : "dnf"}`, label);
+      button.type = "button";
+      button.setAttribute("aria-pressed", String(pressed));
+      button.addEventListener("click", () => socket.emit("set_penalty", next));
+      toggles.appendChild(button);
+      return button;
+    };
+    toggle("+2", r.plus_two, { plus_two: !r.plus_two, dnf }).disabled = dnf;
+    toggle("DNF", dnf, { plus_two: r.plus_two, dnf: !dnf });
+    return toggles;
   }
 
   function setEndRoundVisible(visible) {

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="game" class="game" data-phase="lobby" data-slug="{{ challenge.slug }}"
+<div id="game" class="game" data-phase="lobby" data-slug="{{ challenge.slug }}" data-player-id="{{ player.id }}"
      data-is-co="{{ 'true' if player.is_co else 'false' }}">
   <p id="message" class="notice" role="status" hidden></p>
 
