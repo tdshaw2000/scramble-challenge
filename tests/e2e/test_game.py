@@ -926,3 +926,32 @@ def test_a_round_plays_normally_where_the_screen_cannot_be_kept_awake(new_player
     expect(amy.locator("#results-heading")).to_have_text("Round 1 results")
     assert leaderboard(amy)[0] == ["1st", "Amy (1)", "5.00"]
     assert errors == []
+
+
+# Refuses the first ask (as at the start of a round) and grants the ones after it.
+REFUSED_ONCE_WAKE_LOCK = (
+    FAKE_WAKE_LOCK
+    + """
+  const grant = navigator.wakeLock.request;
+  let asks = 0;
+  Object.defineProperty(navigator, "wakeLock", {
+    configurable: true,
+    value: {
+      request: (type) =>
+        ++asks === 1 ? Promise.reject(new DOMException("Not now", "NotAllowedError")) : grant(type),
+    },
+  });
+"""
+)
+
+
+def test_a_refused_screen_lock_is_asked_for_again_on_starting_inspection(new_player):
+    tom, amy = tom_and_amy_with(new_player, REFUSED_ONCE_WAKE_LOCK)
+    tom.get_by_role("button", name="Start round").click()
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+    amy.wait_for_timeout(250)
+    assert screen_locks_held(amy) == 0
+
+    amy.get_by_role("button", name="Start inspection").click()
+
+    amy.wait_for_function("window.__screenLocksHeld() === 1")
