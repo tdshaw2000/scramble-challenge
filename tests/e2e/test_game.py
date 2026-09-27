@@ -729,6 +729,26 @@ def test_letting_go_of_space_after_inspection_ran_out_does_not_start_a_solve(tom
     assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
 
 
+def test_a_start_just_after_17_seconds_is_a_dnf_even_before_the_countdown_notices(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    # The countdown only looks every 100 ms, so press and lift in the same moment the
+    # clock passes 17 seconds, before it can notice.
+    amy.evaluate(
+        """() => {
+          window.__fakeNow += 17050;
+          const overlay = document.getElementById("overlay");
+          overlay.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+          overlay.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+        }"""
+    )
+
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
+    expect(amy.locator("#leaderboard")).to_contain_text("DNF")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "DNF"]]
+
+
 # A finger (or mouse button) on the blank screen works like the spacebar: hold it down
 # during inspection to get ready, lift it to start the solve; a press while solving stops.
 def press_overlay(page):
