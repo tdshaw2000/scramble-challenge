@@ -353,6 +353,6 @@ select.field-input:focus { background-color: var(--bright-cyan); }
 .penalty:disabled::before, .penalty:disabled::after { color: var(--dark-grey); }
 
 /* Show time toggle under Start inspection: a grey block that turns cyan when on. */
-.show-time { width: calc(100% - 8px); margin-top: 14px; background: var(--grey); }
+.show-time { width: calc(100% - 8px); margin-top: 14px; padding: 12px 14px; background: var(--grey); }
 .show-time[aria-pressed="true"] { color: var(--black); background: var(--bright-cyan); }
 .running-time { margin: 0; font: 80px/1 var(--dos); color: var(--white); }

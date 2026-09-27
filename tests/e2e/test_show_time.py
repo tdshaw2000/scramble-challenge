@@ -3,6 +3,7 @@ time), on shows the time ticking up while solving. The choice lives in a cookie.
 
 import re
 
+import pytest
 from playwright.sync_api import expect
 
 from tests.e2e.test_game import (
@@ -132,3 +133,15 @@ def test_a_solve_cut_short_by_end_round_leaves_no_running_time_in_the_next_round
 
     expect(amy.locator("#countdown")).to_have_text("14")
     expect(amy.locator("#running-time")).to_be_hidden()
+
+
+@pytest.mark.parametrize("skin", ["plain", "dos", "mario64", "monkeyisland2", "neon80s"])
+def test_the_toggle_is_as_tall_as_start_inspection_in_every_skin(tom_and_amy, skin):  # noqa: F811
+    _, amy = start_round(tom_and_amy)
+    amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])
+    amy.reload()
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+
+    start = amy.get_by_role("button", name="Start inspection").bounding_box()
+    toggle = amy.locator(SHOW_TIME).bounding_box()
+    assert toggle["height"] == start["height"]
