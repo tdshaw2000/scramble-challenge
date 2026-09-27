@@ -182,6 +182,24 @@ def stop_solve(player: Player, time_ms: int) -> Solve:
     return solve
 
 
+def set_penalty(player: Player, plus_two: bool, dnf: bool) -> Solve:
+    """The player marks their own finished solve as +2, DNF, both or neither, until the next
+    round starts. The timed solve is kept, so turning a penalty off again brings it back."""
+    # Trust boundary: like time_ms, the player decides their own penalties (honour system).
+    if type(plus_two) is not bool or type(dnf) is not bool:
+        raise InvalidInput("plus_two and dnf must be true or false.")
+    challenge = player.challenge
+    if challenge.status not in (ChallengeStatus.ROUND_ACTIVE, ChallengeStatus.ROUND_RESULTS):
+        raise InvalidState("There is no round to change.")
+    solve = find_solve(challenge.current_round, player)
+    if solve is None or solve.result is None or solve.time_ms is None:
+        raise InvalidState("Only a finished, timed solve can be changed.")
+    solve.plus_two = plus_two
+    solve.result = SolveResult.DNF if dnf else SolveResult.OK
+    db.session.commit()
+    return solve
+
+
 def end_round(challenge: Challenge, player: Player) -> Round:
     require_co(challenge, player)
     if challenge.status != ChallengeStatus.ROUND_ACTIVE:
@@ -235,9 +253,16 @@ class _Row:
     solve: Solve
 
 
+def _counted_time(solve: Solve) -> int | None:
+    # A DNF the player chose keeps its timed solve, so the result decides, not time_ms.
+    if solve.result == SolveResult.DNF:
+        return None
+    return game.counted_time(solve.time_ms, solve.plus_two)
+
+
 def _rows(rnd: Round) -> list[_Row]:
     return [
-        _Row(name=s.player.display_name, time_ms=game.counted_time(s.time_ms, s.plus_two), solve=s)
+        _Row(name=s.player.display_name, time_ms=_counted_time(s), solve=s)
         for s in rnd.solves
         if s.result is not None
     ]
@@ -281,6 +306,8 @@ def leaderboard(rnd: Round) -> list[dict]:
             "time_ms": row.time_ms,
             "plus_two": row.solve.plus_two,
             "result": row.solve.result.value,
+            # A timed solve can have its +2 and DNF toggled; a DNF with no time can't.
+            "timed": row.solve.time_ms is not None,
             "position": position,
             "points": totals[row.solve.player_id],
         }

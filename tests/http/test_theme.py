@@ -86,3 +86,11 @@ def test_pressing_the_timer_screen_never_selects_text_on_any_phone(theme):
         "-webkit-touch-callout: none",
     ):
         assert re.search(rf"(?<![-\w]){declaration};", rule), declaration
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_styles_the_penalty_toggles(theme):
+    css = (APP / "static" / "themes" / theme / "theme.css").read_text()
+
+    for selector in (".penalties", '.penalty[aria-pressed="true"]', ".penalty:disabled"):
+        assert selector in css, selector

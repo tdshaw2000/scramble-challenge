@@ -49,9 +49,9 @@ This is a spiritual sibling to tnoodle-scratch but a new project, not an extensi
 - `id` (uuid, primary key)
 - `round_id` (FK → Round)
 - `player_id` (FK → Player)
-- `time_ms` (nullable — null means DNF)
+- `time_ms` (nullable — null when there is no timed solve: a DNF from inspection, End Round or leaving. A DNF the player chose keeps its time, so `result` decides)
 - `result`: `ok` | `dnf`
-- `plus_two` (bool, default false — the solve started between 15 and 17 seconds into inspection; `time_ms` stays the time as timed, and 2 seconds are added wherever the time counts or shows)
+- `plus_two` (bool, default false — the solve started between 15 and 17 seconds into inspection; `time_ms` stays the time as timed, and 2 seconds are added wherever the time counts or shows. The player can also toggle it after the solve)
 - `started_inspection_at`, `started_solve_at`, `finished_at` (raw timestamps — not used for anything beyond computing `time_ms`; the browser decides the inspection penalty)
 
 One `Solve` row per (round, player) — created when a player presses Start Inspection, filled in when they stop the timer, left with `time_ms = null, result = dnf` if the round ends before they finish.
@@ -109,6 +109,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 | `start_solve` | `{ plus_two }` | player, mid-inspection | Records `started_solve_at` and `plus_two` (true if the solve started between 15 and 17 seconds into inspection; defaults to false). The inspection countdown runs in the browser, which decides the penalty (honour system, like `time_ms`) |
 | `inspection_expired` | `{}` | player, mid-inspection | 17 seconds of inspection passed: fills `Solve` (`result: dnf`), broadcasts `leaderboard_update` |
 | `stop_solve` | `{ time_ms }` | player, mid-solve | Fills `Solve` (`time_ms`, `result: ok`), broadcasts `leaderboard_update` |
+| `set_penalty` | `{ plus_two, dnf }` | player, own finished timed solve in the current round, until the next round starts | Sets `plus_two` and `result` (`dnf` or `ok`); the timed solve is kept, so turning a DNF off brings the time back. Broadcasts `leaderboard_update`, and `player_list` if the round is over (points may change). Honour system |
 | `end_round` | `{}` | CO only | Force-ends round: unfinished players marked `dnf`, broadcasts `round_complete` |
 | `end_challenge` | `{}` | CO only, during `round_results` | Ends the challenge for everyone, broadcasts `challenge_ended` |
 
@@ -118,7 +119,7 @@ One room per challenge (room name = `Challenge.slug` or `id`). REST endpoints ha
 |---|---|---|---|
 | `player_list` | `[{ player_id, display_name, is_co, connected, points }]` | room | Any join/leave/disconnect, and after `round_complete` |
 | `round_started` | `{ round_id, round_number, puzzle, puzzle_name, scramble_text, scramble_svg_url }` | room | CO starts a round |
-| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, plus_two, result, position, points }] }` | room | Any solve completes (live reordering). `time_ms` here is the counted time, with any +2 already added |
+| `leaderboard_update` | `{ round_id, results: [{ player_id, display_name, time_ms, plus_two, result, timed, position, points }] }` | room | Any solve completes (live reordering). `time_ms` here is the counted time, with any +2 already added, and null for any DNF. `timed` says the solve has a time, so its penalties can be toggled |
 | `round_complete` | `{ round_id, results: [...] }` | room | All finished, or CO ends round early |
 | `challenge_ended` | `{}` | room, or one page joining an ended challenge | The challenge ends: the CO ends it, or doesn't come back within the grace period. The page reloads and lands on the summary |
 
@@ -148,6 +149,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 
 **Leaderboard / results (all players, during and after a round)**
 - Sorted list: position, name, time (or DNF), live-updating as solves come in
+- The player's own row, if their solve has a time, has **+2** and **DNF** toggles (no OK button; tap again to turn one off). +2 can't be changed while DNF is on, and a +2 from inspection starts switched on. They show from the player's own result until the next round starts; changes update everyone's results and points at once. Only your own solve can be changed
 - CO only, additionally: "End round" button (visible whenever the round is still active) and, once the round is complete, the puzzle dropdown + "Start round" button to begin the next one, and a yellow "End challenge / show results" button at the bottom of the results card. It asks "End the challenge for everyone?" (Yes, end it / Cancel) before ending it
 
 **Challenge summary (everyone, once the challenge has ended)** — at `/c/<slug>/summary`
@@ -161,7 +163,7 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 - **One attempt per player per round.** No retries within a round.
 - **Ties share position.** Two players whose counted times (with any +2 added) match to the hundredth (times are truncated, not rounded, as in WCA results) both get the same rank number (e.g. both shown as 1st); the next distinct time takes the rank after (1, 1, 3 — not 1, 1, 2).
 - **+2.** Starting the solve between 15 and 17 seconds into inspection adds 2 seconds, as in WCA rules. The penalised time is what ranks, ties (after truncating to hundredths) and wins points, and it shows WCA-style with a "+" after it ("12.34+") in the leaderboard, summary and admin pages.
-- **DNF.** No separate DNF button/flow — it's simply what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if 17 seconds of inspection pass without them starting (WCA's rule). Shown as "DNF" in the leaderboard, sorted after all timed results.
+- **DNF.** A player can mark their own timed solve DNF with the toggle above. Otherwise it's what a player ends up with if the round is force-ended (via CO's End Round) before they stop their timer, if they disconnect mid-round, or if 17 seconds of inspection pass without them starting (WCA's rule). Shown as "DNF" in the leaderboard, sorted after all timed results.
 - **Puzzle defaults.** Round 1 of any challenge always defaults to 3x3 (`333`). Round 2 onward defaults to whatever puzzle was used in the immediately preceding round. CO can always override via the dropdown.
 - **Puzzle list.** The WCA puzzles TNoodle scrambles, without variants: 2x2 to 7x7, Pyraminx, Skewb, Square-1, Megaminx and Clock. The blindfolded (`333ni`, `444ni`, `555ni`), fewest-moves (`333fm`) and fast-4x4 (`444fast`) variants are deliberately left out. The dropdown and round heading show names ("Megaminx"); events and the database use TNoodle codes (`minx`).
 
