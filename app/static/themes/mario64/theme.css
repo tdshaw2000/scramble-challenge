@@ -340,3 +340,6 @@ body::after {
   text-shadow: 0 12px 0 var(--outline);
   font-variant-numeric: tabular-nums;
 }
+/* Luckiest Guy has no fixed-width digits, so each digit gets the widest one's width ("0",
+   0.63em) and the running time holds still instead of jiggling. */
+.running-time .digit { display: inline-block; width: 0.64em; text-align: center; }

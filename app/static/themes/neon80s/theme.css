@@ -513,3 +513,6 @@ body::after {
   text-shadow: 0 0 6px var(--cyan), 0 0 22px var(--cyan), 0 0 50px var(--pink);
   font-variant-numeric: tabular-nums;
 }
+/* Orbitron has no fixed-width digits, so each digit gets the widest one's width ("0" and
+   "8", 0.83em) and the running time holds still instead of jiggling. */
+.running-time .digit { display: inline-block; width: 0.84em; text-align: center; }
