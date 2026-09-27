@@ -57,11 +57,13 @@
     <p id="scramble-text" class="scramble-text"></p>
     <img id="scramble-image" class="scramble-image" alt="Scramble diagram">
     <button type="button" id="start-inspection" class="button button-primary">Start inspection</button>
+    <button type="button" id="show-time" class="button show-time" aria-pressed="{{ 'true' if show_time else 'false' }}">Show time: {{ 'On' if show_time else 'Off' }}</button>
   </section>
 
   <div id="overlay" class="overlay" hidden>
     <p id="countdown" class="countdown"></p>
     <p id="solving" class="solving" hidden>Solving…</p>
+    <p id="running-time" class="running-time" hidden></p>
     <p id="finished" class="finished" hidden></p>
     <p id="overlay-hint" class="overlay-hint">Tap anywhere</p>
   </div>

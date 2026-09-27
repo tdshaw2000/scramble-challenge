@@ -328,3 +328,15 @@ body::after {
 .penalty { padding: 6px 12px; font-size: 1rem; border-radius: 12px; box-shadow: 0 4px 0 var(--outline); }
 .penalty[aria-pressed="true"] { color: #fff; background: var(--red); box-shadow: 0 4px 0 var(--red-dark), 0 4px 0 3px var(--outline); }
 .penalty:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* Show time toggle under Start inspection: white when off, grass green when on. */
+.show-time { width: 100%; margin-top: 16px; }
+.show-time[aria-pressed="true"] { color: #fff; background: var(--grass); box-shadow: 0 6px 0 var(--grass-dark), 0 6px 0 3px var(--outline); }
+.running-time {
+  margin: 0;
+  font: 24vmin/1 var(--display);
+  color: #fff;
+  -webkit-text-stroke: 6px var(--outline);
+  text-shadow: 0 12px 0 var(--outline);
+  font-variant-numeric: tabular-nums;
+}

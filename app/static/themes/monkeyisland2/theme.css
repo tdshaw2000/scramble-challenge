@@ -357,3 +357,13 @@ body::before {
 .penalty { padding: 6px 12px; font-size: 1.2rem; }
 .penalty[aria-pressed="true"] { color: var(--yellow); border-color: var(--yellow); }
 .penalty:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* Show time toggle under Start inspection: a verb that lights up yellow when on. */
+.show-time { width: 100%; margin-top: 12px; }
+.show-time[aria-pressed="true"] { color: var(--yellow); border-color: var(--yellow); }
+.running-time {
+  margin: 0;
+  font: 24vmin/1 var(--mono);
+  color: var(--text);
+  text-shadow: 5px 5px 0 var(--verb-dark), 10px 10px 0 #000;
+}
