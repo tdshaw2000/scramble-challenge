@@ -314,7 +314,7 @@
         return;
       }
       setText("share-link-button", "Copied!");
-      setTimeout(() => setText("share-link-button", "Share URL"), 2000);
+      setTimeout(() => setText("share-link-button", "Share link"), 2000);
     });
   }
 
