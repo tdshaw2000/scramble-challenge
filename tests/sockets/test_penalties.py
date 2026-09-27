@@ -27,6 +27,7 @@ def test_everyone_sees_a_plus_two_while_the_round_is_still_going(challenge, add_
     tom, amy = join_all(challenge, connect, "cookie-co", "cookie-Amy")
     tom.emit("start_round", {})
     solve(tom, 12_000)
+    tom.get_received()
     amy.get_received()
 
     tom.emit("set_penalty", {"plus_two": True, "dnf": False})

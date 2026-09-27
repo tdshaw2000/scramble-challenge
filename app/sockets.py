@@ -142,6 +142,17 @@ def on_stop_solve(player, data):
     broadcast_solve_progress(player.challenge, solve.round)
 
 
+@socketio.on("set_penalty")
+@player_action
+def on_set_penalty(player, data):
+    solve = services.set_penalty(player, plus_two=data.get("plus_two"), dnf=data.get("dnf"))
+    rnd = solve.round
+    emit("leaderboard_update", round_results(rnd), to=rnd.challenge.slug)
+    if rnd.status == RoundStatus.COMPLETE:
+        # A finished round's winners may have changed, and the players list shows points.
+        emit("player_list", player_list(rnd.challenge), to=rnd.challenge.slug)
+
+
 @socketio.on("end_round")
 @player_action
 def on_end_round(player, data):
