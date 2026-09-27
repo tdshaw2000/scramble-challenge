@@ -1,9 +1,9 @@
 from app import services
 
 
-def finish(player, time_ms):
+def finish(player, time_ms, plus_two=False):
     services.start_inspection(player)
-    services.start_solve(player)
+    services.start_solve(player, plus_two=plus_two)
     services.stop_solve(player, time_ms=time_ms)
 
 
@@ -103,3 +103,26 @@ def test_standings_after_a_tie_skip_the_shared_places(challenge, co, add_player)
     services.end_round(challenge, co)
 
     assert standings_rows(challenge) == [(1, "Amy", 1), (1, "Tom", 1), (3, "Bob", 0)]
+
+
+def test_a_plus_two_counts_in_the_time_that_wins(challenge, co, add_player):
+    amy = add_player("Amy")
+    services.start_round(challenge, co)
+    finish(amy, 9_000, plus_two=True)  # counts as 11.00
+    finish(co, 10_000)
+
+    assert points_by_name(challenge) == {"Tom": 1, "Amy": 0}
+
+
+def test_leaderboard_shows_the_counted_time_and_marks_the_plus_two(challenge, co, add_player):
+    amy = add_player("Amy")
+    rnd = services.start_round(challenge, co)
+    finish(amy, 10_349, plus_two=True)  # counts as 12.349, so 12.34 after truncating
+    finish(co, 12_340)
+
+    board = services.leaderboard(rnd)
+
+    assert [(r["display_name"], r["time_ms"], r["plus_two"], r["position"]) for r in board] == [
+        ("Amy", 12_349, True, 1),
+        ("Tom", 12_340, False, 1),
+    ]
