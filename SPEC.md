@@ -137,13 +137,14 @@ Note: `time_ms` is sent by the client in `stop_solve` — this is fine and consi
 **Scramble reveal (all players, on `round_started`)**
 - Scramble text + rendered image (from TNoodle, same rendering tnoodle-scratch already does)
 - "Start inspection" button
+- Under it, a "Show time: Off / On" toggle. Off by default; each player's choice is kept in a cookie (`scramble_show_time`, one year) and used from then on
 
 **Inspection (per player, after they press Start inspection)**
 - Screen goes blank except a large 15→1 countdown. Once 15 seconds have passed it shows "+2" until 17 seconds, when the attempt becomes a DNF
 - Hold a finger (or the mouse button, or Space) anywhere and let go to start solving, like a real cubing timer. While held, the screen shows it is ready
 
 **Solving (per player)**
-- Blank screen, timer running (not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator)
+- Blank screen, timer running. With Show time off (the default) it is not displayed live — WCA convention is you don't watch your own time tick up, it's distracting; just a solving indicator. With Show time on, the running time (hundredths) replaces the indicator; like a real timer it leaves out any +2, which is added when the solve stops
 - Tap/click anywhere, or press Space, stops the timer, submits `stop_solve`, then shows the player's own time (truncated to hundredths) full screen for one second, with no label, and returns to leaderboard. Taps and Space do nothing during that second. If the round ends meanwhile (they were last to finish), the results wait until the second is up; if the next round starts meanwhile, its scramble shows at once.
 - A +2 time shows with the 2 seconds added and a "+" after it, e.g. "12.34+". Letting 17 seconds of inspection pass shows "DNF" the same way. A DNF given by End Round does not (the results already show it).
 

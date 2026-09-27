@@ -12,6 +12,11 @@
   const PLUS_TWO_MS = 2000;
   // How long the player's own time (or DNF) fills the screen after they finish.
   const FINISHED_MS = 1000;
+  // How often the running time is redrawn while solving, when the player chose to see it.
+  const RUNNING_TIME_MS = 10;
+  // The Show time choice is kept for a year; the server reads it to draw the toggle.
+  const SHOW_TIME_COOKIE = "scramble_show_time";
+  const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
   // A +2 time is shown WCA-style with the penalty already added and a "+" after it: 12.34+.
   function formatTime(ms, plusTwo = false) {
@@ -72,6 +77,7 @@
       $(id).hidden = !show.includes(id);
     }
     $("finished").hidden = next !== "finished";
+    $("running-time").hidden = next !== "solving" || !showTime();
     $("overlay-hint").hidden = next === "finished";
   }
 
@@ -318,6 +324,20 @@
     });
   }
 
+  // Off by default: WCA style, the solver doesn't watch their time tick up. The page is
+  // drawn with the saved choice, so the button itself is the source of truth.
+  function showTime() {
+    return $("show-time").getAttribute("aria-pressed") === "true";
+  }
+
+  $("show-time").addEventListener("click", () => {
+    const on = !showTime();
+    $("show-time").setAttribute("aria-pressed", String(on));
+    setText("show-time", `Show time: ${on ? "On" : "Off"}`);
+    const value = on ? "on" : "off";
+    document.cookie = `${SHOW_TIME_COOKIE}=${value}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+  });
+
   $("start-inspection").addEventListener("click", () => {
     socket.emit("start_inspection", {});
     // If the screen lock was refused when the round started, ask again from this tap.
@@ -368,9 +388,18 @@
       socket.emit("start_solve", { plus_two: plusTwo });
       setText("countdown", "");
       $("countdown").hidden = true;
-      $("solving").hidden = false;
+      // The running time is the solve alone, like a real timer: any +2 is added at the end.
+      $("solving").hidden = showTime();
+      setText("running-time", showTime() ? formatTime(0) : "");
       setPhase("solving");
+      if (showTime()) {
+        ticker = setInterval(
+          () => setText("running-time", formatTime(performance.now() - solveStartedAt)),
+          RUNNING_TIME_MS,
+        );
+      }
     } else if (phase === "solving") {
+      stopTicker();
       const timeMs = Math.max(1, Math.round(performance.now() - solveStartedAt));
       socket.emit("stop_solve", { time_ms: timeMs });
       showFinished(plusTwo ? timeMs + PLUS_TWO_MS : timeMs, plusTwo);

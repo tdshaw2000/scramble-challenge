@@ -26,6 +26,8 @@ COOKIE_NAME = "scramble_device"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 NAME_COOKIE_NAME = "scramble_name"
 SKIN_COOKIE_NAME = "scramble_skin"
+# Set by challenge.js when the player flips the Show time toggle: "on" or "off".
+SHOW_TIME_COOKIE_NAME = "scramble_show_time"
 
 
 @bp.get("/healthz")
@@ -140,6 +142,7 @@ def challenge(slug: str):
         share_url=url_for("main.challenge", slug=slug, _external=True),
         puzzles={code: game.PUZZLE_NAMES[code] for code in services.SUPPORTED_PUZZLES},
         default_puzzle=services.next_puzzle_default(challenge),
+        show_time=request.cookies.get(SHOW_TIME_COOKIE_NAME) == "on",
     )
 
 

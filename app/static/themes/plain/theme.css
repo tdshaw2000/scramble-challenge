@@ -89,3 +89,8 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .penalty { padding: 6px 12px; min-width: 3.5em; }
 .penalty[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: #fff; }
 .penalty:disabled { opacity: 0.4; cursor: default; }
+
+/* Show time toggle under Start inspection, and the running time it turns on. */
+.show-time { width: 100%; margin-top: 12px; }
+.show-time[aria-pressed="true"] { background: #15803d; border-color: #15803d; color: #fff; }
+.running-time { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }

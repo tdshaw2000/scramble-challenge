@@ -8,6 +8,7 @@ from playwright.sync_api import expect
 from tests.e2e.test_game import (
     advance,
     leaderboard,
+    solve,
     tom_and_amy,  # noqa: F401  (fixture)
 )
 
@@ -122,6 +123,7 @@ def test_a_solve_cut_short_by_end_round_leaves_no_running_time_in_the_next_round
     amy.locator("#overlay").click()
     advance(amy, 2000)
 
+    solve(tom, 7_500)  # the owner reaches the results, where End round is
     tom.get_by_role("button", name="End round").click()
     expect(amy.locator("#overlay")).to_be_hidden()
     tom.get_by_role("button", name="Start round").click()
