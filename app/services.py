@@ -140,17 +140,21 @@ def start_inspection(player: Player) -> Solve:
     return solve
 
 
-def start_solve(player: Player) -> Solve:
+def start_solve(player: Player, plus_two: bool = False) -> Solve:
+    # Trust boundary: like time_ms, the client decides whether inspection ran into the +2.
+    if type(plus_two) is not bool:
+        raise InvalidInput("plus_two must be true or false.")
     solve = find_solve(active_round(player), player)
     if solve is None or solve.started_solve_at is not None:
         raise InvalidState("Start inspection first, and only start solving once.")
     solve.started_solve_at = now()
+    solve.plus_two = plus_two
     db.session.commit()
     return solve
 
 
 def inspection_expired(player: Player) -> Solve:
-    """The countdown reached zero before the solve started: a DNF (a game rule, not WCA's)."""
+    """17 seconds of inspection went by without the solve starting: a DNF, as in WCA rules."""
     # Trust boundary: like time_ms, the client decides when inspection ran out.
     solve = find_solve(active_round(player), player)
     if solve is None or solve.started_solve_at is not None or solve.result is not None:
@@ -232,7 +236,7 @@ class _Row:
 
 def _rows(rnd: Round) -> list[_Row]:
     return [
-        _Row(name=s.player.display_name, time_ms=s.time_ms, solve=s)
+        _Row(name=s.player.display_name, time_ms=game.counted_time(s.time_ms, s.plus_two), solve=s)
         for s in rnd.solves
         if s.result is not None
     ]
@@ -274,6 +278,7 @@ def leaderboard(rnd: Round) -> list[dict]:
             "player_id": str(row.solve.player_id),
             "display_name": row.name,
             "time_ms": row.time_ms,
+            "plus_two": row.solve.plus_two,
             "result": row.solve.result.value,
             "position": position,
             "points": totals[row.solve.player_id],

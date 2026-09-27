@@ -21,6 +21,10 @@ PUZZLE_NAMES = {
 
 DEFAULT_PUZZLE = "333"
 
+# WCA inspection: starting the solve after the 15-second countdown, but within 17 seconds,
+# adds this much to the time. Later than 17 seconds is a DNF.
+PLUS_TWO_MS = 2000
+
 
 class Rankable(Protocol):
     name: str
@@ -30,6 +34,13 @@ class Rankable(Protocol):
 def hundredths(time_ms: int) -> int:
     """WCA results keep whole hundredths and drop the rest: 12.349s is 12.34s, never 12.35s."""
     return time_ms // 10
+
+
+def counted_time(time_ms: int | None, plus_two: bool) -> int | None:
+    """The time that ranks and shows: the timed solve plus any +2. None (DNF) stays None."""
+    if time_ms is None:
+        return None
+    return time_ms + PLUS_TWO_MS if plus_two else time_ms
 
 
 def rank[R: Rankable](entries: Sequence[R]) -> list[tuple[int, R]]:

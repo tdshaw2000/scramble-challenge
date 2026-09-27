@@ -4,7 +4,7 @@
   <li class="result result-{{ r.result }} result-position-{{ r.position }}">
     <span class="position">{{ r.position | ordinal }}</span>
     <span class="name">{{ r.display_name }} ({{ r.points }})</span>
-    <span class="time">{{ r.time_ms | solve_time }}</span>
+    <span class="time">{{ r.time_ms | solve_time(r.plus_two) }}</span>
   </li>
   {% endfor %}
 </ol>
