@@ -212,6 +212,7 @@ def complete_round(challenge: Challenge) -> Round:
         if solve is not None and solve.result is None:
             solve.result = SolveResult.DNF
             solve.time_ms = None
+            solve.plus_two = False
     rnd.status = RoundStatus.COMPLETE
     rnd.ended_at = now()
     challenge.status = ChallengeStatus.ROUND_RESULTS
@@ -332,6 +333,7 @@ def player_left(player: Player) -> None:
             db.session.add(solve)
         if solve.result is None:
             solve.result = SolveResult.DNF
+            solve.plus_two = False
     db.session.commit()
     if challenge.status == ChallengeStatus.ROUND_ACTIVE:
         complete_round_if_everyone_finished(challenge)
