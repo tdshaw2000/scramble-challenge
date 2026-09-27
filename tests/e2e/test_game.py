@@ -16,7 +16,7 @@ def start_challenge(page, name="Tom"):
     # The player list is drawn by the server, so it shows before challenge.js has run.
     # Start round is enabled only once the script has run and the socket has joined.
     expect(page.get_by_role("button", name="Start round")).to_be_enabled()
-    return page.get_by_role("button", name="Share URL").get_attribute("data-url")
+    return page.get_by_role("button", name="Share link").get_attribute("data-url")
 
 
 def join(page, link, name):
@@ -119,7 +119,7 @@ def test_share_button_opens_the_phones_share_sheet_with_the_link(new_player):
     tom.add_init_script(RECORD_SHARES)
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share URL").click()
+    tom.get_by_role("button", name="Share link").click()
 
     tom.wait_for_function("window.__shared.length === 1")
     shared = tom.evaluate("window.__shared[0]")
@@ -140,11 +140,11 @@ def test_cancelling_the_share_sheet_changes_nothing(new_player):
     start_challenge(tom)
     tom.evaluate("navigator.clipboard.writeText('untouched')")
 
-    tom.get_by_role("button", name="Share URL").click()
+    tom.get_by_role("button", name="Share link").click()
     tom.wait_for_function("window.__shareCalled === true")
     settle(tom)
 
-    expect(tom.get_by_role("button", name="Share URL")).to_be_visible()
+    expect(tom.get_by_role("button", name="Share link")).to_be_visible()
     expect(tom.locator("#message")).to_be_hidden()
     assert tom.evaluate("navigator.clipboard.readText()") == "untouched"
 
@@ -163,7 +163,7 @@ def test_a_failed_share_copies_the_link_instead(new_player):
     tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share URL").click()
+    tom.get_by_role("button", name="Share link").click()
 
     expect(tom.get_by_role("button", name="Copied!")).to_be_visible()
     assert tom.evaluate("navigator.clipboard.readText()") == link
@@ -187,7 +187,7 @@ def test_when_copying_is_blocked_the_link_is_shown_for_copying_by_hand(new_playe
     tom.add_init_script(NO_SHARING_OR_COPYING)
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share URL").click()
+    tom.get_by_role("button", name="Share link").click()
 
     expect(tom.locator("#message")).to_have_text(f"Copy this link to share it: {link}")
 
@@ -246,11 +246,11 @@ def test_share_button_copies_the_link_where_sharing_is_unsupported(new_player):
     tom.context.grant_permissions(["clipboard-read", "clipboard-write"])
     link = start_challenge(tom)
 
-    tom.get_by_role("button", name="Share URL").click()
+    tom.get_by_role("button", name="Share link").click()
 
     expect(tom.get_by_role("button", name="Copied!")).to_be_visible()
     assert tom.evaluate("navigator.clipboard.readText()") == link
-    expect(tom.get_by_role("button", name="Share URL")).to_be_visible(timeout=4000)
+    expect(tom.get_by_role("button", name="Share link")).to_be_visible(timeout=4000)
 
 
 def test_friend_joins_by_link_and_both_lists_update(new_player):
@@ -265,7 +265,7 @@ def test_friend_joins_by_link_and_both_lists_update(new_player):
     expect(amy.locator("#players")).to_contain_text("Tom")
     expect(amy.get_by_text("Waiting for the challenge owner to start a round")).to_be_visible()
     expect(amy.get_by_role("button", name="Start round")).to_be_hidden()
-    expect(amy.get_by_role("button", name="Share URL")).to_be_hidden()
+    expect(amy.get_by_role("button", name="Share link")).to_be_hidden()
     expect(amy.get_by_role("button", name="QR code")).to_be_hidden()
 
 

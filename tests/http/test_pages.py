@@ -195,7 +195,7 @@ def test_socket_client_script_is_served(client):
     assert b"join_challenge" in response.data
 
 
-def test_co_gets_qr_code_and_share_url_buttons_instead_of_a_link_box(client):
+def test_co_gets_qr_code_and_share_link_buttons_instead_of_a_link_box(client):
     location = create(client).headers["Location"]
 
     page = client.get(location).text
@@ -204,7 +204,7 @@ def test_co_gets_qr_code_and_share_url_buttons_instead_of_a_link_box(client):
     assert re.search(r'<button[^>]*id="qr-button"[^>]*>QR code</button>', page)
     assert re.search(
         rf'<button[^>]*id="share-link-button"[^>]*data-url="http://localhost{location}"'
-        r"[^>]*>Share URL</button>",
+        r"[^>]*>Share link</button>",
         page,
     )
     assert 'id="share-link"' not in page

@@ -15,7 +15,7 @@ def test_start_a_challenge_and_see_the_waiting_room(new_player):
     expect(tom.locator("#players")).to_contain_text("Tom")
     expect(tom.get_by_text("Share with others")).to_be_visible()
     expect(tom.get_by_role("button", name="QR code")).to_be_visible()
-    expect(tom.get_by_role("button", name="Share URL")).to_have_attribute(
+    expect(tom.get_by_role("button", name="Share link")).to_have_attribute(
         "data-url", re.compile(r"http://127\.0\.0\.1:\d+/c/")
     )
     expect(tom.get_by_label("Puzzle")).to_have_value("333")
