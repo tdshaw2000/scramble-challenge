@@ -244,6 +244,7 @@ select.field-input:focus { background-color: var(--bright-cyan); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  -webkit-user-select: none;
   user-select: none;
   touch-action: none; /* a finger drifting while held must not become a scroll */
   -webkit-touch-callout: none;

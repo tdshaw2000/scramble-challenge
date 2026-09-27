@@ -730,6 +730,19 @@ def test_a_long_press_does_not_open_the_phones_menu(tom_and_amy):
     assert not_prevented is False
 
 
+def test_pressing_the_timer_screen_does_not_start_selecting_text(tom_and_amy):
+    # Backs up the themes' no-select styles for any browser that ignores them.
+    tom, amy, _ = tom_and_amy
+    start_inspecting(tom, amy)
+
+    not_prevented = amy.evaluate(
+        "document.getElementById('countdown').dispatchEvent("
+        "new Event('selectstart', { bubbles: true, cancelable: true }))"
+    )
+
+    assert not_prevented is False
+
+
 def test_a_finger_that_drifts_while_held_still_starts_the_solve_when_lifted(new_player):
     # Real touch events, as a phone sends them. A finger rarely stays perfectly still, and
     # the browser must not take a small drift over as a scroll (which cancels the press).
@@ -800,3 +813,145 @@ def test_starting_another_round_puts_the_end_challenge_button_away(tom_and_amy):
     expect(tom.get_by_role("heading", name="Round 2")).to_be_visible()
     expect(end_challenge).to_be_hidden()
     expect(tom.get_by_text("End the challenge for everyone?")).to_be_hidden()
+
+
+# Phones keep the screen on through the Screen Wake Lock API (navigator.wakeLock). The tests
+# replace it with a recorder whose locks the "browser" can drop, as it does when the page
+# is hidden, or remove it (older phones) or make it refuse (e.g. battery saver).
+FAKE_WAKE_LOCK = """
+  window.__wakeLocks = [];
+  Object.defineProperty(navigator, "wakeLock", {
+    configurable: true,
+    value: {
+      request: (type) => {
+        const lock = new EventTarget();
+        lock.type = type;
+        lock.released = false;
+        lock.release = () => {
+          if (!lock.released) {
+            lock.released = true;
+            lock.dispatchEvent(new Event("release"));
+          }
+          return Promise.resolve();
+        };
+        window.__wakeLocks.push(lock);
+        return Promise.resolve(lock);
+      },
+    },
+  });
+  window.__screenLocksHeld = () =>
+    window.__wakeLocks.filter((lock) => lock.type === "screen" && !lock.released).length;
+  window.__browserDropsWakeLocks = () => window.__wakeLocks.forEach((lock) => lock.release());
+"""
+
+NO_WAKE_LOCK = """
+  delete Navigator.prototype.wakeLock;
+  delete navigator.wakeLock;
+"""
+
+REFUSED_WAKE_LOCK = """
+  Object.defineProperty(navigator, "wakeLock", {
+    configurable: true,
+    value: { request: () => Promise.reject(new DOMException("Battery saver", "NotAllowedError")) },
+  });
+"""
+
+
+def screen_locks_held(page):
+    return page.evaluate("window.__screenLocksHeld()")
+
+
+def tom_and_amy_with(new_player, script):
+    tom, amy = new_player(), new_player()
+    for page in (tom, amy):
+        page.add_init_script(FAKE_NOW)
+        page.add_init_script(script)
+    link = start_challenge(tom)
+    join(amy, link, "Amy")
+    for page in (tom, amy):
+        set_now(page, 1_000_000)
+    return tom, amy
+
+
+def test_the_screen_is_kept_awake_from_the_start_of_a_round_until_it_ends(new_player):
+    tom, amy = tom_and_amy_with(new_player, FAKE_WAKE_LOCK)
+    assert screen_locks_held(amy) == 0
+
+    tom.get_by_role("button", name="Start round").click()
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+    amy.wait_for_function("window.__screenLocksHeld() === 1")
+    tom.wait_for_function("window.__screenLocksHeld() === 1")
+
+    solve(amy, 5000)
+    solve(tom, 6000)
+    expect(amy.locator("#results-heading")).to_have_text("Round 1 results")
+
+    amy.wait_for_function("window.__screenLocksHeld() === 0")
+    tom.wait_for_function("window.__screenLocksHeld() === 0")
+    assert amy.evaluate("window.__wakeLocks.length") == 1
+
+
+def test_the_screen_is_kept_awake_again_on_coming_back_to_the_page_mid_round(new_player):
+    tom, amy = tom_and_amy_with(new_player, FAKE_WAKE_LOCK)
+    start_inspecting(tom, amy)
+    amy.wait_for_function("window.__screenLocksHeld() === 1")
+
+    # Switching apps: the browser drops the lock, then the page is shown again.
+    amy.evaluate("window.__browserDropsWakeLocks()")
+    assert screen_locks_held(amy) == 0
+    amy.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+
+    amy.wait_for_function("window.__screenLocksHeld() === 1")
+
+
+def test_coming_back_to_the_page_between_rounds_lets_the_screen_sleep(new_player):
+    tom, amy = tom_and_amy_with(new_player, FAKE_WAKE_LOCK)
+
+    amy.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+    amy.wait_for_timeout(250)
+
+    assert screen_locks_held(amy) == 0
+
+
+@pytest.mark.parametrize("script", [NO_WAKE_LOCK, REFUSED_WAKE_LOCK], ids=["missing", "refused"])
+def test_a_round_plays_normally_where_the_screen_cannot_be_kept_awake(new_player, script):
+    tom, amy = tom_and_amy_with(new_player, script)
+    errors = []
+    amy.on("pageerror", lambda error: errors.append(error))
+
+    tom.get_by_role("button", name="Start round").click()
+    solve(amy, 5000)
+    solve(tom, 6000)
+
+    expect(amy.locator("#results-heading")).to_have_text("Round 1 results")
+    assert leaderboard(amy)[0] == ["1st", "Amy (1)", "5.00"]
+    assert errors == []
+
+
+# Refuses the first ask (as at the start of a round) and grants the ones after it.
+REFUSED_ONCE_WAKE_LOCK = (
+    FAKE_WAKE_LOCK
+    + """
+  const grant = navigator.wakeLock.request;
+  let asks = 0;
+  Object.defineProperty(navigator, "wakeLock", {
+    configurable: true,
+    value: {
+      request: (type) =>
+        ++asks === 1 ? Promise.reject(new DOMException("Not now", "NotAllowedError")) : grant(type),
+    },
+  });
+"""
+)
+
+
+def test_a_refused_screen_lock_is_asked_for_again_on_starting_inspection(new_player):
+    tom, amy = tom_and_amy_with(new_player, REFUSED_ONCE_WAKE_LOCK)
+    tom.get_by_role("button", name="Start round").click()
+    expect(amy.get_by_role("button", name="Start inspection")).to_be_visible()
+    amy.wait_for_timeout(250)
+    assert screen_locks_held(amy) == 0
+
+    amy.get_by_role("button", name="Start inspection").click()
+
+    amy.wait_for_function("window.__screenLocksHeld() === 1")
