@@ -310,6 +310,8 @@
   $("overlay").addEventListener("pointercancel", () => setHeld(false));
   // A long press on a phone would otherwise open a menu.
   $("overlay").addEventListener("contextmenu", (event) => event.preventDefault());
+  // Nor should a press start selecting the text (the themes also forbid it in CSS).
+  $("overlay").addEventListener("selectstart", (event) => event.preventDefault());
 
   // The spacebar does the same while the blank screen is showing. It must not scroll the
   // page or press a focused button, and a held key's repeats are not new presses. Space

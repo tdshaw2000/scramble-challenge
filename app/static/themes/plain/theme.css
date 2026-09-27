@@ -27,7 +27,7 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 [data-puzzle="minx"] .scramble-text { font-size: min(1.2rem, calc((100vw - 64px) / 26)); }
 [data-puzzle="666"] .scramble-text, [data-puzzle="777"] .scramble-text { font-size: 1rem; }
 .scramble-image { display: block; width: 100%; max-width: 320px; max-height: 240px; object-fit: contain; margin: 0 auto 16px; }
-.overlay { position: fixed; inset: 0; z-index: 10; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; user-select: none; }
+.overlay { position: fixed; inset: 0; z-index: 10; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .countdown { font-size: 30vmin; font-weight: 700; margin: 0; }
 .solving { font-size: 2rem; margin: 0; }
 .finished { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; }
