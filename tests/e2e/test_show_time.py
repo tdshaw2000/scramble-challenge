@@ -9,6 +9,7 @@ from playwright.sync_api import expect
 from tests.e2e.test_game import (
     advance,
     leaderboard,
+    set_now,
     solve,
     tom_and_amy,  # noqa: F401  (fixture)
 )
@@ -145,3 +146,40 @@ def test_the_toggle_is_as_tall_as_start_inspection_in_every_skin(tom_and_amy, sk
     start = amy.get_by_role("button", name="Start inspection").bounding_box()
     toggle = amy.locator(SHOW_TIME).bounding_box()
     assert toggle["height"] == start["height"]
+
+
+# Where the decimal point is drawn, found from the text itself so any markup works.
+POINT_X = """() => {
+  const shown = document.getElementById("running-time");
+  const walker = document.createTreeWalker(shown, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const at = node.data.indexOf(".");
+    if (at === -1) continue;
+    const range = document.createRange();
+    range.setStart(node, at);
+    range.setEnd(node, at + 1);
+    return range.getBoundingClientRect().left;
+  }
+  return null;
+}"""
+
+
+@pytest.mark.parametrize("skin", ["plain", "dos", "mario64", "monkeyisland2", "neon80s"])
+def test_the_running_time_holds_still_as_the_digits_change_in_every_skin(tom_and_amy, skin):  # noqa: F811
+    _, amy = start_round(tom_and_amy)
+    amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])
+    amy.reload()
+    set_now(amy, 1_000_000)  # the reload brought back the real clock
+    amy.locator(SHOW_TIME).click()
+    amy.get_by_role("button", name="Start inspection").click()
+    amy.locator("#overlay").click()
+
+    advance(amy, 1110)
+    expect(amy.locator("#running-time")).to_have_text("1.11")
+    narrow = amy.evaluate(POINT_X)
+    advance(amy, 7770)
+    expect(amy.locator("#running-time")).to_have_text("8.88")
+    wide = amy.evaluate(POINT_X)
+
+    assert narrow is not None
+    assert abs(wide - narrow) < 0.5
