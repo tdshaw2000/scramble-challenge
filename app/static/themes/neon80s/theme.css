@@ -485,3 +485,14 @@ body::after {
 .qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; margin-bottom: 14px; }
 .qr-dialog .button { width: 100%; }
 .qr-dialog .card-title { margin-left: auto; margin-right: auto; }
+
+/* +2 and DNF toggles on the player's own result: a pressed one glows red */
+.penalties { grid-column: 2 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px; }
+.penalty { padding: 7px 12px; font-size: 0.85rem; }
+.penalty[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--red);
+  box-shadow: 0 0 12px rgba(255, 36, 54, 0.8), inset 0 0 8px rgba(255, 36, 54, 0.5);
+  text-shadow: 0 0 6px rgba(255, 36, 54, 0.9);
+}
+.penalty:disabled { opacity: 0.45; cursor: default; transform: none; }

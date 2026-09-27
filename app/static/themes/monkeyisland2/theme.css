@@ -351,3 +351,9 @@ body::before {
 .qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
 .qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; margin-bottom: 14px; }
 .qr-dialog .button { width: 100%; }
+
+/* +2 and DNF toggles on the player's own result: verbs, lit yellow when chosen */
+.penalties { grid-column: 2 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px; }
+.penalty { padding: 6px 12px; font-size: 1.2rem; }
+.penalty[aria-pressed="true"] { color: var(--yellow); border-color: var(--yellow); }
+.penalty:disabled { opacity: 0.45; cursor: default; transform: none; }
