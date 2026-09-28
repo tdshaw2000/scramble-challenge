@@ -10,6 +10,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = "scramble-challenge.duckdns.org"
+WCA_SITE = "wca-records-analyser.duckdns.org"
+EDGE_NETWORK = "scramble-challenge-edge"
 
 
 @pytest.fixture(scope="module")
@@ -48,6 +50,40 @@ def test_caddy_proxies_the_site_address_to_the_web_app():
     assert "reverse_proxy web:5000" in caddyfile
 
 
+def test_wca_records_analyser_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
+    # Same trick as SITE_ADDRESS: a bare port, not a real domain, so CI and local
+    # `docker compose up` never trigger a live Let's Encrypt ACME challenge for a
+    # production hostname the runner doesn't own.
+    caddy_env = compose["services"]["caddy"]["environment"]
+    assert caddy_env["WCA_SITE_ADDRESS"] == "${WCA_SITE_ADDRESS:-:8080}"
+
+
+def test_caddy_proxies_wca_site_address_to_the_other_app():
+    caddyfile = text("docker/caddy/Caddyfile")
+
+    assert "{$WCA_SITE_ADDRESS}" in caddyfile
+    assert "reverse_proxy wca-records-analyser:8000" in caddyfile
+
+
+def test_caddy_joins_a_shared_external_network_so_it_can_reach_other_apps(compose):
+    # wca-records-analyser is a separate app with its own compose project, so Caddy can
+    # only resolve its container name if both stacks join a network created outside of
+    # (and shared between) either project.
+    caddy = compose["services"]["caddy"]
+
+    assert set(caddy["networks"]) == {"default", "edge"}
+    edge = compose["networks"]["edge"]
+    assert edge["external"] is True
+    assert edge["name"] == EDGE_NETWORK
+
+
+def test_only_caddy_joins_the_shared_edge_network(compose):
+    # The other services have no business being reachable from outside this stack.
+    for name, service in compose["services"].items():
+        if name != "caddy":
+            assert "networks" not in service
+
+
 def test_web_is_reachable_only_through_caddy_and_trusts_it(compose):
     web = compose["services"]["web"]
 
@@ -79,6 +115,21 @@ def test_deploy_pulls_restarts_and_smoke_tests_the_live_site(deploy):
     assert "scripts/smoke-test.sh" in run
 
 
+def test_deploy_sets_the_real_domain_for_the_other_app(deploy):
+    assert deploy["env"]["WCA_SITE_ADDRESS"] == WCA_SITE
+
+
+def test_smoke_creates_the_shared_edge_network_before_compose_up():
+    # docker-compose.yml declares "edge" as external, so smoke's own `docker compose up`
+    # needs it to already exist.
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+    runs = [step.get("run", "") for step in workflow["jobs"]["smoke"]["steps"]]
+
+    network = next(i for i, run in enumerate(runs) if EDGE_NETWORK in run)
+    up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
+    assert network < up
+
+
 def test_server_setup_script_is_valid_and_executable():
     script = ROOT / "scripts/server-setup.sh"
 
@@ -101,6 +152,17 @@ def test_server_setup_registers_an_arm_runner_labelled_oci_as_a_service():
     assert "linux-arm64" in script
     assert "--labels oci" in script
     assert "svc.sh install" in script
+
+
+def test_server_setup_creates_the_shared_edge_network_once():
+    script = text("scripts/server-setup.sh")
+
+    assert f"docker network create {EDGE_NETWORK}" in script
+    # Idempotent: re-running server-setup.sh (or a second server) must not fail because
+    # the network already exists.
+    creates = script.index(f"docker network create {EDGE_NETWORK}")
+    guard = script.rfind("docker network inspect", 0, creates)
+    assert guard != -1, "network create isn't guarded by an existence check"
 
 
 def test_server_setup_refuses_to_run_anywhere_but_an_arm_server():
