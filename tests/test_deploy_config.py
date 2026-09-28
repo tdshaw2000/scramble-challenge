@@ -214,3 +214,15 @@ def test_deploy_snapshots_the_database_with_the_new_image_before_restarting(depl
     snapshot = runs.index(f"{BACKUP} snapshot predeploy")
     up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
     assert pull < snapshot < up
+
+
+def test_deploy_creates_the_shared_edge_network_before_compose_up(deploy):
+    # docker-compose.yml declares "edge" as external. server-setup.sh creates it once,
+    # but a server that predates that script (or a fresh one) has no other chance to
+    # run it before the first `docker compose up -d --remove-orphans` here, so deploy
+    # must create it itself, the same idempotent way smoke and server-setup.sh do.
+    runs = [step.get("run", "") for step in deploy["steps"]]
+
+    network = next(i for i, run in enumerate(runs) if EDGE_NETWORK in run)
+    up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
+    assert network < up
