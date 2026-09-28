@@ -4,3 +4,7 @@
 	# Caddy passes WebSocket upgrades through without extra config.
 	reverse_proxy web:5000
 }
+wca-records-analyser.duckdns.org {
+	encode zstd gzip
+	reverse_proxy wca-records-analyser:8000
+}
