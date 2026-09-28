@@ -134,6 +134,7 @@ jobs:
       - run: docker compose pull
       # A consistent copy of the live database, taken with the new image, to roll back to.
       - run: docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
+      - run: docker network inspect scramble-challenge-edge > /dev/null 2>&1 || docker network create scramble-challenge-edge
       - run: docker compose up -d --remove-orphans
       - run: scripts/smoke-test.sh
       - if: failure()
