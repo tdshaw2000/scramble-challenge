@@ -57,13 +57,27 @@ services:
       - "443:443"
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      # Same trick: a bare port in CI/local dev, the real domain only at deploy time,
+      # so nothing here ever attempts a live ACME challenge for a domain it doesn't own.
+      WCA_SITE_ADDRESS: ${WCA_SITE_ADDRESS:-:8080}
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data  # HTTPS certificates; keep them to avoid Let's Encrypt rate limits
     depends_on:
       - web
+    networks:
+      - default
+      # Shared with other apps' own compose projects on the same server, so Caddy can
+      # reach their containers by name. Created once by scripts/server-setup.sh (and by
+      # CI, for the smoke test); see README.md.
+      - edge
 
 volumes:
   data:
   backups:
   caddy_data:
+
+networks:
+  edge:
+    name: scramble-challenge-edge
+    external: true

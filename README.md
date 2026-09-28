@@ -55,6 +55,33 @@ and gets its certificate from Let's Encrypt automatically.
    server's own firewall, installs Docker, and registers the runner as a service.
 5. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job does the rest.
 
+## A second app behind the same Caddy
+
+Caddy joins an external Docker network, `scramble-challenge-edge`, created once by
+`scripts/server-setup.sh` (and by CI, for the smoke test). Another app's own
+`docker-compose.yml`, running as its own separate project on the same server, can
+share this site's HTTPS by joining the same network and giving its service a name
+Caddy can proxy to:
+
+```yaml
+services:
+  wca-records-analyser:
+    # ...
+    networks:
+      - default
+      - scramble-challenge-edge
+
+networks:
+  scramble-challenge-edge:
+    external: true
+```
+
+Then add a site block to `docker/caddy/Caddyfile` for it, following the
+`WCA_SITE_ADDRESS` block as a template: gate the real domain behind an env var that
+defaults to a bare port (never a live domain), so CI and local `docker compose up`
+never attempt a Let's Encrypt challenge they can't complete, and set the real domain
+as that variable only in the `deploy` job's `env` in `.github/workflows/ci.yml`.
+
 ## Admin area
 
 `/admin` is a read-only view of every past challenge, its rounds and results, with

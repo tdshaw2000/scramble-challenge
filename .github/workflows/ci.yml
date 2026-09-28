@@ -53,6 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose build
+      - run: docker network inspect scramble-challenge-edge > /dev/null 2>&1 || docker network create scramble-challenge-edge
       - run: docker compose up -d
       - run: scripts/smoke-test.sh
       - name: Take and list a database snapshot
@@ -122,6 +123,7 @@ jobs:
       packages: read
     env:
       SITE_ADDRESS: scramble-challenge.duckdns.org
+      WCA_SITE_ADDRESS: wca-records-analyser.duckdns.org
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
