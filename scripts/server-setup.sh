@@ -36,6 +36,12 @@ sudo apt-get install -y docker.io docker-compose-v2
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 
+echo "== Creating the shared network other apps use to sit behind this Caddy =="
+# docker-compose.yml declares this as external, so it must exist before the first
+# `docker compose up`. Idempotent: safe to re-run server-setup.sh.
+sudo docker network inspect scramble-challenge-edge > /dev/null 2>&1 \
+  || sudo docker network create scramble-challenge-edge
+
 echo "== Installing the GitHub Actions runner =="
 VERSION=$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest \
   | grep -o '"tag_name": *"v[^"]*"' | grep -o '[0-9][0-9.]*')
