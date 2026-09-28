@@ -136,7 +136,7 @@ def test_a_solve_cut_short_by_end_round_leaves_no_running_time_in_the_next_round
     expect(amy.locator("#running-time")).to_be_hidden()
 
 
-@pytest.mark.parametrize("skin", ["plain", "dos", "mario64", "monkeyisland2", "neon80s"])
+@pytest.mark.parametrize("skin", ["plain", "dark", "dos", "mario64", "monkeyisland2", "neon80s"])
 def test_the_toggle_is_as_tall_as_start_inspection_in_every_skin(tom_and_amy, skin):  # noqa: F811
     _, amy = start_round(tom_and_amy)
     amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])
@@ -164,7 +164,7 @@ POINT_X = """() => {
 }"""
 
 
-@pytest.mark.parametrize("skin", ["plain", "dos", "mario64", "monkeyisland2", "neon80s"])
+@pytest.mark.parametrize("skin", ["plain", "dark", "dos", "mario64", "monkeyisland2", "neon80s"])
 def test_the_running_time_holds_still_as_the_digits_change_in_every_skin(tom_and_amy, skin):  # noqa: F811
     _, amy = start_round(tom_and_amy)
     amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])

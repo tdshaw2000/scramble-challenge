@@ -1,0 +1,97 @@
+/* "Dark" skin: Minimal's layout in greys, light text on near-black, a black timer screen. */
+:root { color-scheme: dark; --ink: #e6e8eb; --muted: #9aa4b2; --line: #30353c; --accent: #60a5fa; --accent-fill: #2563eb; --bad: #f87171; --bad-fill: #dc2626; --good: #22c55e; --good-fill: #15803d; --page: #121417; --card: #1c1f24; --field: #15181c; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--page); }
+.site-header { padding: 16px; text-align: center; }
+.site-title { color: var(--ink); text-decoration: none; font-size: 1.5rem; font-weight: 700; }
+.site-title-word + .site-title-word { margin-left: 0.3em; }
+.page { max-width: 480px; margin: 0 auto; padding: 0 16px 32px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card-title { margin: 0 0 12px; font-size: 1.2rem; }
+.field { display: block; margin-bottom: 12px; }
+.field-label { display: block; font-size: 0.9rem; color: var(--muted); }
+.field-input { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--ink); }
+.button { padding: 12px 16px; font: inherit; font-weight: 600; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+.button-primary { background: var(--accent-fill); border-color: var(--accent-fill); color: #fff; width: 100%; }
+.button-danger { background: var(--bad-fill); border-color: var(--bad-fill); color: #fff; }
+.button-subline { font-weight: 400; }
+.end-challenge { margin-top: 12px; }
+.confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
+.confirm-text { margin: 0 0 8px; font-weight: 600; }
+.confirm .button { width: 100%; margin-top: 8px; }
+.notice { padding: 12px; background: #3a2e12; border: 1px solid #b7791f; border-radius: 6px; color: #fde68a; }
+.players { padding-left: 20px; }
+.player-away { color: var(--muted); }
+.scramble-text { font: 1.2rem/1.6 ui-monospace, monospace; white-space: pre-line; }
+[data-puzzle="minx"] .scramble-text { font-size: min(1.2rem, calc((100vw - 64px) / 26)); }
+[data-puzzle="666"] .scramble-text, [data-puzzle="777"] .scramble-text { font-size: 1rem; }
+.scramble-image { display: block; width: 100%; max-width: 320px; max-height: 240px; object-fit: contain; margin: 0 auto 16px; }
+.overlay { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.countdown { font-size: 30vmin; font-weight: 700; margin: 0; }
+.solving { font-size: 2rem; margin: 0; }
+.finished { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; }
+.finished[data-result="dnf"] { color: var(--bad); }
+.game[data-ready] .countdown { color: var(--good); }
+.overlay-hint { color: var(--muted); }
+.result-list, .standings { list-style: none; padding: 0; margin: 0 0 12px; }
+.result, .standing { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.result .name, .standing .name { flex: 1; }
+.result .time { font-variant-numeric: tabular-nums; }
+.result-dnf .time { color: var(--bad); }
+.summary .button { display: block; text-align: center; text-decoration: none; }
+.summary-ended { text-align: center; }
+.summary-ended .card-title { margin: 0; }
+.summary-standings .button { width: 100%; margin-top: 12px; }
+.admin-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.admin-nav form { margin: 0; }
+.admin-meta { color: var(--muted); font-size: 0.9rem; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th, .admin-table td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.admin-pages { display: flex; justify-content: space-between; margin-top: 12px; }
+.admin-pages a:last-child { margin-left: auto; }
+
+/* On a phone each challenge becomes a small block instead of a wide table row. */
+@media (max-width: 600px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; grid-template-columns: 1fr auto; padding: 10px 0; border-top: 1px solid var(--line); }
+  .admin-table td { border: 0; padding: 2px 0; white-space: normal; }
+  .admin-table td:nth-child(even) { text-align: right; }
+  .admin-players::before { content: "Players: "; }
+  .admin-rounds::before { content: "Rounds: "; }
+}
+.admin-code-value { font-family: ui-monospace, monospace; font-weight: 700; }
+
+/* Skin picker: a small gear in the header's top-right corner. */
+.site-header { position: relative; z-index: 2; }
+.skin-picker { position: absolute; top: 6px; right: 6px; text-align: left; z-index: 5; }
+.skin-picker-toggle { list-style: none; cursor: pointer; font-size: 1.5rem; line-height: 1; padding: 6px; color: var(--muted); }
+.skin-picker-toggle::-webkit-details-marker { display: none; }
+.skin-menu { margin: 0; position: absolute; right: 0; top: 100%; min-width: 150px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); }
+.skin-menu-title { margin: 0 6px 4px; font-size: 0.8rem; color: var(--muted); }
+.skin-option { display: block; width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; padding: 8px 6px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.skin-option[aria-current="true"] { font-weight: 700; }
+.skin-option[aria-current="true"]::after { content: " \2713"; color: var(--accent); }
+
+/* Share buttons and the QR code popup */
+.share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.share .button { width: 100%; }
+.share-label { grid-column: 1 / -1; margin-bottom: 0; }
+.qr-dialog { box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: visible; width: min(88vw, 400px); max-width: none; color: inherit; margin: auto; text-align: center; }
+.qr-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.qr-image { display: block; width: 100%; height: auto; background: #fff; image-rendering: pixelated; margin-bottom: 14px; }
+.qr-dialog .button { width: 100%; }
+
+/* +2 and DNF toggles on the player's own result */
+.result { flex-wrap: wrap; }
+.penalties { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 8px; }
+.penalty { padding: 6px 12px; min-width: 3.5em; }
+.penalty[aria-pressed="true"] { background: var(--bad-fill); border-color: var(--bad-fill); color: #fff; }
+.penalty:disabled { opacity: 0.4; cursor: default; }
+
+/* Show time toggle under Start inspection, and the running time it turns on. */
+.show-time { width: 100%; margin-top: 12px; }
+.show-time[aria-pressed="true"] { background: var(--good-fill); border-color: var(--good-fill); color: #fff; }
+.running-time { font-size: min(22vmin, 18vw); font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
