@@ -34,10 +34,12 @@ The SQLite database lives on the `data` volume; migrations run when the web cont
   `tnoodle` images for amd64 and arm64 and pushes them to GHCR. TNoodle is built
   once per version, so change `TNOODLE_VERSION` in the workflow and in
   `docker-compose.yml` together.
-- `deploy` (on `main` only, after `publish`): runs on the OCI server's own runner
-  (label `oci`). It pulls the new images, takes a `predeploy` snapshot of the
-  database, restarts the stack, and runs the smoke test against
-  https://scramble-challenge.duckdns.org.
+- `deploy` (on `main` only, after `publish`): runs on a normal GitHub-hosted runner
+  and SSHes into the server to trigger `scripts/deploy.sh`, which pulls the new
+  images, takes a `predeploy` snapshot of the database, restarts the stack, and runs
+  the smoke test against https://scramble-challenge.duckdns.org. There's no
+  self-hosted runner: the SSH key is restricted, server-side, to running nothing but
+  that one script, so it's safe to keep as a secret even with the repo public.
 
 ## Deploying (one-time server setup)
 
@@ -46,14 +48,31 @@ and gets its certificate from Let's Encrypt automatically.
 
 1. Point scramble-challenge.duckdns.org at the server's public IP (duckdns.org), and
    allow TCP 80 and 443 in the subnet's security list (OCI console).
-2. Get a runner token: GitHub repo, Settings > Actions > Runners > New self-hosted
-   runner. Copy the value after `--token` (single-use, expires in an hour).
+2. On your own machine, generate a dedicated deploy key (no passphrase, since GitHub
+   Actions has to use it unattended): `ssh-keygen -t ed25519 -f deploy_key -N ""`.
 3. Put `scripts/server-setup.sh` on the server, either with
    `scp -i <key> scripts/server-setup.sh ubuntu@<ip>:` or by pasting the file into
-   `nano server-setup.sh` over SSH.
-4. On the server: `bash server-setup.sh <token>`. It opens ports 80 and 443 in the
-   server's own firewall, installs Docker, and registers the runner as a service.
-5. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job does the rest.
+   `nano server-setup.sh` over SSH. Just this one file — it clones the repo itself,
+   `scripts/deploy-launcher.sh` included, before installing anything.
+4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It opens ports 80
+   and 443 in the server's own firewall, installs Docker, clones this repo for
+   deploys, installs `deploy-launcher.sh` at `$HOME` (deliberately outside that
+   checkout — it's what git-updates the checkout, so it can't safely live inside it),
+   and restricts the public key, in `authorized_keys`, to always running that launcher
+   — nothing else, whatever command is sent over it. It also asks for a GHCR token to
+   `docker login` with, needed only while the `web`/`tnoodle` packages are private;
+   leave it blank once you've made them public (Settings on the package itself, or
+   Package settings > Manage Actions access, once the repo is public too).
+5. In the repo's GitHub settings (Settings > Secrets and variables > Actions), add:
+   - `DEPLOY_HOST`: the server's IP or hostname.
+   - `DEPLOY_SSH_KEY`: the contents of `deploy_key` (the *private* half). Delete the
+     local copies of both files once it's saved.
+6. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job SSHes in,
+   which runs the launcher, which brings the checkout up to date and hands off to
+   `scripts/deploy.sh` to do the rest.
+
+Re-running `server-setup.sh` (a new deploy key, a fresh server) is safe: cloning the
+repo and adding the key are both skipped if already done.
 
 ## A second app behind the same Caddy
 
@@ -88,7 +107,7 @@ as that variable only in the `deploy` job's `env` in `.github/workflows/ci.yml`.
 times in UK time. It is switched off (404) until a password is set on the server:
 
 1. SSH to the server, then
-   `cd ~/actions-runner/_work/scramble-challenge/scramble-challenge`.
+   `cd ~/scramble-challenge`.
 2. `sudo python3 scripts/set_admin_password.py` asks for a password
    and writes its hash and a new secret key to `/etc/scramble-challenge/admin.env`.
 3. Re-run the latest CI run on `main` so the deploy restarts the web container with it.
@@ -108,7 +127,7 @@ Each kind keeps its newest 14. Snapshots use SQLite's online backup, so they are
 to take while people are playing.
 
 To put a snapshot back (for example, after a deploy broke the data), SSH to the server
-and run these from `~/actions-runner/_work/scramble-challenge/scramble-challenge`:
+and run these from `~/scramble-challenge`:
 
 ```bash
 docker compose run --rm --no-deps backup python -m app.backup list    # newest first
