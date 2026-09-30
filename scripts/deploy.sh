@@ -8,6 +8,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Compose otherwise names the stack after this directory ("repo"), which would start a
+# second stack alongside the live one instead of updating it. Pin it to what the stack
+# has always been called, independent of where the checkout happens to live.
+export COMPOSE_PROJECT_NAME="scramble-challenge"
+
 trap 'docker compose logs --tail 100' ERR
 
 echo "== Pulling the new images =="
