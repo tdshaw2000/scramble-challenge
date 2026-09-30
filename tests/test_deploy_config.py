@@ -322,13 +322,11 @@ def test_deploy_script_is_valid_and_executable():
     subprocess.run(["bash", "-n", str(script)], check=True)
 
 
-def test_deploy_script_updates_the_checkout_before_using_it():
-    script = text("scripts/deploy.sh")
+def test_deploy_launcher_is_valid_and_executable():
+    script = ROOT / "scripts/deploy-launcher.sh"
 
-    assert "git fetch" in script
-    fetch = script.index("git fetch")
-    pull = script.index("docker compose pull")
-    assert fetch < pull
+    assert os.access(script, os.X_OK)
+    subprocess.run(["bash", "-n", str(script)], check=True)
 
 
 def test_deploy_script_snapshots_the_database_with_the_new_image_before_restarting():

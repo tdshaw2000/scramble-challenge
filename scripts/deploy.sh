@@ -1,17 +1,14 @@
 #!/bin/bash
-# Runs on the server, not in GitHub Actions. It's invoked remotely over SSH by the
-# "deploy" job in .github/workflows/ci.yml, using a key that server-setup.sh restricts
-# to always running exactly this script (see the "command=" entry it adds to
-# authorized_keys) — so whatever that job asks for, this is the only thing that runs.
+# Runs on the server, not in GitHub Actions. It's exec'd by scripts/deploy-launcher.sh
+# once that has already brought this checkout up to date with origin/main — deploy.sh
+# itself never touches its own checkout (see deploy-launcher.sh for why).
 #
-# It updates this checkout to the latest main, then pulls, snapshots and restarts the
-# Docker Compose stack, the same way the old self-hosted-runner deploy job used to.
+# Pulls the new images, snapshots and restarts the Docker Compose stack, and smoke
+# tests the result — the same steps the old self-hosted-runner deploy job used to run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== Updating the checkout =="
-git fetch --depth 1 origin main
-git reset --hard origin/main
+trap 'docker compose logs --tail 100' ERR
 
 echo "== Pulling the new images =="
 docker compose pull

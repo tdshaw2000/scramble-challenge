@@ -52,17 +52,24 @@ and gets its certificate from Let's Encrypt automatically.
    Actions has to use it unattended): `ssh-keygen -t ed25519 -f deploy_key -N ""`.
 3. Put `scripts/server-setup.sh` on the server, either with
    `scp -i <key> scripts/server-setup.sh ubuntu@<ip>:` or by pasting the file into
-   `nano server-setup.sh` over SSH.
+   `nano server-setup.sh` over SSH. It needs `scripts/deploy-launcher.sh` from the same
+   checkout too, or `scp` both.
 4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It opens ports 80
    and 443 in the server's own firewall, installs Docker, clones this repo for
-   deploys, and restricts that public key, in `authorized_keys`, to always running
-   `scripts/deploy.sh` — nothing else, whatever command is sent over it.
+   deploys, installs `deploy-launcher.sh` at `$HOME` (deliberately outside that
+   checkout — it's what git-updates the checkout, so it can't safely live inside it),
+   and restricts the public key, in `authorized_keys`, to always running that launcher
+   — nothing else, whatever command is sent over it. It also asks for a GHCR token to
+   `docker login` with, needed only while the `web`/`tnoodle` packages are private;
+   leave it blank once you've made them public (Settings on the package itself, or
+   Package settings > Manage Actions access, once the repo is public too).
 5. In the repo's GitHub settings (Settings > Secrets and variables > Actions), add:
    - `DEPLOY_HOST`: the server's IP or hostname.
    - `DEPLOY_SSH_KEY`: the contents of `deploy_key` (the *private* half). Delete the
      local copies of both files once it's saved.
-6. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job SSHes in
-   and `scripts/deploy.sh` does the rest.
+6. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job SSHes in,
+   which runs the launcher, which brings the checkout up to date and hands off to
+   `scripts/deploy.sh` to do the rest.
 
 Re-running `server-setup.sh` (a new deploy key, a fresh server) is safe: cloning the
 repo and adding the key are both skipped if already done.
