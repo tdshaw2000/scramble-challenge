@@ -181,13 +181,76 @@ def test_server_setup_clones_the_repo_once_for_deploys():
     assert guard != -1, "git clone isn't guarded by an existence check"
 
 
-def test_server_setup_restricts_the_deploy_key_to_deploy_sh():
+def test_server_setup_restricts_the_deploy_key_to_the_launcher():
+    # The launcher, not scripts/deploy.sh directly: see test_deploy_launcher_lives_
+    # outside_the_git_checkout for why deploy.sh can't safely be the forced command.
     script = text("scripts/server-setup.sh")
 
     assert "command=" in script
-    assert "scripts/deploy.sh" in script
+    assert "$HOME/deploy-launcher.sh" in script
     for restriction in ("no-agent-forwarding", "no-X11-forwarding", "no-port-forwarding", "no-pty"):
         assert restriction in script
+
+
+def test_server_setup_writes_a_deploy_launcher_outside_the_git_checkout():
+    # git reset --hard rewrites every tracked file, including whichever one is the
+    # running forced command. A file inside $HOME but outside the checkout is never
+    # touched by that reset, so it's safe to keep running while the reset happens.
+    script = text("scripts/server-setup.sh")
+
+    assert "$HOME/deploy-launcher.sh" in script
+    assert "scramble-challenge/deploy-launcher.sh" not in script
+
+
+def test_deploy_launcher_lives_outside_the_git_checkout():
+    # scripts/deploy.sh used to git fetch/reset its own checkout and then keep running
+    # from that same (now rewritten) file — bash can read a script that's being
+    # overwritten mid-execution and corrupt the run. The launcher does the git update
+    # from outside the checkout, then execs deploy.sh fresh, only once it's current.
+    launcher = text("scripts/deploy-launcher.sh")
+
+    assert "git fetch" in launcher
+    fetch = launcher.index("git fetch")
+    reset = launcher.index("git reset --hard")
+    exec_deploy = launcher.index("exec scripts/deploy.sh")
+    assert fetch < reset < exec_deploy
+
+
+def test_server_setup_installs_the_launcher_and_makes_it_executable():
+    script = text("scripts/server-setup.sh")
+
+    assert "scripts/deploy-launcher.sh" in script
+    assert '"$HOME/deploy-launcher.sh"' in script
+    assert "chmod +x" in script
+
+
+def test_deploy_script_no_longer_updates_its_own_checkout():
+    # That's the launcher's job now, from outside the checkout (see above).
+    script = text("scripts/deploy.sh")
+
+    assert "git fetch" not in script
+    assert "git reset" not in script
+
+
+def test_deploy_script_logs_the_stack_if_a_step_fails():
+    script = text("scripts/deploy.sh")
+
+    assert "trap" in script
+    assert "docker compose logs" in script
+
+
+def test_server_setup_offers_to_log_in_to_ghcr_for_private_images():
+    # docker/login-action used GITHUB_TOKEN, which only exists inside a running
+    # workflow job. Outside one (i.e. from the server itself), there's nothing to
+    # authenticate `docker compose pull` with unless either the images are made
+    # public, or a durable credential is set up here instead.
+    script = text("scripts/server-setup.sh")
+
+    assert "docker login ghcr.io" in script
+    login = script.index("docker login ghcr.io")
+    # Optional: skippable when the images are public, never a required plaintext arg.
+    read_prompt = script.rfind("read ", 0, login)
+    assert read_prompt != -1, "the token is read interactively, not passed as an argument"
 
 
 def test_server_setup_appending_the_deploy_key_is_idempotent():
