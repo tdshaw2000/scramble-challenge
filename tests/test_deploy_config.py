@@ -184,7 +184,7 @@ def test_server_setup_clones_the_repo_once_for_deploys():
 def test_server_setup_restricts_the_deploy_key_to_deploy_sh():
     script = text("scripts/server-setup.sh")
 
-    assert 'command="' in script
+    assert "command=" in script
     assert "scripts/deploy.sh" in script
     for restriction in ("no-agent-forwarding", "no-X11-forwarding", "no-port-forwarding", "no-pty"):
         assert restriction in script
@@ -194,7 +194,7 @@ def test_server_setup_appending_the_deploy_key_is_idempotent():
     script = text("scripts/server-setup.sh")
 
     assert "authorized_keys" in script
-    appends = script.index(">> \"$HOME/.ssh/authorized_keys\"")
+    appends = script.index('>> "$HOME/.ssh/authorized_keys"')
     guard = script.rfind("grep", 0, appends)
     assert guard != -1, "the key is appended without checking it isn't there already"
 

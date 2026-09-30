@@ -113,30 +113,22 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    # Runs on the OCI server itself, through the self-hosted runner that
-    # scripts/server-setup.sh registers with the label "oci".
+    # No self-hosted runner: on a public repo, a fork pull request's own copy of this
+    # workflow could otherwise target one and run on the OCI server. Instead this job
+    # runs on a normal GitHub-hosted runner and only ever SSHes out to trigger
+    # scripts/deploy.sh, which does the actual pull/restart/smoke-test on the server.
+    # The SSH key is restricted server-side (by scripts/server-setup.sh) to running
+    # nothing else, so it's safe as a repo secret even with fork PRs enabled.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [publish]
-    runs-on: [self-hosted, oci]
-    permissions:
-      contents: read
-      packages: read
-    env:
-      SITE_ADDRESS: scramble-challenge.duckdns.org
-      WCA_SITE_ADDRESS: wca-records-analyser.duckdns.org
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - name: Pin the server's host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+      - uses: webfactory/ssh-agent@v0.9.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - run: docker compose pull
-      # A consistent copy of the live database, taken with the new image, to roll back to.
-      - run: docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
-      - run: docker network inspect scramble-challenge-edge > /dev/null 2>&1 || docker network create scramble-challenge-edge
-      - run: docker compose up -d --remove-orphans
-      - run: scripts/smoke-test.sh
-      - if: failure()
-        run: docker compose logs --tail 100
-      - run: docker image prune -f
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Trigger scripts/deploy.sh on the server
+        run: ssh -o BatchMode=yes "ubuntu@${{ secrets.DEPLOY_HOST }}"
