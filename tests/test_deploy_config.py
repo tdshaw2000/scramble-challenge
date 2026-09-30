@@ -99,24 +99,42 @@ def test_smoke_test_checks_pages_and_websockets_through_caddy():
     assert "101" in script
 
 
-def test_deploy_runs_on_the_servers_runner_after_publishing(deploy):
-    assert deploy["runs-on"] == ["self-hosted", "oci"]
+def test_deploy_runs_on_a_github_hosted_runner_over_ssh_after_publishing(deploy):
+    # No self-hosted runner: a public repo's pull requests would otherwise be able to
+    # target it and run arbitrary code on the server. A hosted runner only ever holds
+    # the SSH key needed to trigger scripts/deploy.sh remotely.
+    assert deploy["runs-on"] == "ubuntu-latest"
     assert deploy["needs"] == ["publish"]
     assert deploy["if"] == "github.event_name == 'push' && github.ref == 'refs/heads/main'"
-    assert deploy["permissions"]["packages"] == "read"
 
 
-def test_deploy_pulls_restarts_and_smoke_tests_the_live_site(deploy):
+def test_deploy_never_checks_out_the_repository(deploy):
+    # A checkout isn't needed (the server has its own clone) and, more importantly,
+    # avoids ever handing this job's GITHUB_TOKEN to anything that could act on it.
+    assert "actions/checkout@v4" not in [step.get("uses", "") for step in deploy["steps"]]
+
+
+def test_deploy_uses_an_ssh_key_scoped_to_this_job_only(deploy):
+    steps = deploy["steps"]
+    agent = next(s for s in steps if s.get("uses", "").startswith("webfactory/ssh-agent"))
+    assert agent["with"]["ssh-private-key"] == "${{ secrets.DEPLOY_SSH_KEY }}"
+
+
+def test_deploy_pins_the_servers_host_key_before_connecting(deploy):
     run = "\n".join(step.get("run", "") for step in deploy["steps"])
-
-    assert deploy["env"]["SITE_ADDRESS"] == SITE
-    assert "docker compose pull" in run
-    assert "docker compose up -d" in run
-    assert "scripts/smoke-test.sh" in run
+    assert "ssh-keyscan" in run
+    assert "${{ secrets.DEPLOY_HOST }}" in run
 
 
-def test_deploy_sets_the_real_domain_for_the_other_app(deploy):
-    assert deploy["env"]["WCA_SITE_ADDRESS"] == WCA_SITE
+def test_deploy_runs_nothing_but_the_forced_remote_command(deploy):
+    # The SSH key is restricted server-side (see server-setup.sh) to always run
+    # scripts/deploy.sh, whatever command the client sends, so the workflow itself
+    # never names a remote command to run.
+    run = "\n".join(step.get("run", "") for step in deploy["steps"])
+    ssh_lines = [line for line in run.splitlines() if line.strip().startswith("ssh ")]
+    assert ssh_lines
+    for line in ssh_lines:
+        assert "${{ secrets.DEPLOY_HOST }}" in line
 
 
 def test_smoke_creates_the_shared_edge_network_before_compose_up():
@@ -146,12 +164,39 @@ def test_server_setup_opens_web_ports_before_docker_touches_the_firewall():
     assert opens_ports < saves_rules < installs_docker
 
 
-def test_server_setup_registers_an_arm_runner_labelled_oci_as_a_service():
+def test_server_setup_has_no_self_hosted_runner_left():
     script = text("scripts/server-setup.sh")
 
-    assert "linux-arm64" in script
-    assert "--labels oci" in script
-    assert "svc.sh install" in script
+    assert "actions-runner" not in script
+    assert "svc.sh" not in script
+
+
+def test_server_setup_clones_the_repo_once_for_deploys():
+    script = text("scripts/server-setup.sh")
+
+    assert "git clone" in script
+    clones = script.index("git clone")
+    # Idempotent: re-running server-setup.sh must not fail on an existing checkout.
+    guard = script.rfind("[ ! -d", 0, clones)
+    assert guard != -1, "git clone isn't guarded by an existence check"
+
+
+def test_server_setup_restricts_the_deploy_key_to_deploy_sh():
+    script = text("scripts/server-setup.sh")
+
+    assert 'command="' in script
+    assert "scripts/deploy.sh" in script
+    for restriction in ("no-agent-forwarding", "no-X11-forwarding", "no-port-forwarding", "no-pty"):
+        assert restriction in script
+
+
+def test_server_setup_appending_the_deploy_key_is_idempotent():
+    script = text("scripts/server-setup.sh")
+
+    assert "authorized_keys" in script
+    appends = script.index(">> \"$HOME/.ssh/authorized_keys\"")
+    guard = script.rfind("grep", 0, appends)
+    assert guard != -1, "the key is appended without checking it isn't there already"
 
 
 def test_server_setup_creates_the_shared_edge_network_once():
@@ -207,22 +252,42 @@ def test_a_backup_service_takes_nightly_snapshots_onto_its_own_volume(compose):
     assert "backups:/backups" not in web["volumes"]
 
 
-def test_deploy_snapshots_the_database_with_the_new_image_before_restarting(deploy):
-    runs = [step.get("run", "") for step in deploy["steps"]]
+def test_deploy_script_is_valid_and_executable():
+    script = ROOT / "scripts/deploy.sh"
 
-    pull = runs.index("docker compose pull")
-    snapshot = runs.index(f"{BACKUP} snapshot predeploy")
-    up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
+    assert os.access(script, os.X_OK)
+    subprocess.run(["bash", "-n", str(script)], check=True)
+
+
+def test_deploy_script_updates_the_checkout_before_using_it():
+    script = text("scripts/deploy.sh")
+
+    assert "git fetch" in script
+    fetch = script.index("git fetch")
+    pull = script.index("docker compose pull")
+    assert fetch < pull
+
+
+def test_deploy_script_snapshots_the_database_with_the_new_image_before_restarting():
+    script = text("scripts/deploy.sh")
+
+    pull = script.index("docker compose pull")
+    snapshot = script.index(f"{BACKUP} snapshot predeploy")
+    up = script.index("docker compose up -d")
     assert pull < snapshot < up
 
 
-def test_deploy_creates_the_shared_edge_network_before_compose_up(deploy):
-    # docker-compose.yml declares "edge" as external. server-setup.sh creates it once,
-    # but a server that predates that script (or a fresh one) has no other chance to
-    # run it before the first `docker compose up -d --remove-orphans` here, so deploy
-    # must create it itself, the same idempotent way smoke and server-setup.sh do.
-    runs = [step.get("run", "") for step in deploy["steps"]]
+def test_deploy_script_creates_the_shared_edge_network_before_compose_up():
+    script = text("scripts/deploy.sh")
 
-    network = next(i for i, run in enumerate(runs) if EDGE_NETWORK in run)
-    up = next(i for i, run in enumerate(runs) if run.startswith("docker compose up -d"))
+    network = script.index(EDGE_NETWORK)
+    up = script.index("docker compose up -d")
     assert network < up
+
+
+def test_deploy_script_sets_both_real_domains_and_smoke_tests_the_live_site():
+    script = text("scripts/deploy.sh")
+
+    assert SITE in script
+    assert WCA_SITE in script
+    assert "scripts/smoke-test.sh" in script
