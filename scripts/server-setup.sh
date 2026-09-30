@@ -13,7 +13,11 @@ set -euo pipefail
 
 DEPLOY_KEY="${1:?Usage: bash server-setup.sh <deploy-public-key>}"
 REPO_URL="https://github.com/tdshaw2000/scramble-challenge"
-CHECKOUT_DIR="$HOME/scramble-challenge"
+# Everything for this app lives under its own folder, not loose in $HOME -- a second
+# app set up the same way gets its own ~/apps/<name>/ alongside this one.
+APP_DIR="$HOME/apps/scramble-challenge"
+CHECKOUT_DIR="$HOME/apps/scramble-challenge/repo"
+LAUNCHER_PATH="$HOME/apps/scramble-challenge/deploy-launcher.sh"
 
 # Guard against running this on the wrong machine (e.g. a local PC instead of over SSH):
 # it changes the firewall and installs Docker.
@@ -45,17 +49,19 @@ sudo docker network inspect scramble-challenge-edge > /dev/null 2>&1 \
   || sudo docker network create scramble-challenge-edge
 
 echo "== Cloning the repo the launcher will keep up to date =="
+mkdir -p "$APP_DIR"
 if [ ! -d "$CHECKOUT_DIR/.git" ]; then
   git clone --depth 1 "$REPO_URL" "$CHECKOUT_DIR"
 fi
 chmod +x "$CHECKOUT_DIR/scripts/deploy.sh"
 
 echo "== Installing the deploy launcher outside the checkout =="
-# Deliberately NOT inside $CHECKOUT_DIR: it's the forced command below, and its job is
-# to git-reset that checkout, which would rewrite itself out from under a running
-# process if it lived there too. See scripts/deploy-launcher.sh for the full story.
-cp "$CHECKOUT_DIR/scripts/deploy-launcher.sh" "$HOME/deploy-launcher.sh"
-chmod +x "$HOME/deploy-launcher.sh"
+# A sibling of $CHECKOUT_DIR (both under $APP_DIR), never inside it: it's the forced
+# command below, and its job is to git-reset that checkout, which would rewrite itself
+# out from under a running process if it lived there too. See scripts/deploy-launcher.sh
+# for the full story.
+cp "$CHECKOUT_DIR/scripts/deploy-launcher.sh" "$LAUNCHER_PATH"
+chmod +x "$LAUNCHER_PATH"
 
 echo "== Logging in to GHCR, if the images are private =="
 echo "Leave this blank if you've made the ghcr.io packages public (recommended once"
@@ -70,7 +76,7 @@ unset GHCR_TOKEN
 echo "== Restricting the deploy key to the launcher =="
 mkdir -p "$HOME/.ssh"
 touch "$HOME/.ssh/authorized_keys"
-RESTRICTION="command=\"$HOME/deploy-launcher.sh\",no-agent-forwarding,no-X11-forwarding,no-port-forwarding,no-pty"
+RESTRICTION="command=\"$LAUNCHER_PATH\",no-agent-forwarding,no-X11-forwarding,no-port-forwarding,no-pty"
 if ! grep -qF "$DEPLOY_KEY" "$HOME/.ssh/authorized_keys"; then
   echo "$RESTRICTION $DEPLOY_KEY" >> "$HOME/.ssh/authorized_keys"
 fi

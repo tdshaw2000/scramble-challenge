@@ -181,25 +181,40 @@ def test_server_setup_clones_the_repo_once_for_deploys():
     assert guard != -1, "git clone isn't guarded by an existence check"
 
 
+APP_DIR = "$HOME/apps/scramble-challenge"
+LAUNCHER_PATH = f"{APP_DIR}/deploy-launcher.sh"
+
+
 def test_server_setup_restricts_the_deploy_key_to_the_launcher():
     # The launcher, not scripts/deploy.sh directly: see test_deploy_launcher_lives_
     # outside_the_git_checkout for why deploy.sh can't safely be the forced command.
     script = text("scripts/server-setup.sh")
 
     assert "command=" in script
-    assert "$HOME/deploy-launcher.sh" in script
+    assert LAUNCHER_PATH in script
     for restriction in ("no-agent-forwarding", "no-X11-forwarding", "no-port-forwarding", "no-pty"):
         assert restriction in script
 
 
-def test_server_setup_writes_a_deploy_launcher_outside_the_git_checkout():
-    # git reset --hard rewrites every tracked file, including whichever one is the
-    # running forced command. A file inside $HOME but outside the checkout is never
-    # touched by that reset, so it's safe to keep running while the reset happens.
+def test_server_setup_keeps_this_apps_files_together_under_apps_dir():
+    # Everything for this app -- the checkout and the launcher -- lives under its own
+    # ~/apps/scramble-challenge/, not loose in $HOME, so a second app set up the same
+    # way (its own ~/apps/<name>/) doesn't end up mixed in with this one's files.
     script = text("scripts/server-setup.sh")
 
-    assert "$HOME/deploy-launcher.sh" in script
-    assert "scramble-challenge/deploy-launcher.sh" not in script
+    assert APP_DIR in script
+    assert f"{APP_DIR}/repo" in script
+
+
+def test_server_setup_writes_a_deploy_launcher_outside_the_git_checkout():
+    # git reset --hard rewrites every tracked file, including whichever one is the
+    # running forced command. A file outside the checkout (even if it's a sibling
+    # inside the same app folder) is never touched by that reset, so it's safe to
+    # keep running while the reset happens.
+    script = text("scripts/server-setup.sh")
+
+    assert LAUNCHER_PATH in script
+    assert f"{APP_DIR}/repo/deploy-launcher.sh" not in script
 
 
 def test_deploy_launcher_lives_outside_the_git_checkout():
@@ -209,6 +224,7 @@ def test_deploy_launcher_lives_outside_the_git_checkout():
     # from outside the checkout, then execs deploy.sh fresh, only once it's current.
     launcher = text("scripts/deploy-launcher.sh")
 
+    assert f"{APP_DIR}/repo" in launcher
     assert "git fetch" in launcher
     fetch = launcher.index("git fetch")
     reset = launcher.index("git reset --hard")
@@ -220,7 +236,7 @@ def test_server_setup_installs_the_launcher_and_makes_it_executable():
     script = text("scripts/server-setup.sh")
 
     assert "scripts/deploy-launcher.sh" in script
-    assert '"$HOME/deploy-launcher.sh"' in script
+    assert f'"{LAUNCHER_PATH}"' in script
     assert "chmod +x" in script
 
 
