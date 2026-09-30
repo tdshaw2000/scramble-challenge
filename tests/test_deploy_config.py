@@ -368,3 +368,16 @@ def test_deploy_script_sets_both_real_domains_and_smoke_tests_the_live_site():
     assert SITE in script
     assert WCA_SITE in script
     assert "scripts/smoke-test.sh" in script
+
+
+def test_deploy_script_pins_the_compose_project_name():
+    # Compose otherwise names the stack after the checkout's directory (now "repo",
+    # since the server layout cleanup moved the checkout to .../scramble-challenge/repo).
+    # Pinning it keeps deploys landing on the live scramble-challenge-* containers
+    # instead of starting a second, colliding stack under a new project name.
+    script = text("scripts/deploy.sh")
+
+    assert 'COMPOSE_PROJECT_NAME="scramble-challenge"' in script
+    pin = script.index('COMPOSE_PROJECT_NAME="scramble-challenge"')
+    pull = script.index("docker compose pull")
+    assert pin < pull
