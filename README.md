@@ -55,12 +55,15 @@ and gets its certificate from Let's Encrypt automatically.
    `nano server-setup.sh` over SSH. Just this one file — it clones the repo itself,
    `scripts/deploy-launcher.sh` included, before installing anything.
 4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It opens ports 80
-   and 443 in the server's own firewall, installs Docker, clones this repo for
-   deploys, installs `deploy-launcher.sh` at `$HOME` (deliberately outside that
-   checkout — it's what git-updates the checkout, so it can't safely live inside it),
-   and restricts the public key, in `authorized_keys`, to always running that launcher
-   — nothing else, whatever command is sent over it. It also asks for a GHCR token to
-   `docker login` with, needed only while the `web`/`tnoodle` packages are private;
+   and 443 in the server's own firewall, installs Docker, clones this repo to
+   `~/apps/scramble-challenge/repo`, installs `deploy-launcher.sh` as that folder's
+   sibling at `~/apps/scramble-challenge/deploy-launcher.sh` (deliberately outside
+   the checkout — it's what git-updates the checkout, so it can't safely live
+   inside it), and restricts the public key, in `authorized_keys`, to always
+   running that launcher — nothing else, whatever command is sent over it. Everything
+   for this app lives under `~/apps/scramble-challenge/`, so a second app set up the
+   same way gets its own `~/apps/<name>/` alongside it. It also asks for a GHCR token
+   to `docker login` with, needed only while the `web`/`tnoodle` packages are private;
    leave it blank once you've made them public (Settings on the package itself, or
    Package settings > Manage Actions access, once the repo is public too).
 5. In the repo's GitHub settings (Settings > Secrets and variables > Actions), add:
@@ -107,7 +110,7 @@ as that variable only in the `deploy` job's `env` in `.github/workflows/ci.yml`.
 times in UK time. It is switched off (404) until a password is set on the server:
 
 1. SSH to the server, then
-   `cd ~/scramble-challenge`.
+   `cd ~/apps/scramble-challenge/repo`.
 2. `sudo python3 scripts/set_admin_password.py` asks for a password
    and writes its hash and a new secret key to `/etc/scramble-challenge/admin.env`.
 3. Re-run the latest CI run on `main` so the deploy restarts the web container with it.
@@ -127,7 +130,7 @@ Each kind keeps its newest 14. Snapshots use SQLite's online backup, so they are
 to take while people are playing.
 
 To put a snapshot back (for example, after a deploy broke the data), SSH to the server
-and run these from `~/scramble-challenge`:
+and run these from `~/apps/scramble-challenge/repo`:
 
 ```bash
 docker compose run --rm --no-deps backup python -m app.backup list    # newest first
