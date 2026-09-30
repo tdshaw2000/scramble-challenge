@@ -52,8 +52,8 @@ and gets its certificate from Let's Encrypt automatically.
    Actions has to use it unattended): `ssh-keygen -t ed25519 -f deploy_key -N ""`.
 3. Put `scripts/server-setup.sh` on the server, either with
    `scp -i <key> scripts/server-setup.sh ubuntu@<ip>:` or by pasting the file into
-   `nano server-setup.sh` over SSH. It needs `scripts/deploy-launcher.sh` from the same
-   checkout too, or `scp` both.
+   `nano server-setup.sh` over SSH. Just this one file — it clones the repo itself,
+   `scripts/deploy-launcher.sh` included, before installing anything.
 4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It opens ports 80
    and 443 in the server's own firewall, installs Docker, clones this repo for
    deploys, installs `deploy-launcher.sh` at `$HOME` (deliberately outside that
