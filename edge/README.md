@@ -38,11 +38,12 @@ machine:
   then `cd ~/apps/caddy && docker compose up -d`.
 - **`Caddyfile` changed only**: copy it to `~/apps/caddy/Caddyfile`, then validate
   and reload rather than restart, so existing connections (including the other
-  app's) aren't dropped:
+  app's) aren't dropped. Run these from `~/apps/caddy` (`docker compose exec`
+  finds the right container without needing to know its name):
 
   ```bash
-  docker exec caddy-caddy-1 caddy validate --config /etc/caddy/Caddyfile
-  docker exec caddy-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+  docker compose exec caddy caddy validate --config /etc/caddy/Caddyfile
+  docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
   ```
 
 ## Migrating from Caddy running inside scramble-challenge's own stack
