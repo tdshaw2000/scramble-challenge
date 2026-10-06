@@ -331,7 +331,7 @@ def gate(event):
     if action == "misnamed-reviewer":
         block(
             "This dispatch does the reviewer's job but subagent_type isn't \"reviewer\" - set "
-            "subagent_type: \"reviewer\" exactly (not a free-text description), or its verdict "
+            'subagent_type: "reviewer" exactly (not a free-text description), or its verdict '
             "will never be recorded. " + LOOP
         )
     if action == "create-not-draft":
