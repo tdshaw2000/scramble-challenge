@@ -108,7 +108,9 @@ def write_transcript(repo, *contents):
     return path
 
 
-def record_via_transcript(repo, transcript_path, agent_type="reviewer", last_assistant_message=None):
+def record_via_transcript(
+    repo, transcript_path, agent_type="reviewer", last_assistant_message=None
+):
     return run(
         "record",
         {
