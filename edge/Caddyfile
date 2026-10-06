@@ -1,6 +1,6 @@
-# SITE_ADDRESS is the public domain on the server (Caddy then gets and renews a
+# SCRCH_SITE_ADDRESS is the public domain on the server (Caddy then gets and renews a
 # Let's Encrypt certificate itself), or ":80" for plain HTTP in CI and local runs.
-{$SITE_ADDRESS} {
+{$SCRCH_SITE_ADDRESS} {
 	# Caddy passes WebSocket upgrades through without extra config.
 	reverse_proxy scramble-web:5000
 }

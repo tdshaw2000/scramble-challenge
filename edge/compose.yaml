@@ -12,7 +12,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      SCRCH_SITE_ADDRESS: ${SCRCH_SITE_ADDRESS:-:80}
       # Same trick: a bare port in CI/local dev, the real domain only at deploy time,
       # so nothing here ever attempts a live ACME challenge for a domain it doesn't own.
       WCA_SITE_ADDRESS: ${WCA_SITE_ADDRESS:-:8080}

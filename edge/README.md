@@ -22,7 +22,7 @@ Then, on the server:
 ```bash
 cd ~/apps/caddy
 cat > .env <<'EOF'
-SITE_ADDRESS=scramble-challenge.duckdns.org
+SCRCH_SITE_ADDRESS=scramble-challenge.duckdns.org
 WCA_SITE_ADDRESS=wca-records-analyser.duckdns.org
 EOF
 docker compose up -d
