@@ -99,6 +99,30 @@ def review(repo, blocking=0, **counts):
     assert result.returncode == 0, result.stderr
 
 
+def write_transcript(repo, *contents):
+    """contents is a list of message "content" lists (Claude Code transcript JSONL shape).
+    Written as a sibling of the repo, not inside it, since it isn't part of the checkout."""
+    path = repo.parent / "transcript.jsonl"
+    lines = [json.dumps({"message": {"content": content}}) for content in contents]
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+def record_via_transcript(repo, transcript_path, agent_type="reviewer", last_assistant_message=None):
+    return run(
+        "record",
+        {
+            "hook_event_name": "SubagentStop",
+            "cwd": str(repo),
+            "agent_type": agent_type,
+            "agent_id": "a1",
+            "stop_hook_active": False,
+            "last_assistant_message": last_assistant_message,
+            "agent_transcript_path": str(transcript_path),
+        },
+    )
+
+
 def mark_ready(repo):
     return run(
         "gate",
@@ -296,6 +320,98 @@ def test_other_tool_calls_pass_through(repo, tool_name, tool_input):
     result = run("gate", {"cwd": str(repo), "tool_name": tool_name, "tool_input": tool_input})
 
     assert result.returncode == 0, result.stderr
+
+
+# --- Recording the reviewer's verdict from its transcript (cloud subagents) ---
+#
+# In a cloud session, the reviewer subagent runs through a generic "Agent" tool instead of
+# Claude Code's own native subagent mechanism. SubagentStop still fires, but
+# last_assistant_message is empty; the reviewer hands its report back through a
+# SubagentHandback tool call in its own transcript instead of a closing text message.
+
+
+def test_a_verdict_handed_back_via_subagenthandback_in_the_transcript_is_recorded(repo):
+    transcript = write_transcript(
+        repo,
+        [{"type": "text", "text": "Reviewing..."}],
+        [
+            {
+                "type": "tool_use",
+                "name": "SubagentHandback",
+                "input": {"message": verdict(head(repo))},
+            }
+        ],
+    )
+
+    result = record_via_transcript(repo, transcript)
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
+def test_the_transcript_is_only_read_when_last_assistant_message_is_empty(repo):
+    transcript = write_transcript(
+        repo,
+        [{"type": "tool_use", "name": "SubagentHandback", "input": {"message": "Looks good!"}}],
+    )
+
+    result = record_via_transcript(repo, transcript, last_assistant_message=verdict(head(repo)))
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
+def test_the_latest_message_in_the_transcript_wins(repo):
+    transcript = write_transcript(
+        repo,
+        [{"type": "tool_use", "name": "SubagentHandback", "input": {"message": "Looks good!"}}],
+        [
+            {
+                "type": "tool_use",
+                "name": "SubagentHandback",
+                "input": {"message": verdict(head(repo))},
+            }
+        ],
+    )
+
+    result = record_via_transcript(repo, transcript)
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
+def test_a_plain_closing_text_message_in_the_transcript_is_read_too(repo):
+    transcript = write_transcript(repo, [{"type": "text", "text": verdict(head(repo))}])
+
+    result = record_via_transcript(repo, transcript)
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
+def test_a_missing_transcript_file_sends_the_reviewer_back_like_any_bad_verdict(repo):
+    result = record_via_transcript(repo, repo / "no-such-file.jsonl")
+
+    assert result.returncode == BLOCKED
+    assert "```json" in result.stderr
+
+
+def test_other_subagents_are_not_recorded_from_the_transcript_either(repo):
+    transcript = write_transcript(
+        repo,
+        [
+            {
+                "type": "tool_use",
+                "name": "SubagentHandback",
+                "input": {"message": verdict(head(repo))},
+            }
+        ],
+    )
+
+    result = record_via_transcript(repo, transcript, agent_type="Explore")
+
+    assert result.returncode == 0
+    assert mark_ready(repo).returncode == BLOCKED
 
 
 # --- Recording the reviewer's verdict ---
