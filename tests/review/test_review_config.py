@@ -59,8 +59,16 @@ def test_the_reviewers_verdict_is_recorded_when_it_stops(hooks):
     assert any("review_gate.py" in c and c.endswith(" record") for c in commands)
 
 
+def test_the_reviewers_verdict_is_also_recorded_from_a_synchronous_agent_call(hooks):
+    # SubagentStop never fires for a subagent run through the generic "Agent" tool
+    # instead of Claude Code's own native mechanism (PRs #47-#50); this is the fallback.
+    commands = commands_for(hooks, "PostToolUse", "Agent")
+
+    assert any("review_gate.py" in c and c.endswith(" record_tool") for c in commands)
+
+
 def test_hook_commands_use_the_project_dir_so_they_work_from_any_cwd(hooks):
-    for event in ("PreToolUse", "SubagentStop"):
+    for event in ("PreToolUse", "SubagentStop", "PostToolUse"):
         for group in hooks[event]:
             for handler in group["hooks"]:
                 assert "$CLAUDE_PROJECT_DIR" in handler["command"]
@@ -115,3 +123,11 @@ def test_claude_md_says_slashes_in_branch_names_become_double_underscores():
     text = (ROOT / "CLAUDE.md").read_text()
 
     assert "any / in the branch name written as __" in text
+
+
+def test_claude_md_says_to_run_the_reviewer_synchronously_where_subagent_stop_never_fires():
+    # Otherwise the record_tool fallback (PostToolUse on the Agent tool) has nothing to
+    # record: tool_response for a background call is just the launch confirmation.
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "run_in_background: false" in text

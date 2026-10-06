@@ -1,10 +1,18 @@
 """Claude Code hook: no pull request is marked ready for review until the reviewer passes it.
 
-    review_gate.py record   SubagentStop, for the reviewer subagent. Saves its verdict
-                            against the commit it reviewed.
-    review_gate.py gate     PreToolUse. Blocks opening a PR that isn't a draft, and blocks
-                            marking a PR ready or merging it until the current commit has
-                            passed review. Merges must be merge commits of that exact commit.
+    review_gate.py record       SubagentStop, for the reviewer subagent. Saves its verdict
+                                against the commit it reviewed. Only fires for Claude Code's
+                                own native subagent mechanism.
+    review_gate.py record_tool  PostToolUse, matched on the generic "Agent" tool. Some
+                                environments run subagents through that tool instead of the
+                                native mechanism above, which never fires SubagentStop -- so a
+                                genuinely passing review was never recorded (PRs #47-#50). When
+                                the reviewer is run with run_in_background: false, this tool
+                                call's own result carries its final message, which is enough to
+                                record the same way.
+    review_gate.py gate         PreToolUse. Blocks opening a PR that isn't a draft, and blocks
+                                marking a PR ready or merging it until the current commit has
+                                passed review. Merges must be merge commits of that exact commit.
 
 Claude Code sends the event as JSON on stdin. Exit code 2 blocks, and stderr tells Claude why.
 Any other failure would let the tool call through, so the gate turns its own errors into blocks.
@@ -88,44 +96,86 @@ def parse_verdict(message):
     return verdict
 
 
+def verdict_or_problem(cwd, message):
+    """(verdict, commit, problem). problem is set, with the other two None, when message
+    doesn't hold a usable verdict."""
+    verdict = parse_verdict(message)
+    if verdict is None:
+        return (
+            None,
+            None,
+            "Your review must end with a ```json block holding commit, blocking, "
+            "suggestions and judgment_calls (see your instructions).",
+        )
+    # The verdict counts for the commit it names. If HEAD has moved on since, the gate simply
+    # won't find a review for HEAD; the reviewer must never relabel its verdict.
+    named = verdict.get("commit")
+    commit = None
+    if isinstance(named, str) and re.fullmatch(r"[0-9a-f]{40}", named):
+        commit = git(cwd, "rev-parse", "--verify", "--quiet", f"{named}^{{commit}}")
+    if commit is None:
+        return (
+            verdict,
+            None,
+            f"The verdict names commit {verdict.get('commit')}, which isn't a full sha of a "
+            f"commit here. Name the commit you actually reviewed (HEAD is "
+            f"{git(cwd, 'rev-parse', 'HEAD')} now; if that isn't what you reviewed, say so "
+            "and review it from scratch).",
+        )
+    return verdict, commit, None
+
+
+def round_dict(commit, verdict):
+    return {
+        "commit": commit,
+        "blocking": len(verdict["blocking"]),
+        "suggestions": len(verdict["suggestions"]),
+        "judgment_calls": len(verdict["judgment_calls"]),
+    }
+
+
 def record(event):
     if event.get("agent_type") != REVIEWER:
         return
     cwd = event.get("cwd")
-    verdict = parse_verdict(event.get("last_assistant_message"))
-    problem = None
-    if verdict is None:
-        problem = (
-            "Your review must end with a ```json block holding commit, blocking, "
-            "suggestions and judgment_calls (see your instructions)."
-        )
-    else:
-        # The verdict counts for the commit it names. If HEAD has moved on since, the gate
-        # simply won't find a review for HEAD; the reviewer must never relabel its verdict.
-        named = verdict.get("commit")
-        commit = None
-        if isinstance(named, str) and re.fullmatch(r"[0-9a-f]{40}", named):
-            commit = git(cwd, "rev-parse", "--verify", "--quiet", f"{named}^{{commit}}")
-        if commit is None:
-            problem = (
-                f"The verdict names commit {verdict.get('commit')}, which isn't a full sha of a "
-                f"commit here. Name the commit you actually reviewed (HEAD is "
-                f"{git(cwd, 'rev-parse', 'HEAD')} now; if that isn't what you reviewed, say so "
-                "and review it from scratch)."
-            )
+    verdict, commit, problem = verdict_or_problem(cwd, event.get("last_assistant_message"))
     if problem:
         if event.get("stop_hook_active"):
             return  # Already sent back once; don't loop. Nothing is recorded, so the gate holds.
         block(problem)
-    save_round(
-        cwd,
-        {
-            "commit": commit,
-            "blocking": len(verdict["blocking"]),
-            "suggestions": len(verdict["suggestions"]),
-            "judgment_calls": len(verdict["judgment_calls"]),
-        },
-    )
+    save_round(cwd, round_dict(commit, verdict))
+
+
+def flatten_text(value):
+    """Best-effort flattening of a PostToolUse tool_response into text to scan for the
+    verdict block: some harnesses hand back a bare string, others wrap it in content blocks."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return "\n".join(flatten_text(v) for v in value)
+    if isinstance(value, dict):
+        for key in ("text", "content", "result", "message", "output"):
+            if key in value:
+                return flatten_text(value[key])
+        return json.dumps(value)
+    return "" if value is None else str(value)
+
+
+def record_from_tool(event):
+    tool_input = event.get("tool_input") or {}
+    if tool_input.get("subagent_type") != REVIEWER:
+        return
+    if tool_input.get("run_in_background") is not False:
+        # Still running, or launched in the background: tool_response is just that launch's
+        # own confirmation, not the subagent's final message. Nothing to record yet -- the
+        # result (if any) arrives later as a separate, unhooked message.
+        return
+    cwd = event.get("cwd")
+    message = flatten_text(event.get("tool_response"))
+    verdict, commit, problem = verdict_or_problem(cwd, message)
+    if problem:
+        block(problem)
+    save_round(cwd, round_dict(commit, verdict))
 
 
 # --- gate ---
@@ -302,7 +352,7 @@ def gate(event):
 
 def main():
     event = json.load(sys.stdin)
-    {"record": record, "gate": gate}[sys.argv[1]](event)
+    {"record": record, "record_tool": record_from_tool, "gate": gate}[sys.argv[1]](event)
 
 
 if __name__ == "__main__":

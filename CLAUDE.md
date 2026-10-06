@@ -16,7 +16,11 @@ auto-merge, --admin merges, and merges through gh api. It does not stop direct p
 
 1. Finish the work, commit, push, and open the PR as a draft.
 2. Run the `reviewer` subagent. Give it the PR number and one line on what the change is for.
-   Don't tell it what to conclude. Its verdict is recorded automatically when it stops.
+   Don't tell it what to conclude. Its verdict is recorded automatically when it stops
+   (`SubagentStop`). In an environment whose subagents run through a generic `Agent` tool
+   instead of Claude Code's own native mechanism, that event never fires — run the reviewer
+   with `run_in_background: false` there instead, so the same tool call's own result carries
+   the verdict for a `PostToolUse` hook to record (see `review_gate.py record_tool`).
 3. **Blocking findings**: fix each one test-first, push, and run the reviewer again. The hook
    allows 3 rounds with blocking findings. After the third, stop: leave the PR open and
    unmerged and tell the owner what is still blocking and why. If you think a blocking finding
