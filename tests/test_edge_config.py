@@ -41,18 +41,18 @@ def test_caddy_is_its_own_compose_project(compose):
 
 
 def test_caddy_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
-    assert compose["services"]["caddy"]["environment"]["SITE_ADDRESS"] == "${SITE_ADDRESS:-:80}"
+    assert compose["services"]["caddy"]["environment"]["SCRCH_SITE_ADDRESS"] == "${SCRCH_SITE_ADDRESS:-:80}"
 
 
 def test_caddy_proxies_the_site_address_to_scramble_challenges_web():
     caddyfile = text("Caddyfile")
 
-    assert "{$SITE_ADDRESS}" in caddyfile
+    assert "{$SCRCH_SITE_ADDRESS}" in caddyfile
     assert "reverse_proxy scramble-web:5000" in caddyfile
 
 
 def test_wca_records_analyser_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
-    # Same trick as SITE_ADDRESS: a bare port, not a real domain, so CI and local
+    # Same trick as SCRCH_SITE_ADDRESS: a bare port, not a real domain, so CI and local
     # `docker compose up` never trigger a live Let's Encrypt ACME challenge for a
     # production hostname the runner doesn't own.
     caddy_env = compose["services"]["caddy"]["environment"]

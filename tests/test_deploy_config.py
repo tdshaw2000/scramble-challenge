@@ -66,7 +66,7 @@ def test_no_caddy_service_or_certificate_volume_left_in_this_stack(compose):
 def test_smoke_test_checks_pages_and_websockets_through_caddy():
     script = text("scripts/smoke-test.sh")
 
-    assert "SITE_ADDRESS" in script
+    assert "SCRCH_SITE_ADDRESS" in script
     assert "Upgrade: websocket" in script
     assert "101" in script
 
