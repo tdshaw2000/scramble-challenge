@@ -298,6 +298,100 @@ def test_other_tool_calls_pass_through(repo, tool_name, tool_input):
     assert result.returncode == 0, result.stderr
 
 
+# --- Recording the reviewer's verdict from a synchronous Agent tool call ---
+#
+# In an environment without Claude Code's native subagent mechanism, subagents run
+# through a generic "Agent" tool instead, which never fires SubagentStop -- so a
+# review that genuinely passed was never recorded (see CLAUDE.md). When that tool is
+# called with run_in_background: false, its own PostToolUse event carries the
+# subagent's full final message as tool_response, which is enough to record the
+# same way.
+
+
+def record_tool(repo, tool_response, subagent_type="reviewer", run_in_background=False):
+    return run(
+        "record_tool",
+        {
+            "hook_event_name": "PostToolUse",
+            "cwd": str(repo),
+            "tool_name": "Agent",
+            "tool_input": {
+                "subagent_type": subagent_type,
+                "run_in_background": run_in_background,
+                "description": "Review the PR",
+                "prompt": "Review PR #1",
+            },
+            "tool_response": tool_response,
+        },
+    )
+
+
+def test_a_synchronous_reviewer_tool_call_records_the_verdict(repo):
+    result = record_tool(repo, verdict(head(repo)))
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
+def test_a_background_reviewer_tool_call_is_not_recorded_yet(repo):
+    # tool_response is just the "launched" stub at this point -- nothing to check.
+    result = record_tool(repo, "Async agent launched successfully.", run_in_background=True)
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_a_reviewer_tool_call_with_no_run_in_background_set_is_treated_as_background(repo):
+    result = run(
+        "record_tool",
+        {
+            "cwd": str(repo),
+            "tool_name": "Agent",
+            "tool_input": {"subagent_type": "reviewer", "description": "d", "prompt": "p"},
+            "tool_response": verdict(head(repo)),
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_other_subagent_types_via_the_tool_are_not_recorded(repo):
+    result = record_tool(repo, verdict(head(repo)), subagent_type="Explore")
+
+    assert result.returncode == 0
+    assert mark_ready(repo).returncode == BLOCKED
+
+
+def test_a_bad_verdict_from_a_synchronous_tool_call_blocks(repo):
+    result = record_tool(repo, "Looks good to me!")
+
+    assert result.returncode == BLOCKED
+    assert "```json" in result.stderr
+
+
+def test_a_synchronous_tool_calls_verdict_for_an_older_commit_is_kept_for_that_commit_only(repo):
+    reviewed = head(repo)
+    new_commit(repo)
+
+    assert record_tool(repo, verdict(reviewed)).returncode == 0
+    result = mark_ready(repo)
+
+    assert result.returncode == BLOCKED
+    assert "reviewer" in result.stderr
+
+
+def test_a_structured_tool_response_is_scanned_for_the_verdict_too(repo):
+    # Some harnesses wrap the final message in content blocks rather than handing back
+    # a bare string.
+    structured = {"content": [{"type": "text", "text": verdict(head(repo))}]}
+
+    result = record_tool(repo, structured)
+
+    assert result.returncode == 0, result.stderr
+    assert mark_ready(repo).returncode == 0
+
+
 # --- Recording the reviewer's verdict ---
 
 
