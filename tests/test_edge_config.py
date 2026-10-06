@@ -41,7 +41,8 @@ def test_caddy_is_its_own_compose_project(compose):
 
 
 def test_caddy_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
-    assert compose["services"]["caddy"]["environment"]["SCRCH_SITE_ADDRESS"] == "${SCRCH_SITE_ADDRESS:-:80}"
+    caddy_env = compose["services"]["caddy"]["environment"]
+    assert caddy_env["SCRCH_SITE_ADDRESS"] == "${SCRCH_SITE_ADDRESS:-:80}"
 
 
 def test_caddy_proxies_the_site_address_to_scramble_challenges_web():
