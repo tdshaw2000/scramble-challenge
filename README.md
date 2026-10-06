@@ -120,7 +120,7 @@ networks:
     external: true
 ```
 
-Then add a site block to `edge/Caddyfile` for it, following the `WCA_SITE_ADDRESS`
+Then add a site block to `edge/Caddyfile` for it, following the `SCRCH_SITE_ADDRESS`
 block as a template: gate the real domain behind an env var that defaults to a bare
 port (never a live domain), so CI and local `docker compose up` never attempt a
 Let's Encrypt challenge they can't complete, and set the real domain as that

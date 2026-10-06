@@ -30,7 +30,7 @@ docker network inspect scramble-challenge-edge > /dev/null 2>&1 \
 echo "== Restarting the stack =="
 # Only for scripts/smoke-test.sh, below, to know which public hostname to check --
 # Caddy itself is edge/'s concern now, not this script's.
-export SITE_ADDRESS=scramble-challenge.duckdns.org
+export SCRCH_SITE_ADDRESS=scramble-challenge.duckdns.org
 docker compose up -d --remove-orphans
 
 echo "== Smoke testing the live site =="

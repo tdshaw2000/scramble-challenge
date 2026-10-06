@@ -32,9 +32,9 @@ do
   sleep 2
 done
 
-# Through Caddy, the way players come in. On the server SITE_ADDRESS is the public
+# Through Caddy, the way players come in. On the server SCRCH_SITE_ADDRESS is the public
 # domain (HTTPS, checked against this machine); in CI and locally it's plain ":80".
-SITE="${SITE_ADDRESS:-:80}"
+SITE="${SCRCH_SITE_ADDRESS:-:80}"
 if [ "${SITE#:}" != "$SITE" ]; then
   BASE="http://localhost$SITE"
   set --
