@@ -59,5 +59,8 @@ volumes:
     name: scramble-challenge_caddy_data
 ```
 
-Revert that override once this stack has run with it at least once (Compose then owns
-a volume of the same name under its own project).
+Keep this override permanently — don't revert it once the stack is running. The volume
+was created under the old `scramble-challenge` Compose project, not this stack's own
+`caddy` project, and Compose refuses to adopt a volume created under a different
+project name unless `external: true` stays set (`docker compose up -d` errors with
+"volume ... was created for project ... Use external: true").
