@@ -41,6 +41,13 @@ GH_CREATE = re.compile(r"\bgh\b.*\bpr\s+create\b", re.DOTALL)
 SEPARATORS = {";", "&", "&&", "|", "||", "\n", "(", ")"}
 DRAFT_FLAGS = {"--draft", "-d", "--draft=true"}
 VERDICT = re.compile(r"```json\s*\n(.*?)\n```", re.DOTALL)
+# A dispatch that does the reviewer's job under some other subagent_type (typically
+# "general-purpose", with "reviewer" only in the free-text description or prompt) is never
+# recorded: record() only saves a verdict when agent_type is exactly "reviewer". Fail closed
+# on the word appearing anywhere in the dispatch, same tradeoff as everywhere else in this
+# file - a false block only costs a retry; a missed one skips the review silently.
+DISPATCH_TOOLS = ("Agent", "Task")
+REVIEW_WORD = re.compile(r"review", re.IGNORECASE)
 
 
 def git(cwd, *args):
@@ -239,9 +246,13 @@ def gh_merges(command):
 
 def wants(event):
     """What the tool call does, as (action, detail). action is 'ready', 'merge', 'auto-merge',
-    'admin-merge', 'api-merge', 'create-not-draft', or None for anything else.
-    A merge's detail is [(method, head sha)]."""
+    'admin-merge', 'api-merge', 'create-not-draft', 'misnamed-reviewer', or None for anything
+    else. A merge's detail is [(method, head sha)]."""
     tool, args = event.get("tool_name") or "", event.get("tool_input") or {}
+    if tool in DISPATCH_TOOLS and args.get("subagent_type") != REVIEWER:
+        text = " ".join(str(args.get(key) or "") for key in ("description", "prompt"))
+        if REVIEW_WORD.search(text):
+            return "misnamed-reviewer", None
     if tool.startswith("mcp__") and tool.endswith("__update_pull_request"):
         return ("ready" if args.get("draft") is False else None), None
     if tool.startswith("mcp__") and tool.endswith("__create_pull_request"):
@@ -317,6 +328,12 @@ def gate(event):
     action, detail = wants(event)
     if action is None:
         return
+    if action == "misnamed-reviewer":
+        block(
+            "This dispatch does the reviewer's job but subagent_type isn't \"reviewer\" - set "
+            'subagent_type: "reviewer" exactly (not a free-text description), or its verdict '
+            "will never be recorded. " + LOOP
+        )
     if action == "create-not-draft":
         block("Open the pull request as a draft. It is marked ready only after review. " + LOOP)
     if action == "auto-merge":
