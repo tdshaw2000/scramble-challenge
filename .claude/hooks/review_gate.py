@@ -88,11 +88,47 @@ def parse_verdict(message):
     return verdict
 
 
+def transcript_report(path):
+    """The reviewer's final report, read from its own transcript. In a cloud session, the
+    reviewer runs through a generic Agent tool rather than Claude Code's own subagent
+    mechanism: SubagentStop still fires, but last_assistant_message is empty, and the
+    reviewer hands its report back through a SubagentHandback tool call instead of a closing
+    text message. That is read here as the fallback, in transcript order so the latest one
+    found (a plain closing text message or a SubagentHandback) wins."""
+    if not path:
+        return None
+    try:
+        lines = Path(path).read_text().splitlines()
+    except OSError:
+        return None
+    message = None
+    for line in lines:
+        try:
+            content = json.loads(line).get("message", {}).get("content")
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(content, list):
+            continue
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "text" and isinstance(item.get("text"), str):
+                message = item["text"]
+            elif item.get("type") == "tool_use" and item.get("name") == "SubagentHandback":
+                text = (item.get("input") or {}).get("message")
+                if isinstance(text, str):
+                    message = text
+    return message
+
+
 def record(event):
     if event.get("agent_type") != REVIEWER:
         return
     cwd = event.get("cwd")
-    verdict = parse_verdict(event.get("last_assistant_message"))
+    message = event.get("last_assistant_message") or transcript_report(
+        event.get("agent_transcript_path")
+    )
+    verdict = parse_verdict(message)
     problem = None
     if verdict is None:
         problem = (
