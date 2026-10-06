@@ -29,58 +29,23 @@ def text(path):
     return (ROOT / path).read_text()
 
 
-def test_caddy_serves_http_and_https_and_keeps_its_certificates(compose):
-    caddy = compose["services"]["caddy"]
+def test_web_joins_the_shared_edge_network_under_an_alias_caddy_can_reach(compose):
+    # Caddy is now a separate Compose project (edge/compose.yaml), so it can only
+    # resolve this container by joining the same externally-created network scramble's
+    # own default network. The alias is what the standalone Caddyfile proxies to.
+    web = compose["services"]["web"]
 
-    assert caddy["image"].startswith("caddy:2")
-    assert {"80:80", "443:443"} <= set(caddy["ports"])
-    assert "./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" in caddy["volumes"]
-    assert "caddy_data:/data" in caddy["volumes"]
-    assert "caddy_data" in compose["volumes"]
-
-
-def test_caddy_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
-    assert compose["services"]["caddy"]["environment"]["SITE_ADDRESS"] == "${SITE_ADDRESS:-:80}"
-
-
-def test_caddy_proxies_the_site_address_to_the_web_app():
-    caddyfile = text("docker/caddy/Caddyfile")
-
-    assert "{$SITE_ADDRESS}" in caddyfile
-    assert "reverse_proxy web:5000" in caddyfile
-
-
-def test_wca_records_analyser_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
-    # Same trick as SITE_ADDRESS: a bare port, not a real domain, so CI and local
-    # `docker compose up` never trigger a live Let's Encrypt ACME challenge for a
-    # production hostname the runner doesn't own.
-    caddy_env = compose["services"]["caddy"]["environment"]
-    assert caddy_env["WCA_SITE_ADDRESS"] == "${WCA_SITE_ADDRESS:-:8080}"
-
-
-def test_caddy_proxies_wca_site_address_to_the_other_app():
-    caddyfile = text("docker/caddy/Caddyfile")
-
-    assert "{$WCA_SITE_ADDRESS}" in caddyfile
-    assert "reverse_proxy wca-records-analyser:8000" in caddyfile
-
-
-def test_caddy_joins_a_shared_external_network_so_it_can_reach_other_apps(compose):
-    # wca-records-analyser is a separate app with its own compose project, so Caddy can
-    # only resolve its container name if both stacks join a network created outside of
-    # (and shared between) either project.
-    caddy = compose["services"]["caddy"]
-
-    assert set(caddy["networks"]) == {"default", "edge"}
+    assert set(web["networks"]) == {"default", "edge"}
+    assert web["networks"]["edge"]["aliases"] == ["scramble-web"]
     edge = compose["networks"]["edge"]
     assert edge["external"] is True
     assert edge["name"] == EDGE_NETWORK
 
 
-def test_only_caddy_joins_the_shared_edge_network(compose):
+def test_only_web_joins_the_shared_edge_network(compose):
     # The other services have no business being reachable from outside this stack.
     for name, service in compose["services"].items():
-        if name != "caddy":
+        if name != "web":
             assert "networks" not in service
 
 
@@ -89,6 +54,13 @@ def test_web_is_reachable_only_through_caddy_and_trusts_it(compose):
 
     assert web["ports"] == ["127.0.0.1:${WEB_PORT:-5000}:5000"]
     assert web["environment"]["TRUSTED_PROXIES"] == "1"
+
+
+def test_no_caddy_service_or_certificate_volume_left_in_this_stack(compose):
+    # Caddy is its own Compose project now (edge/compose.yaml) so that redeploying
+    # this stack never bounces it, and vice versa.
+    assert "caddy" not in compose["services"]
+    assert "caddy_data" not in compose["volumes"]
 
 
 def test_smoke_test_checks_pages_and_websockets_through_caddy():
@@ -148,6 +120,18 @@ def test_smoke_creates_the_shared_edge_network_before_compose_up():
     assert network < up
 
 
+def test_smoke_also_brings_up_the_standalone_caddy_stack():
+    # web joins the edge network under an alias; smoke's own Caddyfile needs a real
+    # Caddy on the other end of it to prove the alias resolves end to end.
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+    runs = [step.get("run", "") for step in workflow["jobs"]["smoke"]["steps"]]
+
+    network = next(i for i, run in enumerate(runs) if EDGE_NETWORK in run)
+    edge_up = next(i for i, run in enumerate(runs) if "edge/compose.yaml up" in run)
+    smoke_test = next(i for i, run in enumerate(runs) if "smoke-test.sh" in run)
+    assert network < edge_up < smoke_test
+
+
 def test_server_setup_script_is_valid_and_executable():
     script = ROOT / "scripts/server-setup.sh"
 
@@ -155,13 +139,12 @@ def test_server_setup_script_is_valid_and_executable():
     subprocess.run(["bash", "-n", str(script)], check=True)
 
 
-def test_server_setup_opens_web_ports_before_docker_touches_the_firewall():
+def test_server_setup_has_no_port_opening_left():
+    # Ports 80/443 belong to the standalone Caddy stack now (edge/server-setup.sh).
     script = text("scripts/server-setup.sh")
 
-    opens_ports = script.index("--dports 80,443")
-    saves_rules = script.index("netfilter-persistent save")
-    installs_docker = script.index("docker.io")
-    assert opens_ports < saves_rules < installs_docker
+    assert "--dports 80,443" not in script
+    assert "netfilter-persistent" not in script
 
 
 def test_server_setup_has_no_self_hosted_runner_left():
@@ -362,11 +345,13 @@ def test_deploy_script_creates_the_shared_edge_network_before_compose_up():
     assert network < up
 
 
-def test_deploy_script_sets_both_real_domains_and_smoke_tests_the_live_site():
+def test_deploy_script_sets_the_real_domain_and_smoke_tests_the_live_site():
+    # WCA_SITE_ADDRESS is no longer this script's concern -- Caddy, which is the only
+    # thing that reads it, is deployed by edge/ now.
     script = text("scripts/deploy.sh")
 
     assert SITE in script
-    assert WCA_SITE in script
+    assert WCA_SITE not in script
     assert "scripts/smoke-test.sh" in script
 
 

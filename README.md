@@ -15,9 +15,12 @@ uv run ruff check . && uv run ruff format --check .
 ## Docker
 
 ```bash
+docker network create scramble-challenge-edge   # once; see "A standalone Caddy" below
 docker compose build
-docker compose up -d          # http://localhost via Caddy; web also on 127.0.0.1:5000
+docker compose up -d                              # web on 127.0.0.1:5000
+docker compose -f edge/compose.yaml up -d         # http://localhost via Caddy
 scripts/smoke-test.sh         # /healthz, a TNoodle scramble + SVG, and Caddy incl. WebSockets
+docker compose -f edge/compose.yaml down -v
 docker compose down
 ```
 
@@ -29,7 +32,9 @@ The SQLite database lives on the `data` volume; migrations run when the web cont
 
 - `test`: ruff, then every test, including the browser tests
 - `tnoodle-contract`: the one test against a real TNoodle (`pytest -m tnoodle`)
-- `smoke`: builds the Docker Compose stack and runs `scripts/smoke-test.sh`
+- `smoke`: builds the Docker Compose stack, brings up the standalone Caddy stack
+  (`edge/compose.yaml`) alongside it the same way production does, and runs
+  `scripts/smoke-test.sh`
 - `publish` (on `main` only, after the three above pass): builds the `web` and
   `tnoodle` images for amd64 and arm64 and pushes them to GHCR. TNoodle is built
   once per version, so change `TNOODLE_VERSION` in the workflow and in
@@ -43,8 +48,10 @@ The SQLite database lives on the `data` volume; migrations run when the web cont
 
 ## Deploying (one-time server setup)
 
-The live site runs on an OCI Ampere server (Ubuntu 24.04). Caddy serves it over HTTPS
-and gets its certificate from Let's Encrypt automatically.
+The live site runs on an OCI Ampere server (Ubuntu 24.04). A standalone Caddy stack
+(see "A standalone Caddy" below) serves it over HTTPS and gets its certificate from
+Let's Encrypt automatically — it isn't part of this app's own stack, so redeploying
+this app never restarts Caddy (or bounces any other app sharing it).
 
 1. Point scramble-challenge.duckdns.org at the server's public IP (duckdns.org), and
    allow TCP 80 and 443 in the subnet's security list (OCI console).
@@ -54,9 +61,9 @@ and gets its certificate from Let's Encrypt automatically.
    `scp -i <key> scripts/server-setup.sh ubuntu@<ip>:` or by pasting the file into
    `nano server-setup.sh` over SSH. Just this one file — it clones the repo itself,
    `scripts/deploy-launcher.sh` included, before installing anything.
-4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It opens ports 80
-   and 443 in the server's own firewall, installs Docker, clones this repo to
-   `~/apps/scramble-challenge/repo`, installs `deploy-launcher.sh` as that folder's
+4. On the server: `bash server-setup.sh "$(cat deploy_key.pub)"`. It installs Docker,
+   creates the shared `scramble-challenge-edge` network (see below), clones this repo
+   to `~/apps/scramble-challenge/repo`, installs `deploy-launcher.sh` as that folder's
    sibling at `~/apps/scramble-challenge/deploy-launcher.sh` (deliberately outside
    the checkout — it's what git-updates the checkout, so it can't safely live
    inside it), and restricts the public key, in `authorized_keys`, to always
@@ -66,24 +73,39 @@ and gets its certificate from Let's Encrypt automatically.
    to `docker login` with, needed only while the `web`/`tnoodle` packages are private;
    leave it blank once you've made them public (Settings on the package itself, or
    Package settings > Manage Actions access, once the repo is public too).
-5. In the repo's GitHub settings (Settings > Secrets and variables > Actions), add:
+5. Set up the standalone Caddy stack too — see "A standalone Caddy" below — so there's
+   something to actually serve HTTPS once this app deploys.
+6. In the repo's GitHub settings (Settings > Secrets and variables > Actions), add:
    - `DEPLOY_HOST`: the server's IP or hostname.
    - `DEPLOY_SSH_KEY`: the contents of `deploy_key` (the *private* half). Delete the
      local copies of both files once it's saved.
-6. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job SSHes in,
+7. Re-run the latest CI run on `main` (or push to `main`). The `deploy` job SSHes in,
    which runs the launcher, which brings the checkout up to date and hands off to
    `scripts/deploy.sh` to do the rest.
 
 Re-running `server-setup.sh` (a new deploy key, a fresh server) is safe: cloning the
 repo and adding the key are both skipped if already done.
 
-## A second app behind the same Caddy
+## A standalone Caddy, shared by this app and any other
 
-Caddy joins an external Docker network, `scramble-challenge-edge`, created once by
-`scripts/server-setup.sh` (and by CI, for the smoke test). Another app's own
-`docker-compose.yml`, running as its own separate project on the same server, can
-share this site's HTTPS by joining the same network and giving its service a name
-Caddy can proxy to:
+Caddy isn't part of this app's own `docker-compose.yml` — it's [`edge/`](edge), its
+own separate Compose project (`edge/compose.yaml` + `edge/Caddyfile`), deployed and
+updated independently (`edge/server-setup.sh` is the one-time setup; after that,
+updating the Caddyfile or compose.yaml is manual — copy the changed file into
+`~/apps/caddy/` on the server and either `docker compose up -d` for a compose change
+or `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` for a
+Caddyfile-only one, which doesn't drop existing connections). This way, redeploying
+this app's own stack (or any other app sharing Caddy) never restarts Caddy as a side
+effect.
+
+Both this app and Caddy join an external Docker network, `scramble-challenge-edge`,
+created once by either's own `server-setup.sh` (and by CI, for the smoke test) —
+idempotent, so it doesn't matter which runs first. This app's `web` service joins it
+under the alias `scramble-web`, which `edge/Caddyfile` proxies to.
+
+A second app behind the same Caddy follows the same pattern: its own
+`docker-compose.yml`, running as its own separate Compose project on the same server,
+joins `scramble-challenge-edge` and gives its service a name Caddy can proxy to:
 
 ```yaml
 services:
@@ -98,11 +120,11 @@ networks:
     external: true
 ```
 
-Then add a site block to `docker/caddy/Caddyfile` for it, following the
-`WCA_SITE_ADDRESS` block as a template: gate the real domain behind an env var that
-defaults to a bare port (never a live domain), so CI and local `docker compose up`
-never attempt a Let's Encrypt challenge they can't complete, and set the real domain
-as that variable only in the `deploy` job's `env` in `.github/workflows/ci.yml`.
+Then add a site block to `edge/Caddyfile` for it, following the `WCA_SITE_ADDRESS`
+block as a template: gate the real domain behind an env var that defaults to a bare
+port (never a live domain), so CI and local `docker compose up` never attempt a
+Let's Encrypt challenge they can't complete, and set the real domain as that
+variable only in `~/apps/caddy/.env` on the server.
 
 ## Admin area
 

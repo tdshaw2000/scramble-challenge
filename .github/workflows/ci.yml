@@ -55,15 +55,22 @@ jobs:
       - run: docker compose build
       - run: docker network inspect scramble-challenge-edge > /dev/null 2>&1 || docker network create scramble-challenge-edge
       - run: docker compose up -d
+      # The standalone Caddy stack (edge/), as its own Compose project, same as production:
+      # proves web's edge-network alias actually resolves end to end, including WebSockets.
+      - run: docker compose -f edge/compose.yaml up -d
       - run: scripts/smoke-test.sh
       - name: Take and list a database snapshot
         run: |
           docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
           docker compose run --rm --no-deps backup python -m app.backup list | grep '^predeploy-'
       - if: failure()
-        run: docker compose logs
+        run: |
+          docker compose logs
+          docker compose -f edge/compose.yaml logs
       - if: always()
-        run: docker compose down -v
+        run: |
+          docker compose -f edge/compose.yaml down -v
+          docker compose down -v
 
   publish:
     # Only main publishes images, and only once every check above has passed.

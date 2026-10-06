@@ -2,7 +2,7 @@
 # Let's Encrypt certificate itself), or ":80" for plain HTTP in CI and local runs.
 {$SITE_ADDRESS} {
 	# Caddy passes WebSocket upgrades through without extra config.
-	reverse_proxy web:5000
+	reverse_proxy scramble-web:5000
 }
 {$WCA_SITE_ADDRESS} {
 	encode zstd gzip

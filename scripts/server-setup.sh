@@ -20,31 +20,23 @@ CHECKOUT_DIR="$HOME/apps/scramble-challenge/repo"
 LAUNCHER_PATH="$HOME/apps/scramble-challenge/deploy-launcher.sh"
 
 # Guard against running this on the wrong machine (e.g. a local PC instead of over SSH):
-# it changes the firewall and installs Docker.
+# it installs Docker.
 if [ "$(uname -m)" != "aarch64" ]; then
   echo "This is $(hostname) ($(uname -m)), not the ARM server. SSH in first:" >&2
   echo "  ssh -i ~/.ssh/oci.key ubuntu@<server-ip>" >&2
   exit 1
 fi
 
-echo "== Opening ports 80 and 443 in the server's own firewall =="
-# OCI's Ubuntu images reject incoming traffic in iptables even when the cloud security
-# list allows it. Save these rules before Docker starts adding its own.
-if ! sudo iptables -C INPUT -p tcp -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT 2> /dev/null; then
-  sudo iptables -I INPUT -p tcp -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT
-fi
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
-sudo netfilter-persistent save
-
 echo "== Installing Docker =="
+sudo apt-get update
 sudo apt-get install -y docker.io docker-compose-v2
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 
-echo "== Creating the shared network other apps use to sit behind this Caddy =="
+echo "== Creating the shared network the standalone Caddy stack reaches this app through =="
 # docker-compose.yml declares this as external, so it must exist before the first
-# `docker compose up`. Idempotent: safe to re-run server-setup.sh.
+# `docker compose up`. Idempotent: safe to re-run server-setup.sh. Ports 80/443 and the
+# Caddy stack itself are edge/server-setup.sh's concern, not this app's.
 sudo docker network inspect scramble-challenge-edge > /dev/null 2>&1 \
   || sudo docker network create scramble-challenge-edge
 

@@ -22,12 +22,15 @@ echo "== Snapshotting the database before restarting =="
 docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
 
 echo "== Making sure the shared edge network exists =="
+# web joins it under an alias (docker-compose.yml) so the standalone Caddy stack
+# (edge/, deployed separately) can reach it.
 docker network inspect scramble-challenge-edge > /dev/null 2>&1 \
   || docker network create scramble-challenge-edge
 
 echo "== Restarting the stack =="
+# Only for scripts/smoke-test.sh, below, to know which public hostname to check --
+# Caddy itself is edge/'s concern now, not this script's.
 export SITE_ADDRESS=scramble-challenge.duckdns.org
-export WCA_SITE_ADDRESS=wca-records-analyser.duckdns.org
 docker compose up -d --remove-orphans
 
 echo "== Smoke testing the live site =="

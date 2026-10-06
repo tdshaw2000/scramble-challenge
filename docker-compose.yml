@@ -13,7 +13,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      # Localhost only: the public way in is through Caddy.
+      # Localhost only: the public way in is through the standalone Caddy stack (edge/).
       - "127.0.0.1:${WEB_PORT:-5000}:5000"
     environment:
       DATABASE_URL: sqlite:////data/scramble.db
@@ -33,6 +33,15 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    networks:
+      default: {}
+      # Shared with edge/compose.yaml's standalone Caddy (and any other app's own
+      # compose project) so it can reach this container by name under this alias.
+      # Created once by scripts/server-setup.sh (and by CI, for the smoke test); see
+      # edge/README.md.
+      edge:
+        aliases:
+          - scramble-web
 
   backup:
     # The web image, running app/backup.py: a snapshot of the database every night at
@@ -49,33 +58,9 @@ services:
       - data:/data
       - backups:/backups
 
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
-      # Same trick: a bare port in CI/local dev, the real domain only at deploy time,
-      # so nothing here ever attempts a live ACME challenge for a domain it doesn't own.
-      WCA_SITE_ADDRESS: ${WCA_SITE_ADDRESS:-:8080}
-    volumes:
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data  # HTTPS certificates; keep them to avoid Let's Encrypt rate limits
-    depends_on:
-      - web
-    networks:
-      - default
-      # Shared with other apps' own compose projects on the same server, so Caddy can
-      # reach their containers by name. Created once by scripts/server-setup.sh (and by
-      # CI, for the smoke test); see README.md.
-      - edge
-
 volumes:
   data:
   backups:
-  caddy_data:
 
 networks:
   edge:
