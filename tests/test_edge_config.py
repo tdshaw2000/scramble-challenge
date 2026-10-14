@@ -67,6 +67,26 @@ def test_caddy_proxies_wca_site_address_to_the_other_app():
     assert "reverse_proxy wca-records-analyser:8000" in caddyfile
 
 
+def test_timer_app_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
+    # Same trick as the other two apps: a bare port, never a real domain, so CI and local
+    # runs don't try a live Let's Encrypt challenge for a hostname they don't own.
+    caddy_env = compose["services"]["caddy"]["environment"]
+    assert caddy_env["TIMER_SITE_ADDRESS"] == "${TIMER_SITE_ADDRESS:-:8081}"
+
+
+def test_caddy_proxies_the_timer_site_address_to_timer_app_pr_tracker():
+    caddyfile = text("Caddyfile")
+
+    assert "{$TIMER_SITE_ADDRESS}" in caddyfile
+    assert "reverse_proxy timer-app-pr-tracker:8000" in caddyfile
+
+
+def test_the_edge_readme_tells_the_server_to_set_the_timer_site_address():
+    readme = text("README.md")
+
+    assert "TIMER_SITE_ADDRESS=timer-pr-tracker.duckdns.org" in readme
+
+
 def test_caddy_joins_the_shared_external_network_so_it_can_reach_either_app(compose):
     caddy = compose["services"]["caddy"]
 
