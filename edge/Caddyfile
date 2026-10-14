@@ -8,3 +8,7 @@
 	encode zstd gzip
 	reverse_proxy wca-records-analyser:8000
 }
+{$TIMER_SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy timer-app-pr-tracker:8000
+}

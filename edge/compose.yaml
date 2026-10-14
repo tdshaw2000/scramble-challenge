@@ -16,6 +16,9 @@ services:
       # Same trick: a bare port in CI/local dev, the real domain only at deploy time,
       # so nothing here ever attempts a live ACME challenge for a domain it doesn't own.
       WCA_SITE_ADDRESS: ${WCA_SITE_ADDRESS:-:8080}
+      # Same again for the timer app: a bare port in CI/local dev, the real domain only
+      # at deploy time.
+      TIMER_SITE_ADDRESS: ${TIMER_SITE_ADDRESS:-:8081}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data  # HTTPS certificates; keep them to avoid Let's Encrypt rate limits

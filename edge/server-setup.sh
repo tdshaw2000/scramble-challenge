@@ -43,5 +43,5 @@ mkdir -p "$APP_DIR"
 cp compose.yaml Caddyfile "$APP_DIR/"
 
 echo
-echo "Done. Add $APP_DIR/.env with the real SITE_ADDRESS and WCA_SITE_ADDRESS domains,"
+echo "Done. Add $APP_DIR/.env with the real SITE_ADDRESS, WCA_SITE_ADDRESS and TIMER_SITE_ADDRESS domains,"
 echo "then: cd $APP_DIR && docker compose up -d"
