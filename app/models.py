@@ -13,7 +13,7 @@ def utcnow() -> datetime:
 
 
 def enum_column(enum_cls: type[enum.Enum]) -> Enum:
-    # Store the lowercase values from SPEC.md, as plain strings (no native enum in SQLite).
+    # Store the lowercase enum values as plain strings (no native enum in SQLite).
     return Enum(
         enum_cls,
         native_enum=False,

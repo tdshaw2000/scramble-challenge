@@ -1,4 +1,4 @@
-"""Socket.IO handlers for the SPEC.md event contract. Kept thin: look up who is asking,
+"""Socket.IO handlers for the spec's event contract. Kept thin: look up who is asking,
 call services, and emit. One room per challenge, named by its slug."""
 
 import functools

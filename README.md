@@ -1,6 +1,7 @@
 # Scramble Challenge
 
-A live multiplayer scramble-timing party game for speedcubers. See [SPEC.md](SPEC.md).
+A live multiplayer scramble-timing party game for speedcubers. See the capability specs under
+[`openspec/specs/`](openspec/specs/).
 
 ## Development
 

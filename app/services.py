@@ -167,7 +167,7 @@ def inspection_expired(player: Player) -> Solve:
 
 
 def stop_solve(player: Player, time_ms: int) -> Solve:
-    # Trust boundary: time_ms comes from the client (honour system, per SPEC.md).
+    # Trust boundary: time_ms comes from the client (honour system, per specs/solve-timing).
     # To enforce timing, compute it here from started_solve_at and now() instead.
     if type(time_ms) is not int or time_ms <= 0:
         raise InvalidInput("time_ms must be a positive whole number.")

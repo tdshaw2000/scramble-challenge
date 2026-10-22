@@ -1,4 +1,4 @@
-"""The screens from SPEC.md, driven in real browsers, one phone-sized window per player."""
+"""The screens from the spec, driven in real browsers, one phone-sized window per player."""
 
 import re
 
