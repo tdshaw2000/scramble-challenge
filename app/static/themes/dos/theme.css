@@ -149,6 +149,15 @@ select.field-input {
   padding-right: 2em;
 }
 select.field-input:focus { background-color: var(--bright-cyan); }
+.timed-inspection-field { display: flex; align-items: center; justify-content: space-between; }
+.timed-inspection-field .field-label { margin: 0; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { position: absolute; inset: 0; background: var(--cyan); }
+.switch-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--white); }
+.switch input:checked + .switch-track { background: var(--green); }
+.switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--bright-cyan); outline-offset: 1px; }
 
 /* Buttons: green blocks with black text and a hard black shadow; pressing drops them into it. */
 .button {

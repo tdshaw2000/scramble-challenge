@@ -192,6 +192,20 @@ def test_when_copying_is_blocked_the_link_is_shown_for_copying_by_hand(new_playe
     expect(tom.locator("#message")).to_have_text(f"Copy this link to share it: {link}")
 
 
+def test_timed_inspection_switch_sits_between_share_buttons_and_puzzle_dropdown(new_player):
+    tom = new_player()
+    start_challenge(tom)
+
+    switch = tom.get_by_label("Timed inspection")
+    expect(switch).to_be_checked()
+    order = tom.evaluate(
+        """() => [...document.querySelectorAll(
+          '.share, .timed-inspection-field, label:has(#puzzle)'
+        )].map((el) => el.className)"""
+    )
+    assert order == ["share", "field timed-inspection-field", "field"]
+
+
 def test_qr_code_button_pops_up_a_big_qr_code_of_the_link(new_player):
     tom = new_player()
     start_challenge(tom)
@@ -310,6 +324,37 @@ def test_after_15_seconds_the_countdown_shows_plus_two_instead_of_a_dnf(tom_and_
     expect(amy.locator("#message")).not_to_contain_text("DNF")
     advance(amy, 1_900)
     expect(amy.locator("#countdown")).to_have_text("+2")
+
+
+def test_a_round_left_at_the_default_still_times_inspection(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_role("button", name="Start round").click()  # switch left on (default)
+
+    amy.get_by_role("button", name="Start inspection").click()
+    expect(amy.locator("#countdown")).to_have_text("15")
+    advance(amy, 15_000)
+    expect(amy.locator("#countdown")).to_have_text("+2")
+    advance(amy, 2_000)
+    expect(amy.locator("#message")).to_have_text("Inspection ran out: DNF.")
+
+
+def test_turning_off_timed_inspection_removes_the_countdown_and_penalty(tom_and_amy):
+    tom, amy, _ = tom_and_amy
+    tom.get_by_label("Timed inspection").uncheck()
+    tom.get_by_role("button", name="Start round").click()
+
+    amy.get_by_role("button", name="Start inspection").click()
+    expect(amy.locator("#countdown")).to_be_hidden()
+    advance(amy, 30_000)  # well past the usual 17-second limit
+    expect(amy.locator("#overlay")).to_be_visible()
+    expect(amy.locator("#message")).not_to_contain_text("DNF")
+
+    amy.locator("#overlay").click()  # start solving, whenever ready
+    advance(amy, 5000)
+    amy.locator("#overlay").click()  # stop
+
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "5.00"]]
 
 
 def test_starting_between_15_and_17_seconds_adds_two_seconds(tom_and_amy):

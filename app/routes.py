@@ -142,6 +142,7 @@ def challenge(slug: str):
         share_url=url_for("main.challenge", slug=slug, _external=True),
         puzzles={code: game.PUZZLE_NAMES[code] for code in services.SUPPORTED_PUZZLES},
         default_puzzle=services.next_puzzle_default(challenge),
+        default_timed_inspection=services.next_timed_inspection_default(challenge),
         show_time=request.cookies.get(SHOW_TIME_COOKIE_NAME) == "on",
     )
 

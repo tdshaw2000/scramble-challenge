@@ -102,3 +102,12 @@ def test_every_theme_styles_the_show_time_toggle_and_the_running_time(theme):
 
     for selector in (".show-time", '.show-time[aria-pressed="true"]', ".running-time"):
         assert selector in css, selector
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_styles_the_timed_inspection_switch(theme):
+    css = (APP / "static" / "themes" / theme / "theme.css").read_text()
+
+    for selector in (".timed-inspection-field", ".switch", ".switch-track", ".switch-thumb"):
+        assert selector in css, selector
+    assert "input:checked" in css

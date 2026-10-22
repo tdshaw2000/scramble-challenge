@@ -49,6 +49,7 @@
 
   let roundNumber = null;
   let phase = "lobby";
+  let timedInspection = true; // whether the current round's inspection is WCA-timed
   let inspectionStartedAt = 0;
   let solveStartedAt = 0;
   let ticker = null;
@@ -225,6 +226,7 @@
 
   socket.on("round_started", (round) => {
     roundNumber = round.round_number;
+    timedInspection = round.timed_inspection;
     setText("round-heading", `Round ${roundNumber}: ${round.puzzle_name}`);
     setText("results-heading", `Round ${roundNumber}`);
     $("scramble").dataset.puzzle = round.puzzle;
@@ -283,7 +285,10 @@
   if (isCo) {
     $("start-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      socket.emit("start_round", { puzzle: $("puzzle").value });
+      socket.emit("start_round", {
+        puzzle: $("puzzle").value,
+        timed_inspection: $("timed-inspection").checked,
+      });
     });
     $("end-round").addEventListener("click", () => socket.emit("end_round", {}));
     $("end-challenge").addEventListener("click", () => {
@@ -352,10 +357,14 @@
     keepScreenAwake();
     inspectionStartedAt = performance.now();
     setHeld(false);
-    setText("countdown", INSPECTION_SECONDS);
-    $("countdown").hidden = false;
     $("solving").hidden = true;
     setPhase("inspecting");
+    if (!timedInspection) {
+      $("countdown").hidden = true;
+      return;
+    }
+    setText("countdown", INSPECTION_SECONDS);
+    $("countdown").hidden = false;
     ticker = setInterval(() => {
       const elapsed = inspectionElapsed();
       if (elapsed >= INSPECTION_LIMIT_MS) {
@@ -384,14 +393,18 @@
   // letting go starts the solve; while solving, pressing down stops the solve at once.
   function pressTimer() {
     if (phase === "inspecting") {
-      const elapsed = inspectionElapsed();
-      // The ticker only looks every 100 ms, so a start just after 17 seconds lands here.
-      if (elapsed >= INSPECTION_LIMIT_MS) {
-        inspectionRanOut();
-        return;
+      if (timedInspection) {
+        const elapsed = inspectionElapsed();
+        // The ticker only looks every 100 ms, so a start just after 17 seconds lands here.
+        if (elapsed >= INSPECTION_LIMIT_MS) {
+          inspectionRanOut();
+          return;
+        }
+        plusTwo = elapsed >= INSPECTION_SECONDS * 1000;
+      } else {
+        plusTwo = false;
       }
       stopTicker();
-      plusTwo = elapsed >= INSPECTION_SECONDS * 1000;
       solveStartedAt = performance.now();
       socket.emit("start_solve", { plus_two: plusTwo });
       setText("countdown", "");
