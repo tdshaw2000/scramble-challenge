@@ -79,7 +79,9 @@ def test_start_round_without_timed_inspection_uses_the_default(challenge, joined
     assert started["timed_inspection"] is True
 
 
-def test_a_late_joiner_sees_the_round_s_timed_inspection_setting(challenge, add_player, joined, connect):
+def test_a_late_joiner_sees_the_round_s_timed_inspection_setting(
+    challenge, add_player, joined, connect
+):
     add_player("Amy", connected=False)
     [tom] = joined("cookie-co")
     tom.emit("start_round", {"timed_inspection": False})

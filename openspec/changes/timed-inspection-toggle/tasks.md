@@ -47,9 +47,9 @@
 
 ## 5. Spec and integration verification
 
-- [ ] 5.1 Run the full test suite (`uv run pytest`) and verify it's green, including the
+- [x] 5.1 Run the full test suite (`uv run pytest`) and verify it's green, including the
       browser tests
-- [ ] 5.2 Manually verify in a running instance: start a round with the switch off, confirm no
+- [x] 5.2 Manually verify in a running instance: start a round with the switch off, confirm no
       countdown/penalty; start the next round, confirm the switch defaults to off (carried
       forward); flip it on, confirm the round after that defaults to on
 

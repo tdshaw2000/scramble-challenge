@@ -129,7 +129,7 @@ body::before {
 .timed-inspection-field .field-label { margin: 0; }
 .switch { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
 .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.switch-track { position: absolute; inset: 0; background: var(--parchment); border: 3px solid var(--wood-dark); }
+.switch-track { position: absolute; inset: 0; pointer-events: none; background: var(--parchment); border: 3px solid var(--wood-dark); }
 .switch-thumb { position: absolute; top: 1px; left: 1px; width: 18px; height: 18px; background: var(--wood-dark); transition: transform 0.15s; }
 .switch input:checked + .switch-track { border-color: var(--yellow); }
 .switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); background: var(--yellow); }

@@ -15,7 +15,7 @@ body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: var(--ink); backg
 .timed-inspection-field .field-label { margin: 0; font-size: 1rem; color: var(--ink); }
 .switch { position: relative; display: inline-block; width: 44px; height: 26px; flex-shrink: 0; }
 .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.switch-track { position: absolute; inset: 0; background: var(--line); border-radius: 13px; transition: background 0.15s; }
+.switch-track { position: absolute; inset: 0; pointer-events: none; background: var(--line); border-radius: 13px; transition: background 0.15s; }
 .switch-thumb { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.3); transition: transform 0.15s; }
 .switch input:checked + .switch-track { background: var(--accent); }
 .switch input:checked + .switch-track .switch-thumb { transform: translateX(18px); }
