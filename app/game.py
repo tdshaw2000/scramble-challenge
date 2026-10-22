@@ -1,4 +1,4 @@
-"""Pure game rules from SPEC.md: no Flask, no database."""
+"""Pure game rules from the spec: no Flask, no database."""
 
 from collections.abc import Iterable, Sequence
 from typing import Protocol

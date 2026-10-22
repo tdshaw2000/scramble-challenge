@@ -1,6 +1,7 @@
 # scramble-challenge
 
-SPEC.md is the spec. Work test-first, with red and green commits so the history shows TDD.
+The capability specs under `openspec/specs/` are the spec. Work test-first, with red and green
+commits so the history shows TDD.
 Open PRs as drafts. Once review and CI pass, Claude marks the PR ready and merges it with a
 merge commit (never squash or rebase). The owner is told what shipped but does not merge.
 
