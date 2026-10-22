@@ -22,10 +22,10 @@
 
 ## 3. Socket layer
 
-- [ ] 3.1 Write a failing socket test that `start_round` reads `data.get("timed_inspection")`
+- [x] 3.1 Write a failing socket test that `start_round` reads `data.get("timed_inspection")`
       and the created round reflects it; wire `on_start_round` to pass it through and verify the
       test passes
-- [ ] 3.2 Write a failing socket test that the round payload sent to clients (on `start_round`
+- [x] 3.2 Write a failing socket test that the round payload sent to clients (on `start_round`
       and on a late joiner's/reconnect's state push) includes `timed_inspection`; add the field
       and verify the test passes
 
