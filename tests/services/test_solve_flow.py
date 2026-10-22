@@ -132,6 +132,15 @@ def test_inspection_cannot_run_out_in_an_untimed_round(challenge, co, add_player
     assert untimed.solves[0].result is None
 
 
+def test_a_plus_two_cannot_be_claimed_in_an_untimed_round(challenge, co, add_player):
+    add_player("Other")
+    services.start_round(challenge, co, timed_inspection=False)
+    services.start_inspection(co)
+
+    with pytest.raises(services.InvalidState):
+        services.start_solve(co, plus_two=True)
+
+
 def test_inspection_running_out_for_the_last_player_completes_the_round(rnd, co, challenge):
     other = next(p for p in challenge.players if not p.is_co)
     services.start_inspection(co)

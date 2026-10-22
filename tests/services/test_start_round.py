@@ -91,6 +91,15 @@ def test_unsupported_puzzle_is_rejected_without_calling_tnoodle(challenge, co, t
     assert challenge.status == ChallengeStatus.WAITING
 
 
+@pytest.mark.parametrize("bad", ["false", "yes", 0, 1, [], {}])
+def test_bad_timed_inspection_is_rejected_without_calling_tnoodle(challenge, co, tnoodle, bad):
+    with pytest.raises(services.InvalidInput):
+        services.start_round(challenge, co, timed_inspection=bad)
+
+    assert tnoodle.requested == []
+    assert challenge.status == ChallengeStatus.WAITING
+
+
 def test_tnoodle_failure_leaves_the_challenge_waiting(challenge, co, tnoodle):
     tnoodle.fail = True
 
