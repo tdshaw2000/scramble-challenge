@@ -2,10 +2,10 @@
 
 ## 1. Data model
 
-- [ ] 1.1 Write a failing test asserting a new `Round` defaults to `timed_inspection=True`, then
+- [x] 1.1 Write a failing test asserting a new `Round` defaults to `timed_inspection=True`, then
       add `Round.timed_inspection: Mapped[bool]` (`default=True, server_default=true()`) and
       verify the test passes
-- [ ] 1.2 Generate an Alembic migration for `rounds.timed_inspection` (batch mode, matching the
+- [x] 1.2 Generate an Alembic migration for `rounds.timed_inspection` (batch mode, matching the
       `solves.plus_two` migration) and verify `uv run flask db upgrade` applies cleanly against
       a copy of the existing SQLite data
 
