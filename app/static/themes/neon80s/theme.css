@@ -179,6 +179,15 @@ body::after {
   box-shadow: 0 0 8px rgba(255, 47, 180, 0.45), inset 0 0 10px rgba(255, 47, 180, 0.15);
 }
 .field-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 12px rgba(47, 243, 255, 0.7); }
+.timed-inspection-field { display: flex; align-items: center; justify-content: space-between; }
+.timed-inspection-field .field-label { margin: 0; }
+.switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { position: absolute; inset: 0; pointer-events: none; background: #06020f; border: 2px solid var(--pink); border-radius: 13px; box-shadow: 0 0 8px rgba(255, 47, 180, 0.45); transition: box-shadow 0.15s, border-color 0.15s; }
+.switch-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--pink); border-radius: 50%; transition: transform 0.15s; }
+.switch input:checked + .switch-track { border-color: var(--cyan); box-shadow: 0 0 12px rgba(47, 243, 255, 0.7); }
+.switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); background: var(--cyan); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 /* Buttons: a neon outline by default, a sunset gradient for the main action. */
 .button {

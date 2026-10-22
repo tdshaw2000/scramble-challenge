@@ -60,6 +60,39 @@ def test_round_started_names_the_puzzle_so_players_know_what_to_pick_up(challeng
     assert started["puzzle_name"] == "Megaminx"
 
 
+def test_start_round_reads_timed_inspection_from_the_payload(challenge, joined):
+    [tom] = joined("cookie-co")
+
+    tom.emit("start_round", {"timed_inspection": False})
+
+    [started] = events(tom, "round_started")
+    assert started["timed_inspection"] is False
+    assert challenge.current_round.timed_inspection is False
+
+
+def test_start_round_without_timed_inspection_uses_the_default(challenge, joined):
+    [tom] = joined("cookie-co")
+
+    tom.emit("start_round", {})
+
+    [started] = events(tom, "round_started")
+    assert started["timed_inspection"] is True
+
+
+def test_a_late_joiner_sees_the_round_s_timed_inspection_setting(
+    challenge, add_player, joined, connect
+):
+    add_player("Amy", connected=False)
+    [tom] = joined("cookie-co")
+    tom.emit("start_round", {"timed_inspection": False})
+
+    amy = connect("cookie-Amy")
+    amy.emit("join_challenge", {"challenge_slug": challenge.slug})
+
+    [started] = events(amy, "round_started")
+    assert started["timed_inspection"] is False
+
+
 def test_only_the_co_can_start_a_round(challenge, add_player, joined):
     add_player("Amy", connected=False)
     tom, amy = joined("cookie-co", "cookie-Amy")

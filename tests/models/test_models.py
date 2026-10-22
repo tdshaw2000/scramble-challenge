@@ -81,6 +81,13 @@ def test_new_round_is_active_and_can_be_the_current_round(db):
     assert challenge.current_round.id == rnd.id
 
 
+def test_new_round_defaults_to_timed_inspection(db):
+    challenge = make_challenge(db)
+    rnd = make_round(db, challenge)
+
+    assert rnd.timed_inspection is True
+
+
 def test_round_number_is_unique_within_a_challenge(db):
     challenge = make_challenge(db)
     make_round(db, challenge, round_number=1)

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint, false
+from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint, false, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
@@ -100,6 +100,8 @@ class Round(db.Model):
     status: Mapped[RoundStatus] = mapped_column(
         enum_column(RoundStatus), default=RoundStatus.ACTIVE
     )
+    # Decided once when the round starts; every player in the round sees the same value.
+    timed_inspection: Mapped[bool] = mapped_column(default=True, server_default=true())
     started_at: Mapped[datetime] = mapped_column(default=utcnow)
     ended_at: Mapped[datetime | None]
 

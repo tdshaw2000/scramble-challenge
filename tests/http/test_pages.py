@@ -75,6 +75,25 @@ def test_co_sees_share_link_and_puzzle_choice(client):
     assert b'<option value="333" selected>' in response.data
 
 
+def test_co_sees_timed_inspection_switch_checked_by_default(client):
+    location = create(client).headers["Location"]
+
+    response = client.get(location)
+
+    assert re.search(r'id="timed-inspection"[^>]* checked', response.text)
+
+
+def test_lobby_renders_the_carried_forward_timed_inspection_default(client, challenge, co):
+    services.start_round(challenge, co, timed_inspection=False)
+    services.end_round(challenge, co)
+    client.set_cookie(COOKIE_NAME, "cookie-co")
+
+    page = client.get(f"/c/{challenge.slug}").text
+
+    checkbox = re.search(r'<input[^>]*id="timed-inspection"[^>]*>', page).group(0)
+    assert "checked" not in checkbox
+
+
 def test_puzzle_choice_lists_every_puzzle_by_name(client):
     location = create(client).headers["Location"]
 

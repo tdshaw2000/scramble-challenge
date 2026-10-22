@@ -36,6 +36,7 @@ def round_started(rnd: Round) -> dict:
         "round_number": rnd.round_number,
         "puzzle": rnd.puzzle,
         "puzzle_name": game.PUZZLE_NAMES[rnd.puzzle],
+        "timed_inspection": rnd.timed_inspection,
         "scramble_text": rnd.scramble_text,
         "scramble_svg_url": url_for(
             "main.scramble_svg", slug=rnd.challenge.slug, round_number=rnd.round_number
@@ -112,7 +113,12 @@ def broadcast_solve_progress(challenge: Challenge, rnd: Round) -> None:
 @socketio.on("start_round")
 @player_action
 def on_start_round(player, data):
-    rnd = services.start_round(player.challenge, player, puzzle=data.get("puzzle"))
+    rnd = services.start_round(
+        player.challenge,
+        player,
+        puzzle=data.get("puzzle"),
+        timed_inspection=data.get("timed_inspection"),
+    )
     emit("round_started", round_started(rnd), to=rnd.challenge.slug)
 
 

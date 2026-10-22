@@ -58,10 +58,43 @@ def test_first_round_default_is_3x3(challenge):
     assert services.next_puzzle_default(challenge) == "333"
 
 
+def test_first_round_timed_inspection_default_is_on(challenge):
+    assert services.next_timed_inspection_default(challenge) is True
+
+
+def test_later_rounds_default_to_the_previous_round_s_timed_inspection(challenge, co):
+    services.start_round(challenge, co, timed_inspection=False)
+    services.end_round(challenge, co)
+
+    assert services.next_timed_inspection_default(challenge) is False
+    assert services.start_round(challenge, co).timed_inspection is False
+
+
+def test_co_can_override_timed_inspection_when_starting_a_round(challenge, co, tnoodle, clock):
+    rnd = services.start_round(challenge, co, timed_inspection=False)
+
+    assert rnd.timed_inspection is False
+
+
+def test_co_starting_a_round_defaults_to_timed_inspection_on(challenge, co):
+    rnd = services.start_round(challenge, co)
+
+    assert rnd.timed_inspection is True
+
+
 @pytest.mark.parametrize("puzzle", ["333ni", "444ni", "555ni", "333fm", "444fast", "nonsense"])
 def test_unsupported_puzzle_is_rejected_without_calling_tnoodle(challenge, co, tnoodle, puzzle):
     with pytest.raises(services.InvalidInput):
         services.start_round(challenge, co, puzzle=puzzle)
+
+    assert tnoodle.requested == []
+    assert challenge.status == ChallengeStatus.WAITING
+
+
+@pytest.mark.parametrize("bad", ["false", "yes", 0, 1, [], {}])
+def test_bad_timed_inspection_is_rejected_without_calling_tnoodle(challenge, co, tnoodle, bad):
+    with pytest.raises(services.InvalidInput):
+        services.start_round(challenge, co, timed_inspection=bad)
 
     assert tnoodle.requested == []
     assert challenge.status == ChallengeStatus.WAITING
