@@ -86,12 +86,21 @@ def next_puzzle_default(challenge: Challenge) -> str:
     return game.default_puzzle(previous)
 
 
+def next_timed_inspection_default(challenge: Challenge) -> bool:
+    return challenge.rounds[-1].timed_inspection if challenge.rounds else True
+
+
 def require_not_ended(challenge: Challenge) -> None:
     if challenge.status == ChallengeStatus.ENDED:
         raise InvalidState("This challenge has ended.")
 
 
-def start_round(challenge: Challenge, player: Player, puzzle: str | None = None) -> Round:
+def start_round(
+    challenge: Challenge,
+    player: Player,
+    puzzle: str | None = None,
+    timed_inspection: bool | None = None,
+) -> Round:
     require_co(challenge, player)
     require_not_ended(challenge)
     if challenge.status not in (ChallengeStatus.WAITING, ChallengeStatus.ROUND_RESULTS):
@@ -99,6 +108,8 @@ def start_round(challenge: Challenge, player: Player, puzzle: str | None = None)
     puzzle = puzzle or next_puzzle_default(challenge)
     if puzzle not in SUPPORTED_PUZZLES:
         raise InvalidInput(f"Unsupported puzzle: {puzzle}")
+    if timed_inspection is None:
+        timed_inspection = next_timed_inspection_default(challenge)
 
     try:
         scramble = current_app.extensions["tnoodle"].generate(puzzle)
@@ -109,6 +120,7 @@ def start_round(challenge: Challenge, player: Player, puzzle: str | None = None)
         challenge=challenge,
         round_number=len(challenge.rounds) + 1,
         puzzle=puzzle,
+        timed_inspection=timed_inspection,
         scramble_text=scramble.text,
         scramble_svg=scramble.svg,
         started_at=now(),
@@ -156,7 +168,10 @@ def start_solve(player: Player, plus_two: bool = False) -> Solve:
 def inspection_expired(player: Player) -> Solve:
     """17 seconds of inspection went by without the solve starting: a DNF, as in WCA rules."""
     # Trust boundary: like time_ms, the client decides when inspection ran out.
-    solve = find_solve(active_round(player), player)
+    rnd = active_round(player)
+    if not rnd.timed_inspection:
+        raise InvalidState("This round's inspection isn't timed.")
+    solve = find_solve(rnd, player)
     if solve is None or solve.started_solve_at is not None or solve.result is not None:
         raise InvalidState("No inspection in progress.")
     solve.result = SolveResult.DNF

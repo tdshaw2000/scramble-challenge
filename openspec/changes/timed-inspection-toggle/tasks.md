@@ -11,13 +11,13 @@
 
 ## 2. Round-start default and service layer
 
-- [ ] 2.1 Write a failing test for `services.next_timed_inspection_default`: `True` for round 1,
+- [x] 2.1 Write a failing test for `services.next_timed_inspection_default`: `True` for round 1,
       and the previous round's value from round 2 onward; implement it (mirroring
       `next_puzzle_default`) and verify the test passes
-- [ ] 2.2 Write a failing test that `services.start_round` stores the CO's chosen
+- [x] 2.2 Write a failing test that `services.start_round` stores the CO's chosen
       `timed_inspection` value (and falls back to the default when omitted); add the
       `timed_inspection: bool | None = None` parameter and verify the test passes
-- [ ] 2.3 Write a failing test that `services.inspection_expired` raises `InvalidState` when the
+- [x] 2.3 Write a failing test that `services.inspection_expired` raises `InvalidState` when the
       round's `timed_inspection` is `False`; add the check and verify the test passes
 
 ## 3. Socket layer
