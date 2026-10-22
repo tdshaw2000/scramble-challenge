@@ -36,13 +36,12 @@ challenge-level or player-level setting would not, since the owner wants it chan
   `next_puzzle_default` (round 1 → `True`; later rounds → the previous round's value). The
   socket handler `on_start_round` reads `data.get("timed_inspection")` the same way it reads
   `data.get("puzzle")`.
-- **The server stays almost entirely passive about enforcement**, consistent with the existing
-  trust boundary: `services.start_solve` already accepts whatever `plus_two` the client sends,
-  so an untimed-round client simply never sends `plus_two: true` and never emits
-  `inspection_expired`. The one active change is `services.inspection_expired`: it should raise
-  `InvalidState` (reject) if called for a round with `timed_inspection=False`, since that event
-  should never fire client-side in an untimed round, and a defensive check beats silently
-  accepting a DNF that shouldn't be possible.
+- **The server stays mostly passive about enforcement**, consistent with the existing trust
+  boundary, but rejects the two events that should never fire client-side in an untimed round
+  rather than silently accepting them: `services.inspection_expired` raises `InvalidState` if
+  called for a round with `timed_inspection=False` (a defensive check beats silently accepting
+  a DNF that shouldn't be possible), and `services.start_solve` raises `InvalidState` if called
+  with `plus_two=True` in an untimed round, for the same reason.
 - **The client reads the round's mode off the state already pushed to it** (the round payload
   sockets already send on `start_round`/on connect) rather than a separate event, and branches
   `challenge.js`'s inspection countdown: timed mode keeps today's 15s/17s timers; untimed mode

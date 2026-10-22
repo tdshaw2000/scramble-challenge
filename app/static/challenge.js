@@ -226,7 +226,7 @@
 
   socket.on("round_started", (round) => {
     roundNumber = round.round_number;
-    timedInspection = round.timed_inspection;
+    timedInspection = round.timed_inspection !== false; // missing/stale field fails safe to timed
     setText("round-heading", `Round ${roundNumber}: ${round.puzzle_name}`);
     setText("results-heading", `Round ${roundNumber}`);
     $("scramble").dataset.puzzle = round.puzzle;
