@@ -187,6 +187,7 @@ body::after {
 .switch-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--pink); border-radius: 50%; transition: transform 0.15s; }
 .switch input:checked + .switch-track { border-color: var(--cyan); box-shadow: 0 0 12px rgba(47, 243, 255, 0.7); }
 .switch input:checked + .switch-track .switch-thumb { transform: translateX(20px); background: var(--cyan); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 /* Buttons: a neon outline by default, a sunset gradient for the main action. */
 .button {

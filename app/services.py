@@ -110,6 +110,8 @@ def start_round(
         raise InvalidInput(f"Unsupported puzzle: {puzzle}")
     if timed_inspection is None:
         timed_inspection = next_timed_inspection_default(challenge)
+    elif type(timed_inspection) is not bool:
+        raise InvalidInput("timed_inspection must be true or false.")
 
     try:
         scramble = current_app.extensions["tnoodle"].generate(puzzle)
@@ -156,7 +158,10 @@ def start_solve(player: Player, plus_two: bool = False) -> Solve:
     # Trust boundary: like time_ms, the client decides whether inspection ran into the +2.
     if type(plus_two) is not bool:
         raise InvalidInput("plus_two must be true or false.")
-    solve = find_solve(active_round(player), player)
+    rnd = active_round(player)
+    if plus_two and not rnd.timed_inspection:
+        raise InvalidState("This round's inspection isn't timed.")
+    solve = find_solve(rnd, player)
     if solve is None or solve.started_solve_at is not None:
         raise InvalidState("Start inspection first, and only start solving once.")
     solve.started_solve_at = now()
