@@ -145,7 +145,9 @@ Run it again to change the password; that also logs out every admin browser.
 The `backup` service (`app/backup.py`) keeps snapshots of the SQLite database on the
 `backups` volume, on the server itself. They are not copied anywhere else.
 
-- `predeploy-<UTC time>.db`: taken by every deploy, just before the restart.
+- `predeploy-<UTC time>.db`: taken by every deploy, just before the restart. The deploy
+  then runs `python -m app.preflight`, which tries the migrations on a throwaway copy of
+  the database and stops the deploy, old version still serving, if they would fail.
 - `nightly-<UTC time>.db`: taken every night at 03:00 UK time.
 - `prerestore-<UTC time>.db`: the database as it was just before a restore.
 
@@ -153,13 +155,15 @@ Each kind keeps its newest 14. Snapshots use SQLite's online backup, so they are
 to take while people are playing.
 
 To put a snapshot back (for example, after a deploy broke the data), SSH to the server
-and run these from `~/apps/scramble-challenge/repo`:
+and run these from `~/apps/scramble-challenge/repo`. On the server, always use
+`scripts/compose.sh` instead of plain `docker compose`: the checkout's folder is called
+`repo`, and plain `docker compose` there starts a second, empty stack beside the live one.
 
 ```bash
-docker compose run --rm --no-deps backup python -m app.backup list    # newest first
-docker compose stop web                                                # nobody writes meanwhile
-docker compose run --rm --no-deps backup python -m app.backup restore <name>.db
-docker compose start web
+scripts/compose.sh run --rm --no-deps backup python -m app.backup list    # newest first
+scripts/compose.sh stop web                                                # nobody writes meanwhile
+scripts/compose.sh run --rm --no-deps backup python -m app.backup restore <name>.db
+scripts/compose.sh start web
 ```
 
 `restore` first saves the current database as a `prerestore` snapshot, so a restore
