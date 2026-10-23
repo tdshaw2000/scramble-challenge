@@ -132,6 +132,13 @@ def test_smoke_also_brings_up_the_standalone_caddy_stack():
     assert network < edge_up < smoke_test
 
 
+def test_smoke_runs_the_migration_preflight_inside_the_real_image():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+    runs = "\n".join(step.get("run", "") for step in workflow["jobs"]["smoke"]["steps"])
+
+    assert "docker compose run --rm --no-deps backup python -m app.preflight" in runs
+
+
 def test_server_setup_script_is_valid_and_executable():
     script = ROOT / "scripts/server-setup.sh"
 
