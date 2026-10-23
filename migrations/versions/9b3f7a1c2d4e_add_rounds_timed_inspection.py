@@ -17,6 +17,9 @@ depends_on = None
 
 
 def upgrade():
+    # SQLite DDL isn't transactional, so an earlier failed run of this migration left its
+    # half-built copy behind, which would otherwise block every retry.
+    op.execute("DROP TABLE IF EXISTS _alembic_tmp_rounds")
     # Existing/in-flight rounds keep today's always-timed behaviour.
     with op.batch_alter_table('rounds', schema=None) as batch_op:
         batch_op.add_column(
