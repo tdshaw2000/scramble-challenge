@@ -21,6 +21,10 @@ docker compose pull
 echo "== Snapshotting the database before restarting =="
 docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
 
+echo "== Trying the migrations on a copy of the database =="
+# Stops the deploy here, with the old version still serving, if they would fail.
+docker compose run --rm --no-deps backup python -m app.preflight
+
 echo "== Making sure the shared edge network exists =="
 # web joins it under an alias (docker-compose.yml) so the standalone Caddy stack
 # (edge/, deployed separately) can reach it.

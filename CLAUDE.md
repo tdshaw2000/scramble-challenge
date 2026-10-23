@@ -27,10 +27,26 @@ auto-merge, --admin merges, and merges through gh api. It does not stop direct p
    then submit_pending). Don't act on suggestions unless they are trivial.
 5. **Judgment calls** take the reviewer's recommendation (the owner chose this). List each one,
    with the choice made, in the PR review body and in the message to the owner.
-6. Wait for CI to be green on the reviewed commit (pull_request_read get_check_runs). Then mark
-   the PR ready and merge it: merge_pull_request with merge_method "merge" and
+6. Wait for CI to be green on the reviewed commit (pull_request_read get_check_runs). Don't rely
+   only on GitHub's completion notice: check again every 10 to 15 minutes until it's done. Then
+   mark the PR ready and merge it: merge_pull_request with merge_method "merge" and
    expectedHeadSha set to the reviewed commit.
-7. Tell the owner in the thread, in plain words, what shipped and any judgment calls taken.
+7. **Watch the deploy.** The merge starts CI on main, whose last job deploys. Follow that run
+   until the deploy job is green before saying anything shipped. If it fails, tell the owner at
+   once, then fix it as below.
+8. Tell the owner in the thread, in plain words, what shipped and any judgment calls taken.
+
+## The live server
+
+The owner runs every server command themselves; Claude has no access. When something is wrong
+there, reproduce it first (a scratch database, the same migration, the same image) and find the
+cause before giving the owner any command. A fix that can ship as code, through the review loop,
+beats one the owner has to type. Server commands go through `scripts/compose.sh`, never plain
+`docker compose`: the checkout's folder is `repo`, and plain compose there starts a second,
+empty stack.
+
+Migrations: test each one by upgrading a database that holds linked rows at the previous
+revision (tests/test_migrations.py), not only an empty one.
 
 Limits, on purpose: the hook only runs inside Claude Code sessions, so a PR pushed by hand is
 not reviewed. It checks the branch you are on, so mark ready and merge from the PR's own

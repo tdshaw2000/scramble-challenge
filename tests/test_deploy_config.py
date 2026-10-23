@@ -132,6 +132,13 @@ def test_smoke_also_brings_up_the_standalone_caddy_stack():
     assert network < edge_up < smoke_test
 
 
+def test_smoke_runs_the_migration_preflight_inside_the_real_image():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+    runs = "\n".join(step.get("run", "") for step in workflow["jobs"]["smoke"]["steps"])
+
+    assert "docker compose run --rm --no-deps backup python -m app.preflight" in runs
+
+
 def test_server_setup_script_is_valid_and_executable():
     script = ROOT / "scripts/server-setup.sh"
 
@@ -335,6 +342,42 @@ def test_deploy_script_snapshots_the_database_with_the_new_image_before_restarti
     snapshot = script.index(f"{BACKUP} snapshot predeploy")
     up = script.index("docker compose up -d")
     assert pull < snapshot < up
+
+
+def test_deploy_script_tries_the_migrations_on_a_copy_before_restarting():
+    # A migration that fails on the live data must stop the deploy while the old
+    # version is still serving, not crash-loop the new one (outage, 2026-10-22).
+    script = text("scripts/deploy.sh")
+
+    snapshot = script.index(f"{BACKUP} snapshot predeploy")
+    preflight = script.index("docker compose run --rm --no-deps backup python -m app.preflight")
+    up = script.index("docker compose up -d")
+    assert snapshot < preflight < up
+
+
+def test_compose_helper_always_targets_the_live_stack(tmp_path):
+    # Without the project name, compose run from the "repo" checkout starts a second,
+    # empty stack beside the live one (PR #49, and again 2026-10-23).
+    helper = ROOT / "scripts/compose.sh"
+    assert os.access(helper, os.X_OK)
+    fake = tmp_path / "docker"
+    fake.write_text('#!/bin/sh\necho "$COMPOSE_PROJECT_NAME|$PWD|$*"\n')
+    fake.chmod(0o755)
+
+    result = subprocess.run(
+        [str(helper), "logs", "web", "--tail", "30"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "PATH": f"{tmp_path}:{os.environ['PATH']}",
+            "COMPOSE_PROJECT_NAME": "repo",
+        },
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.strip() == f"scramble-challenge|{ROOT}|compose logs web --tail 30"
 
 
 def test_deploy_script_creates_the_shared_edge_network_before_compose_up():

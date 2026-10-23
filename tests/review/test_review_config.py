@@ -115,3 +115,24 @@ def test_claude_md_says_slashes_in_branch_names_become_double_underscores():
     text = (ROOT / "CLAUDE.md").read_text()
 
     assert "any / in the branch name written as __" in text
+
+
+def test_claude_md_says_to_check_ci_on_a_timer_not_only_wait_for_a_notice():
+    # 73 idle minutes on PR #60: the completion notice never came.
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "every 10 to 15 minutes" in text
+
+
+def test_claude_md_says_to_watch_the_deploy_before_saying_it_shipped():
+    # PR #60's deploy failed 6 minutes after merge and nobody was watching.
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "Watch the deploy" in text
+
+
+def test_claude_md_says_to_reproduce_before_giving_server_commands():
+    text = (ROOT / "CLAUDE.md").read_text()
+
+    assert "reproduce" in text
+    assert "scripts/compose.sh" in text

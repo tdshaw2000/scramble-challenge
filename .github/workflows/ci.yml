@@ -63,6 +63,8 @@ jobs:
         run: |
           docker compose run --rm --no-deps backup python -m app.backup snapshot predeploy
           docker compose run --rm --no-deps backup python -m app.backup list | grep '^predeploy-'
+      - name: Try the migrations on a copy of the database, as the deploy does
+        run: docker compose run --rm --no-deps backup python -m app.preflight
       - if: failure()
         run: |
           docker compose logs
