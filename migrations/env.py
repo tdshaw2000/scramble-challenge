@@ -92,6 +92,15 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # Batch mode rebuilds a SQLite table by dropping the original, which fails with
+        # foreign keys enforced (app/extensions.py turns them on) whenever other rows
+        # point at it. SQLite's documented table-rebuild procedure switches them off,
+        # then checks integrity at the end. The pragma is a no-op inside a transaction.
+        sqlite = connection.dialect.name == "sqlite"
+        if sqlite:
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
@@ -100,6 +109,13 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
+        if sqlite:
+            violations = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            if violations:
+                raise RuntimeError(f"Migration left broken foreign keys: {violations}")
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
 
 
 if context.is_offline_mode():
