@@ -9,7 +9,7 @@ The switch markup is shared by every skin (`.switch` > `input` + `.switch-track`
 - off: track `--parchment`, border `--wood-dark`, knob `--wood-dark`
 - on: track `--parchment` (unchanged), border `--yellow`, knob `--yellow`
 
-Yellow (#ffd23f) on parchment (#f3e2b6) is about 1.2:1, so the "on" knob nearly vanishes.
+Yellow (#ffd23f) on parchment (#f3e2b6) is about 1.1:1, so the "on" knob nearly vanishes.
 
 ## Goals / Non-Goals
 
@@ -30,7 +30,7 @@ Yellow (#ffd23f) on parchment (#f3e2b6) is about 1.2:1, so the "on" knob nearly 
 - **On state inverts the off state.** On = `--wood-dark` track, `--yellow` border,
   `--parchment` knob on the right. Off stays parchment track with a `--wood-dark` knob on the
   left. The track flipping between light and dark is what makes the state obvious, and the
-  knob is about 9:1 against its track either way. Alternatives mocked up: a yellow track
+  knob is about 10:1 against its track either way. Alternatives mocked up: a yellow track
   (option A) and red/green knobs (option B); the owner chose C's colours.
 - **Keep the yellow border for "on".** It matches the yellow used for "lit" verbs elsewhere
   in the skin (the +2/DNF toggles and the show-time toggle) and the focus outline.
