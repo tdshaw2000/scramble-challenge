@@ -5,6 +5,8 @@ from flask import current_app
 
 from alembic import context
 
+from app.migration_safety import foreign_keys_off_during
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -92,30 +94,16 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
-        # Batch mode rebuilds a SQLite table by dropping the original, which fails with
-        # foreign keys enforced (app/extensions.py turns them on) whenever other rows
-        # point at it. SQLite's documented table-rebuild procedure switches them off,
-        # then checks integrity at the end. The pragma is a no-op inside a transaction.
-        sqlite = connection.dialect.name == "sqlite"
-        if sqlite:
-            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
-            connection.commit()
-
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
             **conf_args
         )
 
-        with context.begin_transaction():
-            context.run_migrations()
-
-        if sqlite:
-            violations = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
-            if violations:
-                raise RuntimeError(f"Migration left broken foreign keys: {violations}")
-            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
-            connection.commit()
+        # app/extensions.py enforces foreign keys, which breaks batch-mode table rebuilds.
+        with foreign_keys_off_during(connection):
+            with context.begin_transaction():
+                context.run_migrations()
 
 
 if context.is_offline_mode():
