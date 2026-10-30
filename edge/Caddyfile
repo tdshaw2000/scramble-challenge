@@ -12,3 +12,7 @@
 	encode zstd gzip
 	reverse_proxy timer-app-pr-tracker:8000
 }
+{$PUZZLE_SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy puzzle-trainer:8000
+}
