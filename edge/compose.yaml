@@ -19,6 +19,8 @@ services:
       # Same again for the timer app: a bare port in CI/local dev, the real domain only
       # at deploy time.
       TIMER_SITE_ADDRESS: ${TIMER_SITE_ADDRESS:-:8081}
+      # And for the puzzle trainer.
+      PUZZLE_SITE_ADDRESS: ${PUZZLE_SITE_ADDRESS:-:8082}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data  # HTTPS certificates; keep them to avoid Let's Encrypt rate limits
