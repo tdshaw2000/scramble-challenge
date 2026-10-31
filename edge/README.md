@@ -1,7 +1,7 @@
 # Standalone Caddy
 
 The Caddy stack that fronts scramble-challenge and any other app sharing its
-`scramble-challenge-edge` Docker network (wca-records-analyser, timer-app-pr-tracker and puzzle-trainer today). Deliberately
+`scramble-challenge-edge` Docker network (wca-records-analyser, timer-app-pr-tracker, puzzle-trainer and tds-hub today). Deliberately
 its own Compose project — `name: caddy` in [`compose.yaml`](compose.yaml) — separate
 from every app it fronts, so that redeploying any one app's own stack never restarts
 this, and vice versa.
@@ -26,6 +26,7 @@ SCRCH_SITE_ADDRESS=scramble-challenge.duckdns.org
 WCA_SITE_ADDRESS=wca-records-analyser.duckdns.org
 TIMER_SITE_ADDRESS=timer-pr-tracker.duckdns.org
 PUZZLE_SITE_ADDRESS=puzzle-trainer.duckdns.org
+HUB_SITE_ADDRESS=tds-hub.duckdns.org
 EOF
 docker compose up -d
 ```

@@ -107,6 +107,26 @@ def test_the_edge_readme_tells_the_server_to_set_the_puzzle_site_address():
     assert "PUZZLE_SITE_ADDRESS=puzzle-trainer.duckdns.org" in readme
 
 
+def test_tds_hub_site_defaults_to_plain_http_so_ci_needs_no_domain(compose):
+    # Same trick as the other apps: a bare port, never a real domain, so CI and local
+    # runs don't try a live Let's Encrypt challenge for a hostname they don't own.
+    caddy_env = compose["services"]["caddy"]["environment"]
+    assert caddy_env["HUB_SITE_ADDRESS"] == "${HUB_SITE_ADDRESS:-:8083}"
+
+
+def test_caddy_proxies_the_hub_site_address_to_tds_hub():
+    caddyfile = text("Caddyfile")
+
+    assert "{$HUB_SITE_ADDRESS}" in caddyfile
+    assert "reverse_proxy tds-hub:8000" in caddyfile
+
+
+def test_the_edge_readme_tells_the_server_to_set_the_hub_site_address():
+    readme = text("README.md")
+
+    assert "HUB_SITE_ADDRESS=tds-hub.duckdns.org" in readme
+
+
 def test_caddy_joins_the_shared_external_network_so_it_can_reach_either_app(compose):
     caddy = compose["services"]["caddy"]
 

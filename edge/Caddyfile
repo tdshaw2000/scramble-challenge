@@ -16,3 +16,7 @@
 	encode zstd gzip
 	reverse_proxy puzzle-trainer:8000
 }
+{$HUB_SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy tds-hub:8000
+}
