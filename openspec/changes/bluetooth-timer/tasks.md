@@ -6,8 +6,10 @@
       Android and confirms the address is `CC:A8:00:00:` followed by the four characters at the
       end of the name (`QY-Adapter-ABCD` → `CC:A8:00:00:AB:CD`). If it matches, keep the design
       as written. If not, add the remembered "timer code" fallback to group 3 before starting.
-- [ ] 1.2 Owner captures a few raw notification values (hex) from nRF Connect for: idle,
-      hands on (ready), running, stopped, so tests can include one real recording
+- [ ] 1.2 Owner screenshots the adapter's expanded advertisement in nRF Connect (manufacturer
+      data, company 0x0504), which carries the address reversed; verify it agrees with 1.1.
+      (Live status messages are not captured here: the timer likely sends nothing before the
+      app's hello. Real frames are captured in 6.2 instead.)
 
 ## 2. Protocol building blocks
 
@@ -16,8 +18,8 @@
       the original back
 - [ ] 2.2 Write failing tests, then implement CRC16/MODBUS, message framing (sequence numbers,
       command, length, CRC, 16-byte blocks) and block encryption in
-      `app/static/bluetooth-timer.js`; verify against known vectors and, once 1.2 is done, the
-      owner's captured frames
+      `app/static/bluetooth-timer.js`; verify against known vectors and, once 6.2 has captured some,
+      real frames from the owner's adapter
 - [ ] 2.3 Write failing tests, then implement parsing of status messages (idle, ready, running,
       stopped with time) and record messages (final time, which must be acknowledged); verify
       each maps to the neutral `ready`/`running`/`stopped {timeMs}`/`idle` states
@@ -66,7 +68,8 @@
 - [ ] 6.2 Owner checks on Android Chrome with the G5 and QiYi adapter, on a deployed preview or
       the live site: connect with one press and no flags, a full solve where the shown time
       matches the G5's display, a +2 start, a brushed screen doing nothing, and switching the
-      adapter off mid-solve then finishing on the screen
+      adapter off mid-solve then finishing on the screen; save a few real
+      frames from the browser console log for the protocol tests
 - [ ] 6.3 Update the README's feature list to mention Bluetooth timers (Android/desktop Chrome
       and Edge only)
 
