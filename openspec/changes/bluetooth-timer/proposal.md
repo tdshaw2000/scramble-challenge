@@ -10,7 +10,9 @@ real hardware.
 
 ## What Changes
 
-- Add an optional "Connect timer" button on the scramble screen, shown only in browsers that
+- Add an optional "Connect timer" button with a stopwatch icon on the scramble screen, under
+  the Show time toggle (mockup D, chosen by the owner). It reads "Timer connected" and is
+  highlighted once connected, and it is shown only in browsers that
   support Web Bluetooth (Chrome and Edge on Android and desktop). It is hidden on iPhones and
   in Safari, where players keep using the screen as they do today.
 - Connecting is one button press plus picking the timer from the browser's own Bluetooth list.
@@ -42,7 +44,9 @@ into them.
 
 ## Impact
 
-- `app/templates/challenge.html`: the new button on the scramble screen.
+- `app/templates/challenge.html`: the new button on the scramble screen, with an inline
+  stopwatch SVG icon (Material Symbols "timer", Apache 2.0). The Bluetooth logo is not used,
+  because it is a Bluetooth SIG trademark.
 - `app/static/challenge.js`: solve start and stop can come from a timer as well as a tap or the
   spacebar. Screen input is ignored while a timer is connected.
 - New `app/static/bluetooth-timer.js`: the QiYi protocol (our own implementation; csTimer is

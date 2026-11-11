@@ -14,7 +14,8 @@ and spacebar exactly as before.
 
 #### Scenario: Supported browser
 - **WHEN** a player opens a challenge in a browser with Web Bluetooth (e.g. Chrome on Android)
-- **THEN** the scramble screen shows a "Connect timer" button
+- **THEN** the scramble screen shows a "Connect timer" button with a stopwatch icon, under
+  the Show time toggle
 
 #### Scenario: Unsupported browser
 - **WHEN** a player opens a challenge in a browser without Web Bluetooth (e.g. Safari on iPhone)
@@ -29,7 +30,8 @@ Bluetooth adapter fitted to a Speed Stacks timer).
 #### Scenario: Successful connection
 - **WHEN** a player presses "Connect timer" and picks their QiYi timer or adapter in the
   browser's device list
-- **THEN** the button shows that the timer is connected, and the timer controls that player's
+- **THEN** the button reads "Timer connected" and is highlighted the way an "on" toggle is in
+  that skin, and the timer controls that player's
   solves from then on
 
 #### Scenario: Connection fails or is cancelled

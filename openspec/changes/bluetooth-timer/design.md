@@ -75,6 +75,14 @@ the owner's hardware and is the first task.** If it does not hold, the fallback 
 "timer code" box whose answer is remembered on the device (a cookie, like Show time), not a
 flag.
 
+### The button: stopwatch icon and text (mockup D)
+A full-width button under Show time, sharing its `.show-time`-style look in each skin, with
+an inline stopwatch SVG (Material Symbols "timer", Apache 2.0) and the text "Connect timer",
+which changes to "Timer connected" with `aria-pressed="true"` once connected. The owner
+picked this from four mockups (`mockups/bluetooth-timer/` in the project files). The
+Bluetooth logo was avoided because it is a Bluetooth SIG trademark reserved for members'
+certified products, and a stopwatch says "timer" more plainly.
+
 ### AES-128 from a small vendored library
 WebCrypto does not offer raw AES-ECB block encryption and decryption. We vendor a small
 MIT-licensed AES implementation (e.g. `aes-js`) into `app/static/vendor/`, alongside the

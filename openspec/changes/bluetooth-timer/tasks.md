@@ -26,8 +26,8 @@
 
 - [ ] 3.1 Build the fake `navigator.bluetooth` Playwright helper (device chooser, GATT service,
       characteristics, notifications) and verify an e2e test can "connect" to it
-- [ ] 3.2 Write a failing e2e test, then add the "Connect timer" button to the scramble screen,
-      shown only when `navigator.bluetooth` exists; verify it is absent when the fake is not
+- [ ] 3.2 Write a failing e2e test, then add the "Connect timer" button (stopwatch SVG icon +
+      text, mockup D) under Show time on the scramble screen, shown only when `navigator.bluetooth` exists; verify it is absent when the fake is not
       installed
 - [ ] 3.3 Write a failing e2e test, then implement connect: device chooser filtered to `QY-Timer`
       and `QY-Adapter`, MAC from the name, hello message; verify the button shows "connected"
@@ -36,7 +36,8 @@
       short "not connected" message; verify the screen still starts and stops solves
 - [ ] 3.5 Write a failing e2e test, then make pressing the button again disconnect; verify
       screen input works again afterwards
-- [ ] 3.6 Style the button in every theme's `theme.css` and verify the per-theme CSS test covers
+- [ ] 3.6 Style the button in every theme's `theme.css` to match mockup D (same look as Show
+      time, "on" highlight when connected, icon sized to the text) and verify the per-theme CSS test covers
       the new class
 
 ## 4. Timer drives the solve
