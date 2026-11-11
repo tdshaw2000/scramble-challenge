@@ -2,14 +2,19 @@
 
 ## 1. Hardware check (owner, before any code)
 
-- [ ] 1.1 Owner checks the QiYi adapter's Bluetooth name and address with the nRF Connect app on
+- [x] 1.1 Owner checks the QiYi adapter's Bluetooth name and address with the nRF Connect app on
       Android and confirms the address is `CC:A8:00:00:` followed by the four characters at the
       end of the name (`QY-Adapter-ABCD` → `CC:A8:00:00:AB:CD`). If it matches, keep the design
       as written. If not, add the remembered "timer code" fallback to group 3 before starting.
-- [ ] 1.2 Owner screenshots the adapter's expanded advertisement in nRF Connect (manufacturer
+- [x] 1.2 Owner screenshots the adapter's expanded advertisement in nRF Connect (manufacturer
       data, company 0x0504), which carries the address reversed; verify it agrees with 1.1.
       (Live status messages are not captured here: the timer likely sends nothing before the
       app's hello. Real frames are captured in 6.2 instead.)
+
+Result (2026-11-11, owner's adapter): name `QY-Adapter-2B0F`, address `CC:A8:00:00:2B:0F`, a
+match. Manufacturer data (company 0x0504) is `0F2B0000A8CC 0121080001055A`: the first six bytes
+are the same address reversed. The rest matches the fixed part of the hello message. The name
+rule holds, so no fallback is needed. The advertisement also lists 16-bit service `0xFF01`.
 
 ## 2. Protocol building blocks
 
