@@ -400,8 +400,13 @@
         if (phase === "solving") stopSolve(Math.max(1, Math.round(event.timeMs)));
         break;
       case "disconnected":
+        // Lost (switched off, out of range): the screen takes over at once, even mid-solve,
+        // where the time then runs from when the timer started.
         timer = null;
         setTimerConnected(false);
+        setHeld(false);
+        showMessage("Timer lost: use the screen instead.");
+        setText("overlay-hint", "Timer lost: tap anywhere");
         break;
     }
   }
@@ -420,6 +425,7 @@
     keepScreenAwake();
     inspectionStartedAt = performance.now();
     setHeld(false);
+    setText("overlay-hint", timer ? "Use your timer" : "Tap anywhere");
     $("solving").hidden = true;
     setPhase("inspecting");
     if (!timedInspection) {

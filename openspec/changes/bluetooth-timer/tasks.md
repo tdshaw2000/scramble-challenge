@@ -63,9 +63,9 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 
 ## 5. Losing the timer
 
-- [ ] 5.1 Write a failing e2e test: fake timer disconnects during inspection; verify the message
+- [x] 5.1 Write a failing e2e test: fake timer disconnects during inspection; verify the message
       shows, the countdown continues and a screen release starts the solve
-- [ ] 5.2 Write a failing e2e test: fake timer disconnects while solving; verify the message
+- [x] 5.2 Write a failing e2e test: fake timer disconnects while solving; verify the message
       shows and a screen tap stops the solve with a browser-measured time from the timer's start
 
 ## 6. Integration and real hardware
