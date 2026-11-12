@@ -341,6 +341,11 @@ body::after {
 /* Show time toggle under Start inspection: white when off, grass green when on. */
 .show-time { width: 100%; margin-top: 16px; }
 .show-time[aria-pressed="true"] { color: #fff; background: var(--grass); box-shadow: 0 6px 0 var(--grass-dark), 0 6px 0 3px var(--outline); }
+/* Connect timer: shares the Show time look (class show-time); the icon sits beside the text.
+   Its negative margins keep it from making the button taller than Show time. */
+.connect-timer { display: flex; align-items: center; justify-content: center; gap: 0.5em; }
+.connect-timer[hidden] { display: none; }
+.connect-timer-icon { flex: none; width: 1.2em; height: 1.2em; margin: -0.25em 0; fill: currentColor; }
 .running-time {
   margin: 0;
   font: 24vmin/1 var(--display);

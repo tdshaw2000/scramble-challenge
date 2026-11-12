@@ -44,7 +44,7 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
       short "not connected" message; verify the screen still starts and stops solves
 - [x] 3.5 Write a failing e2e test, then make pressing the button again disconnect; verify
       screen input works again afterwards
-- [ ] 3.6 Style the button in every theme's `theme.css` to match mockup D (same look as Show
+- [x] 3.6 Style the button in every theme's `theme.css` to match mockup D (same look as Show
       time, "on" highlight when connected, icon sized to the text) and verify the per-theme CSS test covers
       the new class
 

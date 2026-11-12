@@ -515,6 +515,11 @@ body::after {
   box-shadow: 0 0 12px rgba(57, 255, 136, 0.8), inset 0 0 8px rgba(57, 255, 136, 0.5);
   text-shadow: 0 0 6px rgba(57, 255, 136, 0.9);
 }
+/* Connect timer: shares the Show time look (class show-time); the icon sits beside the text.
+   Its negative margins keep it from making the button taller than Show time. */
+.connect-timer { display: flex; align-items: center; justify-content: center; gap: 0.5em; }
+.connect-timer[hidden] { display: none; }
+.connect-timer-icon { flex: none; width: 1.2em; height: 1.2em; margin: -0.25em 0; fill: currentColor; }
 .running-time {
   margin: 0;
   font: 900 min(20vmin, 17vw)/1 var(--display);
