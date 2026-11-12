@@ -70,13 +70,13 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 
 ## 6. Integration and real hardware
 
-- [ ] 6.1 Run the full suite (`uv run pytest`, including e2e) and verify it is green
+- [x] 6.1 Run the full suite (`uv run pytest`, including e2e) and verify it is green
 - [ ] 6.2 Owner checks on Android Chrome with the G5 and QiYi adapter, on a deployed preview or
       the live site: connect with one press and no flags, a full solve where the shown time
       matches the G5's display, a +2 start, a brushed screen doing nothing, and switching the
       adapter off mid-solve then finishing on the screen; save a few real
       frames from the browser console log for the protocol tests
-- [ ] 6.3 Update the README's feature list to mention Bluetooth timers (Android/desktop Chrome
+- [x] 6.3 Update the README's feature list to mention Bluetooth timers (Android/desktop Chrome
       and Edge only)
 
 ## Workflow follow-up
