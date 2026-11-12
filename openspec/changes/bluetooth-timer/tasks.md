@@ -25,6 +25,7 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
       command, length, CRC, 16-byte blocks) and block encryption in
       `app/static/bluetooth-timer.js`; verify against known vectors and, once 6.2 has captured some,
       real frames from the owner's adapter
+      (Done apart from the real frames, which come from 6.2 after deploy.)
 - [ ] 2.3 Write failing tests, then implement parsing of status messages (idle, ready, running,
       stopped with time) and record messages (final time, which must be acknowledged); verify
       each maps to the neutral `ready`/`running`/`stopped {timeMs}`/`idle` states

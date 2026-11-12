@@ -131,9 +131,9 @@ def read(page, packets):
 def test_the_reader_decrypts_a_message_and_checks_its_crc(page):
     msg = qiyi.status(qiyi.RUNNING, 1234, send_sn=6, ack_sn=2)
 
-    assert read(page, qiyi.packets(msg)) == [
-        {"sendSn": 6, "ackSn": 2, "cmd": 0x1003, "data": msg[12:-2]}
-    ]
+    *arriving, done = read(page, qiyi.packets(msg))
+    assert arriving == [None]
+    assert done == {"sendSn": 6, "ackSn": 2, "cmd": 0x1003, "data": msg[12:-2]}
 
 
 def test_the_reader_joins_a_message_split_over_packets(page):
@@ -155,7 +155,7 @@ def test_the_reader_drops_a_message_with_a_bad_crc(page):
     msg = qiyi.status(qiyi.RUNNING, 1234)
     msg[-1] ^= 0xFF
 
-    assert read(page, qiyi.packets(msg)) == [None]
+    assert read(page, qiyi.packets(msg)) == [None, None]
 
 
 def test_the_reader_ignores_a_stray_follow_on_packet_and_recovers(page):
@@ -163,5 +163,5 @@ def test_the_reader_ignores_a_stray_follow_on_packet_and_recovers(page):
     stray = qiyi.packets(long_msg)[1]
 
     results = read(page, [stray, *qiyi.packets(short_msg)])
-    assert results[0] is None
-    assert results[1]["data"] == short_msg[12:-2]
+    assert results[:-1] == [None, None]
+    assert results[-1]["data"] == short_msg[12:-2]
