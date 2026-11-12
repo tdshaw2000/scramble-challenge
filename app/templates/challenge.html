@@ -72,6 +72,13 @@
     </button>
   </section>
 
+  {# Only with ?timerlog in the address: every Bluetooth timer packet, to copy for the protocol tests. #}
+  <section id="timer-log" class="card timer-log" hidden>
+    <h2 class="card-title">Timer log</h2>
+    <textarea id="timer-log-text" class="timer-log-text" readonly aria-label="Timer log"></textarea>
+    <button type="button" id="timer-log-copy" class="button">Copy timer log</button>
+  </section>
+
   <div id="overlay" class="overlay" hidden>
     <p id="countdown" class="countdown"></p>
     <p id="solving" class="solving" hidden>Solving…</p>

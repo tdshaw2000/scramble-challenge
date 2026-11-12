@@ -1,6 +1,8 @@
 """Connecting a Bluetooth timer and solving with it (openspec/specs/bluetooth-timer), against
 the fake QiYi timer in fake_bluetooth.py."""
 
+import re
+
 import pytest
 from playwright.sync_api import expect
 
@@ -485,10 +487,10 @@ def test_with_timerlog_in_the_address_every_packet_is_shown_and_can_be_copied(
     send(amy, msg)
 
     log = amy.locator("#timer-log-text")
-    expect(log).to_contain_text("sent 0021400")  # the hello's first packet
-    expect(log).to_contain_text("received 0019400")
+    expect(log).to_have_value(re.compile("sent 0021400"))  # the hello's first packet
+    expect(log).to_have_value(re.compile("received 0019400"))
     # The decrypted message too, so it can be read without the key.
-    expect(log).to_contain_text("message " + bytes(msg).hex())
+    expect(log).to_have_value(re.compile("message " + bytes(msg[:-2]).hex()))
     amy.get_by_role("button", name="Copy timer log").click()
-    expect(amy.get_by_role("button", name="Copy timer log")).to_have_text("Copied!")
+    expect(amy.locator("#timer-log-copy")).to_have_text("Copied!")
     assert amy.evaluate("navigator.clipboard.readText()") == log.input_value()

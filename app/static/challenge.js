@@ -348,6 +348,24 @@
   // Offered only where the browser has Web Bluetooth (see bluetooth-timer.js).
   const timerSupported = Boolean(window.BluetoothTimer && window.BluetoothTimer.supported());
   $("connect-timer").hidden = !timerSupported;
+  // ?timerlog in the address shows every timer packet on the page, with a Copy button, so
+  // real ones can be captured on a phone with no computer attached.
+  if (timerSupported && new URLSearchParams(window.location.search).has("timerlog")) {
+    $("timer-log").hidden = false;
+    window.BluetoothTimer.onLog((line) => {
+      $("timer-log-text").value += `${line}\n`;
+    });
+    $("timer-log-copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText($("timer-log-text").value);
+        setText("timer-log-copy", "Copied!");
+      } catch {
+        // No clipboard: the text box can still be selected and copied by hand.
+        $("timer-log-text").select();
+      }
+    });
+  }
+
   let timer = null; // the connected timer, which then starts and stops this player's solves
   let connectingTimer = false;
 
