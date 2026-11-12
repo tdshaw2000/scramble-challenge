@@ -135,7 +135,37 @@
     };
   }
 
+  // Timer data comes as a data point: its id, its type, a 2-byte length, then the value.
+  // Point 4 (type 4) is the timer's state and its time so far; point 1 (type 1) is the
+  // record of a finished solve, which the timer resends until it is answered.
+  // The timer's own inspection state is ignored: the round's inspection is on the screen.
+  const QIYI_STATES = ["idle", "idle", "ready", "running", "stopped", "stopped", "disconnected"];
+
+  // The neutral state a message from the timer means, or null if it means nothing to us.
+  function parse(message) {
+    if (!message || message.cmd !== QIYI_TIMER_DATA || message.data.length < 4) return null;
+    const data = message.data;
+    const [point, type] = data;
+    if (point === 1 && type === 1 && data.length >= 12) {
+      return { state: "stopped", timeMs: readU32(data, 8), ack: true };
+    }
+    if (point === 4 && type === 4 && data.length >= 9) {
+      const state = QIYI_STATES[data[4]];
+      if (state === "stopped") {
+        const timeMs = readU32(data, 5);
+        return timeMs > 0 ? { state, timeMs } : null;
+      }
+      return state ? { state } : null;
+    }
+    return null;
+  }
+
+  // The answer to a record message, so the timer stops resending it.
+  function ack(message) {
+    return encode(message.ackSn + 1, message.sendSn, QIYI_TIMER_DATA, [0x00]);
+  }
+
   window.BluetoothTimer = {
-    qiyi: { crc16modbus, encode, hello, macFromName, reader },
+    qiyi: { ack, crc16modbus, encode, hello, macFromName, parse, reader },
   };
 })();
