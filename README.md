@@ -11,7 +11,9 @@ on the screen; the timer's pads start and stop the solve, and its own time is re
 needs Web Bluetooth, so it works in Chrome and Edge on Android and desktop only; on iPhones
 and in Safari the button doesn't appear. The protocol code is in
 `app/static/bluetooth-timer.js`, and it logs every packet to the browser console as
-`[timer] sent ...` / `[timer] received ...`.
+`[timer] sent ...` / `[timer] received ...`. Adding `?timerlog` to a challenge page's
+address shows the same log on the page, with each decrypted message and a Copy button, which
+is the easy way to capture it on a phone.
 
 ## Development
 

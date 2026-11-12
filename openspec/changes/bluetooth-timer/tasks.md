@@ -21,11 +21,11 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 - [x] 2.1 Vendor a pinned MIT AES-128 library into `app/static/vendor/` with its licence text;
       verify a test page can encrypt and decrypt one 16-byte block with the fixed key and get
       the original back
-- [ ] 2.2 Write failing tests, then implement CRC16/MODBUS, message framing (sequence numbers,
+- [x] 2.2 Write failing tests, then implement CRC16/MODBUS, message framing (sequence numbers,
       command, length, CRC, 16-byte blocks) and block encryption in
       `app/static/bluetooth-timer.js`; verify against known vectors and, once 6.2 has captured some,
       real frames from the owner's adapter
-      (Done apart from the real frames, which come from 6.2 after deploy.)
+      (Real frames from 6.2 are in `tests/e2e/fixtures/qiyi-g5-adapter-2026-11-12.log`.)
 - [x] 2.3 Write failing tests, then implement parsing of status messages (idle, ready, running,
       stopped with time) and record messages (final time, which must be acknowledged); verify
       each maps to the neutral `ready`/`running`/`stopped {timeMs}`/`idle` states
@@ -71,11 +71,19 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 ## 6. Integration and real hardware
 
 - [x] 6.1 Run the full suite (`uv run pytest`, including e2e) and verify it is green
-- [ ] 6.2 Owner checks on Android Chrome with the G5 and QiYi adapter, on a deployed preview or
+- [x] 6.2 Owner checks on Android Chrome with the G5 and QiYi adapter, on a deployed preview or
       the live site: connect with one press and no flags, a full solve where the shown time
       matches the G5's display, a +2 start, a brushed screen doing nothing, and switching the
       adapter off mid-solve then finishing on the screen; save a few real
       frames from the browser console log for the protocol tests
+
+Result (2026-11-12, owner, live site, Android Chrome): connect with one press, a full solve, a +2
+start, a brushed screen and unplugging the adapter mid-solve all behaved as specified. Frames
+were captured with the on-page log (`?timerlog` on the challenge address, PR #70), since the
+phone's console isn't reachable and csTimer doesn't log to the console. They confirmed the record
+message's time offset and the acknowledgement. Switching the G5 itself off mid-solve makes the
+adapter send an ordinary record with the time at that moment, indistinguishable from a real
+stop, so it counts as a stop (added to the spec as its own scenario).
 - [x] 6.3 Update the README's feature list to mention Bluetooth timers (Android/desktop Chrome
       and Edge only)
 

@@ -225,3 +225,71 @@ def test_other_messages_mean_nothing(page):
     assert meaning(page, qiyi.message(2, 1, qiyi.HELLO, [0])) is None
     assert meaning(page, qiyi.message(2, 1, qiyi.TIMER_DATA, [9, 9, 0, 0])) is None
     assert page.evaluate("BluetoothTimer.qiyi.parse(null)") is None
+
+
+# --- real frames from the owner's G5 + QiYi adapter (fixtures/qiyi-g5-adapter-2026-11-12.log)
+
+CAPTURE = Path(__file__).parent / "fixtures" / "qiyi-g5-adapter-2026-11-12.log"
+
+
+def capture():
+    """[(direction, bytes), ...] in the order they happened, comments left out."""
+    lines = [line.split() for line in CAPTURE.read_text().splitlines() if line.startswith("[")]
+    return [(direction, list(bytes.fromhex(data))) for _, direction, data in lines]
+
+
+def received_meanings(page):
+    """Every packet the timer sent, fed to the page's reader in order: for each whole message,
+    its bytes (as the log's "message" lines show them) and what the page makes of it."""
+    packets = [data for direction, data in capture() if direction == "received"]
+    return page.evaluate(
+        """(packets) => {
+          const reader = BluetoothTimer.qiyi.reader();
+          const out = [];
+          for (const packet of packets) {
+            const message = reader.push(packet);
+            if (message) out.push({ message, meaning: BluetoothTimer.qiyi.parse(message) });
+          }
+          return out;
+        }""",
+        packets,
+    )
+
+
+def message_bytes(message):
+    cmd, length = message["cmd"], len(message["data"])
+    head = qiyi.u32(message["sendSn"]) + qiyi.u32(message["ackSn"])
+    return head + [cmd >> 8, cmd & 0xFF, length >> 8, length & 0xFF] + message["data"]
+
+
+def test_every_real_packet_decodes_to_the_message_logged_with_it(page):
+    logged = [data for direction, data in capture() if direction == "message"]
+
+    assert [message_bytes(m["message"]) for m in received_meanings(page)] == logged
+
+
+def test_the_real_hello_matches_what_the_page_builds_for_the_owners_adapter(page):
+    sent = [data for direction, data in capture() if direction == "sent"]
+
+    assert page.evaluate("BluetoothTimer.qiyi.hello('CC:A8:00:00:2B:0F')") == sent[:2]
+
+
+def test_the_real_solves_end_with_record_messages_carrying_the_g5s_times(page):
+    meanings = [m["meaning"] for m in received_meanings(page) if m["meaning"]]
+    states = [m["state"] for m in meanings]
+
+    assert states.count("running") > 0
+    records = [m for m in meanings if m.get("ack")]
+    # 5.29: a normal solve. 7.34: the G5 switched off mid-solve, which the adapter reports
+    # exactly like a stop, with the time at that moment.
+    assert [m["timeMs"] for m in records] == [5292, 7346]
+    # After the normal solve the adapter also reports FINISHED with the same time.
+    assert {"state": "stopped", "timeMs": 5292} in meanings
+
+
+def test_the_page_answered_each_real_record_the_way_the_timer_accepted(page):
+    sent = [data for direction, data in capture() if direction == "sent"]
+    records = [m["message"] for m in received_meanings(page) if (m["meaning"] or {}).get("ack")]
+
+    built = [page.evaluate("(m) => BluetoothTimer.qiyi.ack(m)", record) for record in records]
+    assert built == [[sent[2]], [sent[3]]]

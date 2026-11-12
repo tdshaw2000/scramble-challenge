@@ -82,6 +82,12 @@ timer is connected.
   start
 - **THEN** the screen shows the same "ready" state it shows while a finger is held down
 
+#### Scenario: The timer is switched off mid-solve
+- **WHEN** a connected player switches their timer itself off (not the Bluetooth adapter) while
+  solving
+- **THEN** the solve stops with the time the timer had reached, as if the player had stopped it,
+  because the adapter reports it exactly like a stop
+
 #### Scenario: Brushing the screen
 - **WHEN** a connected player touches the screen or presses the spacebar while inspecting or
   solving
