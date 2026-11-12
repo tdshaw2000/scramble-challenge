@@ -34,7 +34,7 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 
 - [x] 3.1 Build the fake `navigator.bluetooth` Playwright helper (device chooser, GATT service,
       characteristics, notifications) and verify an e2e test can "connect" to it
-- [ ] 3.2 Write a failing e2e test, then add the "Connect timer" button (stopwatch SVG icon +
+- [x] 3.2 Write a failing e2e test, then add the "Connect timer" button (stopwatch SVG icon +
       text, mockup D) under Show time on the scramble screen, shown only when `navigator.bluetooth` exists; verify it is absent when the fake is not
       installed
 - [ ] 3.3 Write a failing e2e test, then implement connect: device chooser filtered to `QY-Timer`

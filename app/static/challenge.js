@@ -343,6 +343,12 @@
     document.cookie = `${SHOW_TIME_COOKIE}=${value}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
   });
 
+  // --- Bluetooth timer -----------------------------------------------------------------
+
+  // Offered only where the browser has Web Bluetooth (see bluetooth-timer.js).
+  const timerSupported = Boolean(window.BluetoothTimer && window.BluetoothTimer.supported());
+  $("connect-timer").hidden = !timerSupported;
+
   // Each digit gets its own span, so a theme whose font has digits of different widths can
   // give them all one width and keep the decimal point still while the time runs.
   function showRunningTime(ms) {

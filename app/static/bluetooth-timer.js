@@ -165,7 +165,15 @@
     return encode(message.ackSn + 1, message.sendSn, QIYI_TIMER_DATA, [0x00]);
   }
 
+  // --- connecting ------------------------------------------------------------------------
+
+  // Web Bluetooth: Chrome and Edge on Android and desktop. Not Safari, nor any iPhone browser.
+  function supported() {
+    return Boolean(navigator.bluetooth && navigator.bluetooth.requestDevice);
+  }
+
   window.BluetoothTimer = {
+    supported,
     qiyi: { ack, crc16modbus, encode, hello, macFromName, parse, reader },
   };
 })();
