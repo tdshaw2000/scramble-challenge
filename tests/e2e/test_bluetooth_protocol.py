@@ -10,16 +10,24 @@ from pathlib import Path
 
 import pytest
 
+from tests.e2e import qiyi
+
 VENDOR = Path(__file__).resolve().parents[2] / "app" / "static" / "vendor"
 FIXED_KEY = [0x77] * 16
 
 
 @pytest.fixture
-def page(new_player):
+def aes_page(new_player):
     page = new_player()
     page.goto("/")
     page.add_script_tag(url="/static/vendor/aes.js")
     return page
+
+
+@pytest.fixture
+def page(aes_page):
+    aes_page.add_script_tag(url="/static/bluetooth-timer.js")
+    return aes_page
 
 
 def test_the_aes_library_is_vendored_with_its_licence_and_pinned_version():
@@ -28,8 +36,8 @@ def test_the_aes_library_is_vendored_with_its_licence_and_pinned_version():
     assert "MIT" in (VENDOR / "LICENSE-aes-js.txt").read_text()
 
 
-def test_the_aes_library_matches_the_fips_197_test_vector(page):
-    encrypted = page.evaluate(
+def test_the_aes_library_matches_the_fips_197_test_vector(aes_page):
+    encrypted = aes_page.evaluate(
         """() => {
           const key = Array.from({ length: 16 }, (_, i) => i);
           const plain = aesjs.utils.hex.toBytes("00112233445566778899aabbccddeeff");
@@ -39,9 +47,9 @@ def test_the_aes_library_matches_the_fips_197_test_vector(page):
     assert encrypted == "69c4e0d86a7b0430d8cdb78070b4c55a"
 
 
-def test_one_block_encrypted_with_the_fixed_key_decrypts_to_the_original(page):
+def test_one_block_encrypted_with_the_fixed_key_decrypts_to_the_original(aes_page):
     block = list(range(16))
-    result = page.evaluate(
+    result = aes_page.evaluate(
         """([key, block]) => {
           const aes = new aesjs.AES(key);
           const encrypted = Array.from(aes.encrypt(block));
@@ -51,3 +59,109 @@ def test_one_block_encrypted_with_the_fixed_key_decrypts_to_the_original(page):
     )
     assert result["encrypted"] != block
     assert result["decrypted"] == block
+
+
+# --- CRC, framing and encryption ---------------------------------------------------------
+
+# Decrypts packets the page built, so the test can compare them with qiyi.py's plain ones.
+DECRYPT_PACKETS = """(packets) => {
+  const aes = new aesjs.AES(Array(16).fill(0x77));
+  return packets.map((packet) => {
+    const bytes = Array.from(packet);
+    const header = bytes.slice(0, bytes[0] === 0 ? 4 : 1);
+    const blocks = [];
+    for (let i = header.length; i < bytes.length; i += 16) {
+      blocks.push(Array.from(aes.decrypt(bytes.slice(i, i + 16))));
+    }
+    return [header, blocks];
+  });
+}"""
+
+# Encrypts qiyi.py's plain packets the way a real timer sends them.
+ENCRYPT_PACKETS = """(packets) => {
+  const aes = new aesjs.AES(Array(16).fill(0x77));
+  return packets.map(([header, blocks]) =>
+    header.concat(...blocks.map((block) => Array.from(aes.encrypt(block)))));
+}"""
+
+
+def as_lists(packets):
+    return [[header, blocks] for header, blocks in packets]
+
+
+def test_crc16_modbus_matches_the_standard_check_value(page):
+    assert page.evaluate("BluetoothTimer.qiyi.crc16modbus([])") == 0xFFFF
+    check = page.evaluate(
+        "BluetoothTimer.qiyi.crc16modbus([...'123456789'].map((c) => c.charCodeAt(0)))"
+    )
+    assert check == 0x4B37
+    assert qiyi.crc16_modbus(b"123456789") == 0x4B37
+
+
+def test_a_short_message_is_one_encrypted_packet(page):
+    built = page.evaluate("BluetoothTimer.qiyi.encode(5, 9, 0x1003, [0])")
+
+    assert len(built) == 1 and len(built[0]) == 4 + 16
+    expected = qiyi.packets(qiyi.message(5, 9, qiyi.TIMER_DATA, [0]))
+    assert page.evaluate(DECRYPT_PACKETS, built) == as_lists(expected)
+
+
+def test_the_hello_for_the_owners_adapter_spans_two_packets(page):
+    mac = "CC:A8:00:00:2B:0F"
+    built = page.evaluate("(mac) => BluetoothTimer.qiyi.hello(mac)", mac)
+
+    expected = qiyi.packets(qiyi.message(1, 0, qiyi.HELLO, qiyi.hello_data(mac)))
+    assert page.evaluate(DECRYPT_PACKETS, built) == as_lists(expected)
+    # The address goes in backwards, as the adapter itself advertises it.
+    assert qiyi.hello_data(mac)[-6:] == [0x0F, 0x2B, 0x00, 0x00, 0xA8, 0xCC]
+    assert [header for header, _ in expected] == [[0x00, 31 + 2, 0x40, 0x00], [0x01]]
+
+
+def read(page, packets):
+    """What the page's reader makes of these packets, fed in order: one result per packet."""
+    return page.evaluate(
+        """(packets) => {
+          const reader = BluetoothTimer.qiyi.reader();
+          return packets.map((packet) => reader.push(packet));
+        }""",
+        page.evaluate(ENCRYPT_PACKETS, as_lists(packets)),
+    )
+
+
+def test_the_reader_decrypts_a_message_and_checks_its_crc(page):
+    msg = qiyi.status(qiyi.RUNNING, 1234, send_sn=6, ack_sn=2)
+
+    assert read(page, qiyi.packets(msg)) == [
+        {"sendSn": 6, "ackSn": 2, "cmd": 0x1003, "data": msg[12:-2]}
+    ]
+
+
+def test_the_reader_joins_a_message_split_over_packets(page):
+    msg = qiyi.record(12345)
+    assert len(msg) > 16
+
+    results = read(page, qiyi.packets(msg))
+    assert results[0] is None
+    assert results[1]["data"] == msg[12:-2]
+
+
+def test_the_reader_takes_several_blocks_in_one_packet(page):
+    msg = qiyi.record(12345)
+
+    assert read(page, qiyi.packets(msg, blocks_per_packet=2))[0]["data"] == msg[12:-2]
+
+
+def test_the_reader_drops_a_message_with_a_bad_crc(page):
+    msg = qiyi.status(qiyi.RUNNING, 1234)
+    msg[-1] ^= 0xFF
+
+    assert read(page, qiyi.packets(msg)) == [None]
+
+
+def test_the_reader_ignores_a_stray_follow_on_packet_and_recovers(page):
+    long_msg, short_msg = qiyi.record(12345), qiyi.status(qiyi.IDLE)
+    stray = qiyi.packets(long_msg)[1]
+
+    results = read(page, [stray, *qiyi.packets(short_msg)])
+    assert results[0] is None
+    assert results[1]["data"] == short_msg[12:-2]
