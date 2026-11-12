@@ -15,7 +15,15 @@ from tests.e2e.fake_bluetooth import (
     send,
     written_messages,
 )
-from tests.e2e.test_game import FAKE_NOW, join, leaderboard, set_now, solve, start_challenge
+from tests.e2e.test_game import (
+    FAKE_NOW,
+    advance,
+    join,
+    leaderboard,
+    set_now,
+    solve,
+    start_challenge,
+)
 
 
 def test_the_fake_timer_can_be_connected_to_and_talks_back(new_player):
@@ -235,3 +243,144 @@ def test_the_hidden_timer_button_stays_hidden_in_every_skin(new_player, skin):
     expect(amy.locator("#show-time")).to_be_visible()
 
     expect(amy.locator(CONNECT)).to_be_hidden()
+
+
+# --- the timer drives the solve ----------------------------------------------------------
+
+
+def emitted(page, event):
+    return page.evaluate("window.__emitted").count(event)
+
+
+def start_connected_inspection(tom, amy):
+    start_round(tom, amy)
+    connect(amy)
+    amy.get_by_role("button", name="Start inspection").click()
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "inspecting")
+
+
+def own_result(amy):
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
+    return leaderboard(amy)[0]
+
+
+@pytest.mark.parametrize("finish", ["status", "record"])
+def test_a_full_timer_solve_records_the_timers_own_time(tom_and_amy_with_bluetooth, finish):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+    expect(amy.locator("#overlay-hint")).to_have_text("Use your timer")
+
+    send(amy, qiyi.status(qiyi.GET_SET))
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    send(amy, qiyi.status(qiyi.IDLE))  # hands lifted too soon
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    send(amy, qiyi.status(qiyi.GET_SET))
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+    advance(amy, 3000)
+    send(amy, qiyi.status(qiyi.RUNNING))
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    advance(amy, 11000)  # the browser's clock disagrees with the timer: the timer wins
+    if finish == "status":
+        send(amy, qiyi.status(qiyi.STOPPED, 12345))
+    else:
+        send(amy, qiyi.record(12345, send_sn=7, ack_sn=3))
+
+    expect(amy.locator("#finished")).to_have_text("12.34")
+    assert own_result(amy) == ["1st", "Amy (0)", "12.34"]
+    assert emitted(amy, "start_solve") == 1 and emitted(amy, "stop_solve") == 1
+    if finish == "record":
+        assert written_messages(amy)[-1] == qiyi.message(4, 7, qiyi.TIMER_DATA, [0])
+
+
+def test_a_timer_start_in_the_last_two_seconds_of_inspection_is_a_plus_two(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+
+    advance(amy, 15500)
+    send(amy, qiyi.status(qiyi.RUNNING))
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    send(amy, qiyi.status(qiyi.STOPPED, 10000))
+
+    assert own_result(amy) == ["1st", "Amy (0)", "12.00+"]
+
+
+def test_inspection_still_runs_out_to_a_dnf_with_a_timer_connected(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+
+    advance(amy, 17100)
+
+    expect(amy.locator("#finished")).to_have_text("DNF")
+    send(amy, qiyi.status(qiyi.RUNNING))
+    send(amy, qiyi.status(qiyi.STOPPED, 5000))
+    assert own_result(amy) == ["1st", "Amy (0)", "DNF"]
+    assert emitted(amy, "start_solve") == 0 and emitted(amy, "stop_solve") == 0
+
+
+def test_timer_activity_outside_inspection_and_solving_does_nothing(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    connect(amy)
+
+    # On the scramble screen, before inspection.
+    for state in (qiyi.GET_SET, qiyi.RUNNING):
+        send(amy, qiyi.status(state))
+    send(amy, qiyi.status(qiyi.STOPPED, 4000))
+    amy.wait_for_timeout(300)
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "scramble")
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+
+    # After the attempt is finished.
+    amy.get_by_role("button", name="Start inspection").click()
+    send(amy, qiyi.status(qiyi.RUNNING))
+    send(amy, qiyi.status(qiyi.STOPPED, 6000))
+    assert own_result(amy) == ["1st", "Amy (0)", "6.00"]
+    send(amy, qiyi.status(qiyi.GET_SET))
+    send(amy, qiyi.status(qiyi.RUNNING))
+    send(amy, qiyi.record(7000))
+    amy.wait_for_timeout(300)
+
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    assert own_result(amy) == ["1st", "Amy (0)", "6.00"]
+    assert emitted(amy, "start_solve") == 1 and emitted(amy, "stop_solve") == 1
+
+
+def test_the_screen_and_spacebar_neither_start_nor_stop_a_solve_while_connected(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+
+    amy.locator("#overlay").click()
+    amy.keyboard.press("Space")
+    amy.wait_for_timeout(300)
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "inspecting")
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+
+    send(amy, qiyi.status(qiyi.RUNNING))
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    amy.locator("#overlay").click()
+    amy.keyboard.press("Space")
+    amy.wait_for_timeout(300)
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+
+    send(amy, qiyi.status(qiyi.STOPPED, 8000))
+    assert own_result(amy) == ["1st", "Amy (0)", "8.00"]
+    assert emitted(amy, "start_solve") == 1 and emitted(amy, "stop_solve") == 1
+
+
+def test_an_untimed_inspection_round_works_with_the_timer(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    tom.get_by_label("Timed inspection").uncheck()
+    start_connected_inspection(tom, amy)
+    expect(amy.locator("#countdown")).to_be_hidden()
+
+    advance(amy, 20000)
+    send(amy, qiyi.status(qiyi.RUNNING))
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    send(amy, qiyi.status(qiyi.STOPPED, 9000))
+
+    assert own_result(amy) == ["1st", "Amy (0)", "9.00"]
