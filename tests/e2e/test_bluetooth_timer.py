@@ -184,3 +184,54 @@ def test_pressing_the_button_again_disconnects_and_the_screen_takes_over(
     assert amy.evaluate("__bt.connected") is False
     expect(amy.locator("#message")).to_be_hidden()
     screen_solve_works(tom, amy)
+
+
+SKINS = ["plain", "dark", "dos", "mario64", "monkeyisland2", "neon80s"]
+
+
+@pytest.mark.parametrize("skin", SKINS)
+def test_the_timer_button_looks_like_show_time_with_a_text_sized_icon_in_every_skin(
+    tom_and_amy_with_bluetooth, skin
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])
+    amy.reload()
+    expect(amy.locator(CONNECT)).to_be_visible()
+
+    button, show_time = amy.locator(CONNECT), amy.locator("#show-time")
+    assert button.bounding_box()["height"] == show_time.bounding_box()["height"]
+    assert button.bounding_box()["width"] == show_time.bounding_box()["width"]
+    icon = button.locator(".connect-timer-icon").bounding_box()
+    label = button.locator(".connect-timer-label").bounding_box()
+    font_size = float(button.evaluate("b => getComputedStyle(b).fontSize")[:-2])
+    assert font_size <= icon["height"] <= 1.5 * font_size
+    # Side by side, the icon first, both centred on the same line.
+    assert icon["x"] + icon["width"] <= label["x"]
+    assert abs((icon["y"] + icon["height"] / 2) - (label["y"] + label["height"] / 2)) < 3
+
+    connect(amy)
+    on = amy.evaluate(
+        "() => [getComputedStyle(document.getElementById('connect-timer')).backgroundColor,"
+        " getComputedStyle(document.getElementById('connect-timer')).color]"
+    )
+    show_time.click()  # Show time on: the same highlight
+    expect(show_time).to_have_attribute("aria-pressed", "true")
+    assert on == amy.evaluate(
+        "() => [getComputedStyle(document.getElementById('show-time')).backgroundColor,"
+        " getComputedStyle(document.getElementById('show-time')).color]"
+    )
+
+
+@pytest.mark.parametrize("skin", SKINS)
+def test_the_hidden_timer_button_stays_hidden_in_every_skin(new_player, skin):
+    tom, amy = new_player(), new_player()
+    amy.add_init_script(NO_BLUETOOTH)
+    link = start_challenge(tom)
+    join(amy, link, "Amy")
+    amy.context.add_cookies([{"name": "scramble_skin", "value": skin, "url": amy.url}])
+    start_round(tom, amy)
+    amy.reload()
+    expect(amy.locator("#show-time")).to_be_visible()
+
+    expect(amy.locator(CONNECT)).to_be_hidden()
