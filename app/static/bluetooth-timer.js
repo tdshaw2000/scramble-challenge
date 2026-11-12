@@ -172,7 +172,109 @@
     return Boolean(navigator.bluetooth && navigator.bluetooth.requestDevice);
   }
 
+  const QIYI_NAMES = ["QY-Timer", "QY-Adapter"];
+  const QIYI_SERVICE = "0000fd50-0000-1000-8000-00805f9b34fb";
+  const QIYI_WRITE = "00000001-0000-1001-8001-00805f9b07d0";
+  const QIYI_NOTIFY = "00000002-0000-1001-8001-00805f9b07d0";
+
+  // Every packet to and from the timer goes to the console, so real ones can be copied out
+  // for the protocol tests.
+  function log(direction, bytes) {
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    console.info(`[timer] ${direction} ${hex}`);
+  }
+
+  // Opens the browser's device list (only timers we know are shown) and connects to the one
+  // picked. Resolves to a connection; rejects if the list is closed or the timer can't be
+  // reached. Must be called from a button press: browsers allow nothing else.
+  async function connect() {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: QIYI_NAMES.map((namePrefix) => ({ namePrefix })),
+      optionalServices: [QIYI_SERVICE],
+    });
+    return connectQiyi(device);
+  }
+
+  // A connection: onState(fn) hears {state: "ready" | "running" | "idle" | "disconnected"}
+  // and {state: "stopped", timeMs}. "disconnected" means the timer was lost, not that
+  // disconnect() was called.
+  async function connectQiyi(device) {
+    const mac = macFromName(device.name);
+    if (!mac) throw new Error(`No address can be worked out from the name ${device.name}`);
+    const listeners = [];
+    let open = true;
+    let writer = null;
+    let queue = Promise.resolve();
+
+    function emit(event) {
+      for (const listener of listeners) listener(event);
+    }
+
+    // The timer takes one write at a time.
+    function write(packets) {
+      let done = queue;
+      for (const packet of packets) {
+        done = done.then(() => {
+          log("sent", packet);
+          return writer.writeValue(new Uint8Array(packet));
+        });
+      }
+      queue = done.catch(() => {});
+      return done;
+    }
+
+    function close() {
+      open = false;
+      device.removeEventListener("gattserverdisconnected", lost);
+      if (device.gatt.connected) device.gatt.disconnect();
+    }
+
+    function lost() {
+      if (!open) return;
+      close();
+      emit({ state: "disconnected" });
+    }
+
+    device.addEventListener("gattserverdisconnected", lost);
+    try {
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(QIYI_SERVICE);
+      writer = await service.getCharacteristic(QIYI_WRITE);
+      const notifier = await service.getCharacteristic(QIYI_NOTIFY);
+      const incoming = reader();
+      notifier.addEventListener("characteristicvaluechanged", (event) => {
+        if (!open) return;
+        const value = event.target.value;
+        const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        log("received", bytes);
+        const message = incoming.push(bytes);
+        const meaning = parse(message);
+        if (!meaning) return;
+        if (meaning.ack) write(ack(message)).catch(() => {});
+        if (meaning.state === "disconnected") {
+          lost();
+          return;
+        }
+        emit(meaning.state === "stopped" ? { state: "stopped", timeMs: meaning.timeMs } : { state: meaning.state });
+      });
+      await notifier.startNotifications();
+      await write(hello(mac));
+    } catch (error) {
+      close();
+      throw error;
+    }
+
+    return {
+      name: device.name,
+      onState(listener) {
+        listeners.push(listener);
+      },
+      disconnect: close,
+    };
+  }
+
   window.BluetoothTimer = {
+    connect,
     supported,
     qiyi: { ack, crc16modbus, encode, hello, macFromName, parse, reader },
   };

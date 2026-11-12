@@ -348,6 +348,46 @@
   // Offered only where the browser has Web Bluetooth (see bluetooth-timer.js).
   const timerSupported = Boolean(window.BluetoothTimer && window.BluetoothTimer.supported());
   $("connect-timer").hidden = !timerSupported;
+  let timer = null; // the connected timer, which then starts and stops this player's solves
+  let connectingTimer = false;
+
+  function setTimerConnected(connected) {
+    $("connect-timer").setAttribute("aria-pressed", String(connected));
+    setText("connect-timer-label", connected ? "Timer connected" : "Connect timer");
+    setText("overlay-hint", connected ? "Use your timer" : "Tap anywhere");
+  }
+
+  $("connect-timer").addEventListener("click", async () => {
+    if (timer) {
+      const connection = timer;
+      timer = null;
+      connection.disconnect();
+      setTimerConnected(false);
+      return;
+    }
+    if (connectingTimer) return;
+    connectingTimer = true;
+    try {
+      const connection = await window.BluetoothTimer.connect();
+      timer = connection;
+      connection.onState((event) => {
+        if (timer === connection) onTimerState(event);
+      });
+      setTimerConnected(true);
+    } catch (error) {
+      console.info("[timer] not connected:", error);
+      showMessage("Timer not connected.");
+    } finally {
+      connectingTimer = false;
+    }
+  });
+
+  function onTimerState(event) {
+    if (event.state === "disconnected") {
+      timer = null;
+      setTimerConnected(false);
+    }
+  }
 
   // Each digit gets its own span, so a theme whose font has digits of different widths can
   // give them all one width and keep the decimal point still while the time runs.
