@@ -370,6 +370,11 @@ body::before {
 /* Show time toggle under Start inspection: a verb that lights up yellow when on. */
 .show-time { width: 100%; margin-top: 12px; }
 .show-time[aria-pressed="true"] { color: var(--yellow); border-color: var(--yellow); }
+/* Connect timer: shares the Show time look (class show-time); the icon sits beside the text.
+   Its negative margins keep it from making the button taller than Show time. */
+.connect-timer { display: flex; align-items: center; justify-content: center; gap: 0.5em; }
+.connect-timer[hidden] { display: none; }
+.connect-timer-icon { flex: none; width: 1.2em; height: 1.2em; margin: -0.25em 0; fill: currentColor; }
 .running-time {
   margin: 0;
   font: 24vmin/1 var(--mono);
