@@ -13,8 +13,9 @@ from tests.e2e.fake_bluetooth import (
     SERVICE,
     WRITE,
     send,
+    written_messages,
 )
-from tests.e2e.test_game import FAKE_NOW, join, set_now, start_challenge
+from tests.e2e.test_game import FAKE_NOW, join, leaderboard, set_now, solve, start_challenge
 
 
 def test_the_fake_timer_can_be_connected_to_and_talks_back(new_player):
@@ -101,3 +102,85 @@ def test_there_is_no_timer_button_without_web_bluetooth(new_player):
 
     expect(amy.locator("#show-time")).to_be_visible()
     expect(amy.locator(CONNECT)).to_be_hidden()
+
+
+# --- connecting and disconnecting ---------------------------------------------------------
+
+
+def connect(amy):
+    amy.locator(CONNECT).click()
+    expect(amy.locator(CONNECT)).to_have_text("Timer connected")
+
+
+def test_connecting_asks_for_qiyi_timers_and_says_hello_with_the_address_from_the_name(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+
+    connect(amy)
+
+    expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "true")
+    options = amy.evaluate("__bt.options")
+    assert options["filters"] == [{"namePrefix": "QY-Timer"}, {"namePrefix": "QY-Adapter"}]
+    assert SERVICE in options["optionalServices"]
+    hello = qiyi.message(1, 0, qiyi.HELLO, qiyi.hello_data("CC:A8:00:00:2B:0F"))
+    expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "true")
+    assert written_messages(amy) == [hello]
+
+
+def test_a_qiyi_smart_timer_gets_its_own_address_family(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    amy.evaluate("__bt.name = 'QY-Timer-AB12'")
+
+    connect(amy)
+
+    hello = qiyi.message(1, 0, qiyi.HELLO, qiyi.hello_data("CC:A1:00:00:AB:12"))
+    assert written_messages(amy) == [hello]
+
+
+def screen_solve_works(tom, amy):
+    solve(amy, 5000)
+    expect(amy.locator("#result-list")).to_contain_text("Amy")
+    assert leaderboard(amy) == [["1st", "Amy (0)", "5.00"]]
+
+
+@pytest.mark.parametrize(
+    "trouble",
+    [
+        "__bt.cancel = true",  # the player closed the device list
+        "__bt.failConnect = true",  # the timer is off or out of range
+        "__bt.name = 'QY-Timer'",  # no address to be had from the name
+    ],
+)
+def test_a_timer_that_does_not_connect_leaves_the_screen_in_charge(
+    tom_and_amy_with_bluetooth, trouble
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    amy.evaluate(trouble)
+
+    amy.locator(CONNECT).click()
+
+    expect(amy.locator("#message")).to_have_text("Timer not connected.")
+    expect(amy.locator(CONNECT)).to_have_text("Connect timer")
+    expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "false")
+    assert amy.evaluate("__bt.connected") is False
+    screen_solve_works(tom, amy)
+
+
+def test_pressing_the_button_again_disconnects_and_the_screen_takes_over(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    connect(amy)
+
+    amy.locator(CONNECT).click()
+
+    expect(amy.locator(CONNECT)).to_have_text("Connect timer")
+    expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "false")
+    assert amy.evaluate("__bt.connected") is False
+    expect(amy.locator("#message")).to_be_hidden()
+    screen_solve_works(tom, amy)
