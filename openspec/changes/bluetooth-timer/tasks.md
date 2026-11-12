@@ -50,16 +50,16 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 
 ## 4. Timer drives the solve
 
-- [ ] 4.1 Write a failing e2e test: connected player starts inspection, fake timer sends ready,
+- [x] 4.1 Write a failing e2e test: connected player starts inspection, fake timer sends ready,
       then running, then stopped with 12345 ms; verify `data-ready` shows during ready, and the
       recorded result is 12.34
-- [ ] 4.2 Write a failing e2e test that a timer start 15–17 s into timed inspection gives a +2,
+- [x] 4.2 Write a failing e2e test that a timer start 15–17 s into timed inspection gives a +2,
       and that inspection still runs out to a DNF at 17 s with no timer start; verify both
-- [ ] 4.3 Write a failing e2e test that timer events in the lobby or after finishing do nothing;
+- [x] 4.3 Write a failing e2e test that timer events in the lobby or after finishing do nothing;
       verify no `start_solve`/`stop_solve` is sent
-- [ ] 4.4 Write a failing e2e test that screen taps and the spacebar neither start nor stop a
+- [x] 4.4 Write a failing e2e test that screen taps and the spacebar neither start nor stop a
       solve while connected; implement and verify
-- [ ] 4.5 Verify an untimed-inspection round works with the timer (no countdown, no +2)
+- [x] 4.5 Verify an untimed-inspection round works with the timer (no countdown, no +2)
 
 ## 5. Losing the timer
 

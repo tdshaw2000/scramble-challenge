@@ -382,10 +382,27 @@
     }
   });
 
+  // The timer's pads work like the screen: getting ready lights the screen up, and the
+  // timer starting and stopping starts and stops the solve, with the time the timer measured.
+  // Anything outside inspection and solving (the lobby, after finishing) is ignored.
   function onTimerState(event) {
-    if (event.state === "disconnected") {
-      timer = null;
-      setTimerConnected(false);
+    switch (event.state) {
+      case "ready":
+        if (phase === "inspecting") setHeld(true);
+        break;
+      case "idle":
+        if (phase === "inspecting") setHeld(false);
+        break;
+      case "running":
+        if (phase === "inspecting") startSolve();
+        break;
+      case "stopped":
+        if (phase === "solving") stopSolve(Math.max(1, Math.round(event.timeMs)));
+        break;
+      case "disconnected":
+        timer = null;
+        setTimerConnected(false);
+        break;
     }
   }
 
@@ -438,39 +455,45 @@
   // works it like a real cubing timer: during inspection, holding down gets ready and
   // letting go starts the solve; while solving, pressing down stops the solve at once.
   function pressTimer() {
-    if (phase === "inspecting") {
-      if (timedInspection) {
-        const elapsed = inspectionElapsed();
-        // The ticker only looks every 100 ms, so a start just after 17 seconds lands here.
-        if (elapsed >= INSPECTION_LIMIT_MS) {
-          inspectionRanOut();
-          return;
-        }
-        plusTwo = elapsed >= INSPECTION_SECONDS * 1000;
-      } else {
-        plusTwo = false;
+    if (phase === "inspecting") startSolve();
+    else if (phase === "solving") stopSolve(Math.max(1, Math.round(performance.now() - solveStartedAt)));
+  }
+
+  // From inspection to solving, from a screen release or a Bluetooth timer's start.
+  function startSolve() {
+    if (timedInspection) {
+      const elapsed = inspectionElapsed();
+      // The ticker only looks every 100 ms, so a start just after 17 seconds lands here.
+      if (elapsed >= INSPECTION_LIMIT_MS) {
+        inspectionRanOut();
+        return;
       }
-      stopTicker();
-      solveStartedAt = performance.now();
-      socket.emit("start_solve", { plus_two: plusTwo });
-      setText("countdown", "");
-      $("countdown").hidden = true;
-      // The running time is the solve alone, like a real timer: any +2 is added at the end.
-      $("solving").hidden = showTime();
-      showRunningTime(showTime() ? 0 : null);
-      setPhase("solving");
-      if (showTime()) {
-        ticker = setInterval(
-          () => showRunningTime(performance.now() - solveStartedAt),
-          RUNNING_TIME_MS,
-        );
-      }
-    } else if (phase === "solving") {
-      stopTicker();
-      const timeMs = Math.max(1, Math.round(performance.now() - solveStartedAt));
-      socket.emit("stop_solve", { time_ms: timeMs });
-      showFinished(plusTwo ? timeMs + PLUS_TWO_MS : timeMs, plusTwo);
+      plusTwo = elapsed >= INSPECTION_SECONDS * 1000;
+    } else {
+      plusTwo = false;
     }
+    stopTicker();
+    solveStartedAt = performance.now();
+    socket.emit("start_solve", { plus_two: plusTwo });
+    setText("countdown", "");
+    $("countdown").hidden = true;
+    // The running time is the solve alone, like a real timer: any +2 is added at the end.
+    $("solving").hidden = showTime();
+    showRunningTime(showTime() ? 0 : null);
+    setPhase("solving");
+    if (showTime()) {
+      ticker = setInterval(
+        () => showRunningTime(performance.now() - solveStartedAt),
+        RUNNING_TIME_MS,
+      );
+    }
+  }
+
+  // Ends the solve with its time: the browser's, or the one the Bluetooth timer measured.
+  function stopSolve(timeMs) {
+    stopTicker();
+    socket.emit("stop_solve", { time_ms: timeMs });
+    showFinished(plusTwo ? timeMs + PLUS_TWO_MS : timeMs, plusTwo);
   }
 
   // While held down in inspection, data-ready on #game lets themes light the screen up.
@@ -480,12 +503,16 @@
     else delete game.dataset.ready;
   }
 
+  // While a timer is connected, the screen and spacebar don't start or stop a solve, so a
+  // brushed phone can't end an attempt the pads are timing.
   function holdOrStop() {
+    if (timer) return;
     if (phase === "inspecting") setHeld(true);
     else pressTimer();
   }
 
   function letGo() {
+    if (timer) return;
     if (phase === "inspecting" && heldInInspection) pressTimer();
     setHeld(false);
   }
@@ -493,7 +520,9 @@
   $("overlay").addEventListener("pointerdown", holdOrStop);
   $("overlay").addEventListener("pointerup", letGo);
   // The browser took the touch over (e.g. for a gesture): no pointerup will follow.
-  $("overlay").addEventListener("pointercancel", () => setHeld(false));
+  $("overlay").addEventListener("pointercancel", () => {
+    if (!timer) setHeld(false);
+  });
   // A long press on a phone would otherwise open a menu.
   $("overlay").addEventListener("contextmenu", (event) => event.preventDefault());
   // Nor should a press start selecting the text (the themes also forbid it in CSS).
