@@ -1,11 +1,11 @@
-# Spec Delta
+# bluetooth-timer
 
 ## Purpose
 
 Lets a player optionally use a Bluetooth speedcubing timer, instead of the screen or spacebar,
 to start and stop their own solve, while inspection stays on the screen.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Offering a timer connection
 The scramble screen SHALL offer a "Connect timer" control only in browsers that support Web
@@ -81,6 +81,8 @@ timer is connected.
 - **WHEN** the player's hands have been on the pads long enough for the timer to be ready to
   start
 - **THEN** the screen shows the same "ready" state it shows while a finger is held down
+  (where the timer reports it: the QiYi adapter on a Speed Stacks G5 does not, so with it only
+  the timer's own light shows readiness)
 
 #### Scenario: The timer is switched off mid-solve
 - **WHEN** a connected player switches their timer itself off (not the Bluetooth adapter) while
