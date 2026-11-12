@@ -384,3 +384,77 @@ def test_an_untimed_inspection_round_works_with_the_timer(tom_and_amy_with_bluet
     send(amy, qiyi.status(qiyi.STOPPED, 9000))
 
     assert own_result(amy) == ["1st", "Amy (0)", "9.00"]
+
+
+# --- losing the timer --------------------------------------------------------------------
+
+LOST_HINT = "Timer lost: tap anywhere"
+LOST_MESSAGE = "Timer lost: use the screen instead."
+
+
+def test_losing_the_timer_in_inspection_hands_the_solve_to_the_screen(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+    advance(amy, 3000)
+    send(amy, qiyi.status(qiyi.GET_SET))
+    expect(amy.locator("#game")).to_have_attribute("data-ready", "true")
+
+    amy.evaluate("__bt.drop()")
+
+    expect(amy.locator("#overlay-hint")).to_have_text(LOST_HINT)
+    expect(amy.locator("#message")).to_have_text(LOST_MESSAGE)
+    expect(amy.locator("#game")).not_to_have_attribute("data-ready", "true")
+    expect(amy.locator(CONNECT)).to_have_text("Connect timer")
+    advance(amy, 1000)
+    expect(amy.locator("#countdown")).to_have_text("11")
+    amy.locator("#overlay").click()
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    advance(amy, 5000)
+    amy.locator("#overlay").click()
+
+    assert own_result(amy) == ["1st", "Amy (0)", "5.00"]
+
+
+def test_losing_the_timer_mid_solve_lets_the_screen_stop_it_timed_from_the_timers_start(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+    send(amy, qiyi.status(qiyi.RUNNING))
+    expect(amy.locator("#game")).to_have_attribute("data-phase", "solving")
+    advance(amy, 4000)
+
+    amy.evaluate("__bt.drop()")
+
+    expect(amy.locator("#overlay-hint")).to_have_text(LOST_HINT)
+    expect(amy.locator("#message")).to_have_text(LOST_MESSAGE)
+    advance(amy, 2340)
+    amy.locator("#overlay").click()
+
+    assert own_result(amy) == ["1st", "Amy (0)", "6.34"]
+
+
+def test_after_a_lost_timer_the_next_inspection_says_tap_anywhere_again(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    connect(amy)
+
+    amy.evaluate("__bt.drop()")
+    expect(amy.locator("#message")).to_have_text(LOST_MESSAGE)
+    amy.get_by_role("button", name="Start inspection").click()
+
+    expect(amy.locator("#overlay-hint")).to_have_text("Tap anywhere")
+
+
+def test_the_timer_switching_itself_off_counts_as_losing_it(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_connected_inspection(tom, amy)
+
+    send(amy, qiyi.status(qiyi.DISCONNECT))
+
+    expect(amy.locator("#overlay-hint")).to_have_text(LOST_HINT)
+    assert amy.evaluate("__bt.connected") is False
