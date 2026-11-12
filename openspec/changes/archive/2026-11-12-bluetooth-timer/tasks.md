@@ -78,7 +78,7 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
       frames from the browser console log for the protocol tests
 
 Result (2026-11-12, owner, live site, Android Chrome): connect with one press, a full solve, a +2
-start, a brushed screen and unplugging the adapter mid-solve all behaved as specified. Frames
+start, a brushed screen and switching the adapter off mid-solve (by unplugging it) all behaved as specified. Frames
 were captured with the on-page log (`?timerlog` on the challenge address, PR #70), since the
 phone's console isn't reachable and csTimer doesn't log to the console. They confirmed the record
 message's time offset and the acknowledgement. Switching the G5 itself off mid-solve makes the
@@ -92,3 +92,6 @@ stop, so it counts as a stop (added to the spec as its own scenario).
 - Archive this change once it has shipped and the review process is complete.
 - Then propose GAN Smart Timer support as its own change, as a second driver behind the same
   button.
+
+Archived 2026-11-12. The captured frames also show the adapter never reports the timer's ready
+state, so with a G5 the screen doesn't light up on the pads (owner: fine, the G5's own light shows it).
