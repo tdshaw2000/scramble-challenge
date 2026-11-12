@@ -179,9 +179,17 @@
 
   // Every packet to and from the timer goes to the console, so real ones can be copied out
   // for the protocol tests.
+  // challenge.js can also listen (onLog), to show them on the page with ?timerlog.
+  const logListeners = [];
   function log(direction, bytes) {
     const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-    console.info(`[timer] ${direction} ${hex}`);
+    const line = `[timer] ${direction} ${hex}`;
+    console.info(line);
+    for (const listener of logListeners) listener(line);
+  }
+
+  function onLog(listener) {
+    logListeners.push(listener);
   }
 
   // Opens the browser's device list (only timers we know are shown) and connects to the one
@@ -248,6 +256,11 @@
         const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
         log("received", bytes);
         const message = incoming.push(bytes);
+        if (message) {
+          const cmd = [message.cmd >> 8, message.cmd & 0xff];
+          const length = [message.data.length >> 8, message.data.length & 0xff];
+          log("message", [...u32(message.sendSn), ...u32(message.ackSn), ...cmd, ...length, ...message.data]);
+        }
         const meaning = parse(message);
         if (!meaning) return;
         if (meaning.ack) write(ack(message)).catch(() => {});
@@ -275,6 +288,7 @@
 
   window.BluetoothTimer = {
     connect,
+    onLog,
     supported,
     qiyi: { ack, crc16modbus, encode, hello, macFromName, parse, reader },
   };

@@ -1,6 +1,8 @@
 """Connecting a Bluetooth timer and solving with it (openspec/specs/bluetooth-timer), against
 the fake QiYi timer in fake_bluetooth.py."""
 
+import re
+
 import pytest
 from playwright.sync_api import expect
 
@@ -458,3 +460,37 @@ def test_the_timer_switching_itself_off_counts_as_losing_it(tom_and_amy_with_blu
 
     expect(amy.locator("#overlay-hint")).to_have_text(LOST_HINT)
     assert amy.evaluate("__bt.connected") is False
+
+
+# --- the on-page timer log (?timerlog), for capturing real frames on a phone --------------
+
+
+def test_there_is_no_timer_log_normally(tom_and_amy_with_bluetooth):
+    tom, amy = tom_and_amy_with_bluetooth
+    start_round(tom, amy)
+    connect(amy)
+
+    expect(amy.locator("#timer-log")).to_be_hidden()
+
+
+def test_with_timerlog_in_the_address_every_packet_is_shown_and_can_be_copied(
+    tom_and_amy_with_bluetooth,
+):
+    tom, amy = tom_and_amy_with_bluetooth
+    amy.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    amy.goto(amy.url + "?timerlog")
+    start_round(tom, amy)
+    expect(amy.locator("#timer-log")).to_be_visible()
+
+    connect(amy)
+    msg = qiyi.status(qiyi.GET_SET)
+    send(amy, msg)
+
+    log = amy.locator("#timer-log-text")
+    expect(log).to_have_value(re.compile("sent 0021400"))  # the hello's first packet
+    expect(log).to_have_value(re.compile("received 0019400"))
+    # The decrypted message too, so it can be read without the key.
+    expect(log).to_have_value(re.compile("message " + bytes(msg[:-2]).hex()))
+    amy.get_by_role("button", name="Copy timer log").click()
+    expect(amy.locator("#timer-log-copy")).to_have_text("Copied!")
+    assert amy.evaluate("navigator.clipboard.readText()") == log.input_value()

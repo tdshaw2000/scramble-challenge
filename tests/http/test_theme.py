@@ -121,3 +121,10 @@ def test_every_theme_styles_the_connect_timer_button_and_its_icon(theme):
         assert selector in css, selector
     # A flex button would otherwise show even when hidden.
     assert "display: none" in css_rule(css, ".connect-timer[hidden]")
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_styles_the_timer_log(theme):
+    css = (APP / "static" / "themes" / theme / "theme.css").read_text()
+
+    assert ".timer-log-text" in css
