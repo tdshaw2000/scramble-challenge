@@ -165,3 +165,63 @@ def test_the_reader_ignores_a_stray_follow_on_packet_and_recovers(page):
     results = read(page, [stray, *qiyi.packets(short_msg)])
     assert results[:-1] == [None, None]
     assert results[-1]["data"] == short_msg[12:-2]
+
+
+# --- what the timer's messages mean ------------------------------------------------------
+
+
+def meaning(page, msg):
+    """The neutral state the page reads from one whole message from the timer."""
+    return page.evaluate(
+        """(packets) => {
+          const reader = BluetoothTimer.qiyi.reader();
+          let message = null;
+          for (const packet of packets) message = reader.push(packet) || message;
+          return BluetoothTimer.qiyi.parse(message);
+        }""",
+        page.evaluate(ENCRYPT_PACKETS, as_lists(qiyi.packets(msg))),
+    )
+
+
+@pytest.mark.parametrize(
+    ("state", "time_ms", "expected"),
+    [
+        (qiyi.IDLE, 0, {"state": "idle"}),
+        (qiyi.INSPECTION, 0, {"state": "idle"}),  # the round's inspection is the screen's
+        (qiyi.GET_SET, 0, {"state": "ready"}),
+        (qiyi.RUNNING, 0, {"state": "running"}),
+        (qiyi.RUNNING, 3456, {"state": "running"}),
+        (qiyi.STOPPED, 12345, {"state": "stopped", "timeMs": 12345}),
+        (qiyi.FINISHED, 12345, {"state": "stopped", "timeMs": 12345}),
+        (qiyi.STOPPED, 0, None),  # no time to record
+        (qiyi.DISCONNECT, 0, {"state": "disconnected"}),
+        (99, 0, None),
+    ],
+)
+def test_status_messages_map_to_neutral_states(page, state, time_ms, expected):
+    assert meaning(page, qiyi.status(state, time_ms)) == expected
+
+
+def test_a_record_message_is_a_stop_with_the_final_time_and_must_be_answered(page):
+    assert meaning(page, qiyi.record(12345, inspect_ms=8000)) == {
+        "state": "stopped",
+        "timeMs": 12345,
+        "ack": True,
+    }
+
+
+def test_the_answer_to_a_record_message_follows_on_from_it(page):
+    record = qiyi.record(12345, send_sn=7, ack_sn=3)
+    built = page.evaluate(
+        """(message) => BluetoothTimer.qiyi.ack(message)""",
+        {"sendSn": 7, "ackSn": 3, "cmd": qiyi.TIMER_DATA, "data": record[12:-2]},
+    )
+
+    expected = qiyi.packets(qiyi.message(4, 7, qiyi.TIMER_DATA, [0]))
+    assert page.evaluate(DECRYPT_PACKETS, built) == as_lists(expected)
+
+
+def test_other_messages_mean_nothing(page):
+    assert meaning(page, qiyi.message(2, 1, qiyi.HELLO, [0])) is None
+    assert meaning(page, qiyi.message(2, 1, qiyi.TIMER_DATA, [9, 9, 0, 0])) is None
+    assert page.evaluate("BluetoothTimer.qiyi.parse(null)") is None
