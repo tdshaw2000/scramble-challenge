@@ -18,7 +18,7 @@ rule holds, so no fallback is needed. The advertisement also lists 16-bit servic
 
 ## 2. Protocol building blocks
 
-- [ ] 2.1 Vendor a pinned MIT AES-128 library into `app/static/vendor/` with its licence text;
+- [x] 2.1 Vendor a pinned MIT AES-128 library into `app/static/vendor/` with its licence text;
       verify a test page can encrypt and decrypt one 16-byte block with the fixed key and get
       the original back
 - [ ] 2.2 Write failing tests, then implement CRC16/MODBUS, message framing (sequence numbers,
