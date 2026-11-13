@@ -7,7 +7,7 @@
 states (`ready`, `running`, `stopped {timeMs}`, `idle`, `disconnected`), and `challenge.js`
 acts only on those. Adding GAN means a second driver and a wider device-list filter.
 
-What we know about the GAN Smart Timer comes from public descriptions (the MIT
+What we know about GAN timers (the Halo and the original Smart Timer, which are described as sharing one protocol) comes from public descriptions (the MIT
 `gan-web-bluetooth` library and csTimer), not from the owner's own timer yet. Unlike QiYi, the
 protocol is believed to be simple:
 
@@ -27,7 +27,7 @@ The exact byte layout and CRC variant are the first things to confirm on the own
 ## Goals / Non-Goals
 
 **Goals:**
-- The owner's GAN Smart Timer works with one press on Android Chrome, exactly like QiYi.
+- The owner's GAN Halo works with one press on Android Chrome, exactly like QiYi.
 - No change to `challenge.js` or the spec's behaviour, only to which timers are supported.
 - Real frames from the owner's timer in the tests from the start, not after shipping.
 

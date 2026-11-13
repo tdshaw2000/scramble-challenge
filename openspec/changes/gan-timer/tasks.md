@@ -2,7 +2,7 @@
 
 ## 1. Hardware check and capture (owner, before any code)
 
-- [ ] 1.1 Owner scans with the nRF Connect app on Android, with the GAN timer switched on:
+- [ ] 1.1 Owner scans with the nRF Connect app on Android, with the GAN Halo switched on:
       note the timer's name exactly, and screenshot its expanded advertisement (services and
       manufacturer data). Verify the name prefix to filter on.
 - [ ] 1.2 Owner connects to the timer in nRF Connect, opens service `FFF0`, turns on
@@ -13,7 +13,7 @@
 
 ## 2. Protocol building blocks
 
-- [ ] 2.1 Save the capture as `tests/e2e/fixtures/gan-smart-timer-<date>.log` and write
+- [ ] 2.1 Save the capture as `tests/e2e/fixtures/gan-halo-<date>.log` and write
       `tests/e2e/gan.py`, an independent Python description of the packet (CRC, state, time);
       verify it decodes every captured packet and its CRC matches
 - [ ] 2.2 Write failing tests, then implement the GAN packet parser in
@@ -44,7 +44,7 @@
 ## 5. Integration and real hardware
 
 - [ ] 5.1 Run the full suite and verify it is green
-- [ ] 5.2 Owner checks on Android Chrome with the GAN timer on the live site, as for QiYi:
+- [ ] 5.2 Owner checks on Android Chrome with the GAN Halo on the live site, as for QiYi:
       connect with one press, a full solve with the time matching the timer's display, the
       screen lighting up ready on the pads, a +2 start, a brushed screen doing nothing, and
       switching the timer off mid-solve then finishing on the screen. Captures the

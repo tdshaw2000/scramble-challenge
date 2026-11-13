@@ -4,7 +4,8 @@
 Connecting a timer SHALL need only the button press and choosing the timer from the
 browser's own Bluetooth device list: no browser flags, settings changes or typed codes. The
 supported timers SHALL be the QiYi protocol devices (the QiYi Smart Timer, and the QiYi
-Bluetooth adapter fitted to a Speed Stacks timer) and the GAN Smart Timer. One button SHALL
+Bluetooth adapter fitted to a Speed Stacks timer) and GAN timers (the GAN Halo and GAN Smart
+Timer). One button SHALL
 offer all of them, and the app SHALL work out which kind of timer was chosen by itself.
 
 #### Scenario: Successful connection

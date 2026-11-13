@@ -3,13 +3,13 @@
 ## Why
 
 The Bluetooth timer feature works with QiYi devices (shipped 2026-11-12, tested by the owner
-with a Speed Stacks G5 and the QiYi adapter). The owner also has a GAN Smart Timer, and GAN
+with a Speed Stacks G5 and the QiYi adapter). The owner also has a GAN Halo Smart Timer, and GAN
 timers are the other common Bluetooth timer among speedcubers. The first change planned this
 as a follow-up: a second driver behind the same "Connect timer" button.
 
 ## What Changes
 
-- The same "Connect timer" button also finds GAN timers. The browser's device list shows both
+- The same "Connect timer" button also finds GAN timers (the owner's GAN Halo, and the original GAN Smart Timer, which is described as speaking the same protocol). The browser's device list shows both
   QiYi and GAN timers, and the app picks the right protocol from the name of the one chosen.
   Still one press, no flags, nothing to type.
 - Everything a player sees and does stays as it is for QiYi: inspection on the screen, the
