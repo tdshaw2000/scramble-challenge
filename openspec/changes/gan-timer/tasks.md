@@ -11,6 +11,16 @@
       "Log" tab, or screenshots of the values). Verify the packets start `FE` and the stopped
       time matches the timer's display; record the byte layout and CRC in this file.
 
+Result (2026-11-13, owner's Halo): it advertises as `GAN-STv4769` with service `0xFFF0`, so the
+device list filters on the `GAN` prefix. Two solves were captured on `FFF5` (saved in
+`/mnt/project-files/bluetooth-timer/gan-halo-nrf-2026-11-13.txt`). Every packet is `FE`, a
+length, `01`, the state, then for a stop the time as minutes, seconds and milliseconds (2 bytes,
+low byte first), then a CRC16-CCITT (start 0xFFFF, polynomial 0x1021) of everything after the
+length, low byte first. All 11 packets' CRCs check. States seen: 06 hands on, 01 getting set,
+03 running, 04 stopped (3.775 s and 4.601 s), 07 finished, 05 idle (time zero, on reset).
+A solve is hands on, getting set, running, stopped with the time, finished, as the design
+expected. Hands off (02) didn't appear. Nothing has to be written to the timer.
+
 ## 2. Protocol building blocks
 
 - [ ] 2.1 Save the capture as `tests/e2e/fixtures/gan-halo-<date>.log` and write
