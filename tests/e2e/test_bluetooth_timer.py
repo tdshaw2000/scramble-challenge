@@ -6,7 +6,7 @@ import re
 import pytest
 from playwright.sync_api import expect
 
-from tests.e2e import qiyi
+from tests.e2e import gan, qiyi
 from tests.e2e.fake_bluetooth import (
     FAKE_BLUETOOTH,
     NO_BLUETOOTH,
@@ -122,7 +122,7 @@ def connect(amy):
     expect(amy.locator(CONNECT)).to_have_text("Timer connected")
 
 
-def test_connecting_asks_for_qiyi_timers_and_says_hello_with_the_address_from_the_name(
+def test_connecting_asks_for_qiyi_and_gan_timers_and_says_hello_to_qiyi_with_its_address(
     tom_and_amy_with_bluetooth,
 ):
     tom, amy = tom_and_amy_with_bluetooth
@@ -132,8 +132,10 @@ def test_connecting_asks_for_qiyi_timers_and_says_hello_with_the_address_from_th
 
     expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "true")
     options = amy.evaluate("__bt.options")
-    assert options["filters"] == [{"namePrefix": "QY-Timer"}, {"namePrefix": "QY-Adapter"}]
-    assert SERVICE in options["optionalServices"]
+    assert options["filters"] == [
+        {"namePrefix": prefix} for prefix in ("QY-Timer", "QY-Adapter", "GAN", "Gan", "gan")
+    ]
+    assert sorted(options["optionalServices"]) == sorted([SERVICE, gan.SERVICE])
     hello = qiyi.message(1, 0, qiyi.HELLO, qiyi.hello_data("CC:A8:00:00:2B:0F"))
     expect(amy.locator(CONNECT)).to_have_attribute("aria-pressed", "true")
     assert written_messages(amy) == [hello]

@@ -1,4 +1,5 @@
-"""A fake `navigator.bluetooth` with one QiYi timer in it, for the browser tests.
+"""A fake `navigator.bluetooth` with one timer in it, for the browser tests: a QiYi timer, or a
+GAN timer when its name starts GAN.
 
 Installed with add_init_script before the page loads. The test drives it through
 window.__bt:
@@ -10,10 +11,11 @@ window.__bt:
   __bt.connected      whether the page is connected
   __bt.send(packets)  the timer sends [[header, [plain block, ...]], ...] (from qiyi.packets);
                       each block is encrypted here with the vendored AES library
+  __bt.sendGan(bytes) a GAN timer sends one packet, as gan.packet() builds it
   __bt.drop()         the timer goes away (switched off, out of range)
 """
 
-from tests.e2e import qiyi
+from tests.e2e import gan, qiyi
 
 SERVICE = "0000fd50-0000-1000-8000-00805f9b34fb"
 WRITE = "00000001-0000-1001-8001-00805f9b07d0"
@@ -23,6 +25,7 @@ FAKE_BLUETOOTH = (
     """
 (() => {
   const SERVICE = "__SERVICE__", WRITE = "__WRITE__", NOTIFY = "__NOTIFY__";
+  const GAN_SERVICE = "__GAN_SERVICE__", GAN_STATE = "__GAN_STATE__";
   const bt = (window.__bt = {
     name: "QY-Adapter-2B0F", cancel: false, failConnect: false, options: null,
     written: [], connected: false,
@@ -54,6 +57,21 @@ FAKE_BLUETOOTH = (
   };
   service.getCharacteristics = async () => [write, notify];
 
+  // A GAN timer has its own service, with one characteristic that notifies its state.
+  const ganState = new EventTarget();
+  ganState.uuid = GAN_STATE;
+  ganState.value = null;
+  ganState.startNotifications = async () => ganState;
+  ganState.stopNotifications = async () => ganState;
+  const ganService = {
+    uuid: GAN_SERVICE,
+    getCharacteristic: async (uuid) => {
+      if (uuid === GAN_STATE) return ganState;
+      throw new DOMException("No Characteristics matching UUID " + uuid, "NotFoundError");
+    },
+  };
+  const isGan = () => bt.name.startsWith("GAN");
+
   const device = new EventTarget();
   const server = {
     device,
@@ -70,7 +88,8 @@ FAKE_BLUETOOTH = (
     },
     getPrimaryService: async (uuid) => {
       if (!bt.connected) throw new DOMException("GATT Server is disconnected.", "NetworkError");
-      if (uuid === SERVICE || uuid === 0xfd50) return service;
+      if (isGan() && uuid === GAN_SERVICE) return ganService;
+      if (!isGan() && (uuid === SERVICE || uuid === 0xfd50)) return service;
       throw new DOMException("No Services matching UUID " + uuid, "NotFoundError");
     },
   };
@@ -85,6 +104,10 @@ FAKE_BLUETOOTH = (
       notify.value = new DataView(new Uint8Array(bytes).buffer);
       notify.dispatchEvent(new Event("characteristicvaluechanged"));
     }
+  };
+  bt.sendGan = (bytes) => {
+    ganState.value = new DataView(new Uint8Array(bytes).buffer);
+    ganState.dispatchEvent(new Event("characteristicvaluechanged"));
   };
   bt.drop = () => server.disconnect();
 
@@ -105,6 +128,8 @@ FAKE_BLUETOOTH = (
 """.replace("__SERVICE__", SERVICE)
     .replace("__WRITE__", WRITE)
     .replace("__NOTIFY__", NOTIFY)
+    .replace("__GAN_SERVICE__", gan.SERVICE)
+    .replace("__GAN_STATE__", gan.STATE)
 )
 
 NO_BLUETOOTH = """
@@ -169,3 +194,9 @@ def written_messages(page):
         if len(current) >= length:
             messages.append(current[:length])
     return messages
+
+
+def send_gan(page, *packets):
+    """The fake GAN timer sends these packets (from gan.packet), in order."""
+    for packet in packets:
+        page.evaluate("(bytes) => __bt.sendGan(bytes)", packet)
