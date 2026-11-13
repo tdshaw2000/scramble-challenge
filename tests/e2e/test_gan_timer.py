@@ -128,6 +128,7 @@ def test_losing_a_gan_timer_mid_solve_hands_it_to_the_screen(tom_and_amy_with_a_
 def test_with_timerlog_every_gan_packet_is_shown(tom_and_amy_with_a_halo):
     tom, amy = tom_and_amy_with_a_halo
     amy.goto(amy.url + "?timerlog")
+    amy.evaluate(f"__bt.name = '{HALO}'")  # the fake timer starts again on a new page
     start_round(tom, amy)
 
     connect(amy)

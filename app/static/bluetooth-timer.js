@@ -1,10 +1,11 @@
 // Bluetooth speedcubing timers, through Web Bluetooth (Chrome and Edge, Android and desktop).
 // challenge.js only sees neutral states from a connection: ready, running, stopped {timeMs},
-// idle and disconnected. Each family of timers is a driver behind that; the first is QiYi
-// (the QiYi Smart Timer, and the QiYi adapter fitted to a Speed Stacks timer).
+// idle and disconnected. Each family of timers is a driver behind that: QiYi (the QiYi Smart
+// Timer, and the QiYi adapter fitted to a Speed Stacks timer) and GAN (the Halo and the Smart
+// Timer). The device list offers both, and the chosen timer's name picks the driver.
 //
-// The QiYi protocol is our own implementation. csTimer (GPL) was used only as a description
-// of how the timer behaves; no code was taken from it.
+// Both protocols are our own implementation. csTimer (GPL) and gan-web-bluetooth (MIT) were
+// used only as descriptions of how the timers behave; no code was taken from them.
 (function () {
   "use strict";
 
@@ -213,6 +214,9 @@
   const QIYI_SERVICE = "0000fd50-0000-1000-8000-00805f9b34fb";
   const QIYI_WRITE = "00000001-0000-1001-8001-00805f9b07d0";
   const QIYI_NOTIFY = "00000002-0000-1001-8001-00805f9b07d0";
+  const GAN_NAMES = ["GAN", "Gan", "gan"];
+  const GAN_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb";
+  const GAN_STATE = "0000fff5-0000-1000-8000-00805f9b34fb";
 
   // Every packet to and from the timer goes to the console, so real ones can be copied out
   // for the protocol tests.
@@ -229,31 +233,81 @@
     logListeners.push(listener);
   }
 
+  function received(event) {
+    const value = event.target.value;
+    const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    log("received", bytes);
+    return bytes;
+  }
+
   // Opens the browser's device list (only timers we know are shown) and connects to the one
-  // picked. Resolves to a connection; rejects if the list is closed or the timer can't be
-  // reached. Must be called from a button press: browsers allow nothing else.
+  // picked, speaking its protocol. Resolves to a connection; rejects if the list is closed or
+  // the timer can't be reached. Must be called from a button press: browsers allow nothing else.
   async function connect() {
     const device = await navigator.bluetooth.requestDevice({
-      filters: QIYI_NAMES.map((namePrefix) => ({ namePrefix })),
-      optionalServices: [QIYI_SERVICE],
+      filters: [...QIYI_NAMES, ...GAN_NAMES].map((namePrefix) => ({ namePrefix })),
+      optionalServices: [QIYI_SERVICE, GAN_SERVICE],
     });
-    return connectQiyi(device);
+    const isGan = GAN_NAMES.some((prefix) => (device.name || "").startsWith(prefix));
+    return connectWith(device, isGan ? ganDriver : qiyiDriver);
   }
 
   // A connection: onState(fn) hears {state: "ready" | "running" | "idle" | "disconnected"}
   // and {state: "stopped", timeMs}. "disconnected" means the timer was lost, not that
-  // disconnect() was called.
-  async function connectQiyi(device) {
-    const mac = macFromName(device.name);
-    if (!mac) throw new Error(`No address can be worked out from the name ${device.name}`);
+  // disconnect() was called. The driver sets up the timer's own protocol and passes each
+  // neutral state it reads to timer.heard().
+  async function connectWith(device, driver) {
     const listeners = [];
     let open = true;
+
+    function close() {
+      open = false;
+      device.removeEventListener("gattserverdisconnected", lost);
+      if (device.gatt.connected) device.gatt.disconnect();
+    }
+
+    function lost() {
+      if (!open) return;
+      close();
+      for (const listener of listeners) listener({ state: "disconnected" });
+    }
+
+    const timer = {
+      isOpen: () => open,
+      heard(meaning) {
+        if (!open || !meaning) return;
+        if (meaning.state === "disconnected") {
+          lost();
+          return;
+        }
+        const event = meaning.state === "stopped" ? { state: "stopped", timeMs: meaning.timeMs } : { state: meaning.state };
+        for (const listener of listeners) listener(event);
+      },
+    };
+
+    device.addEventListener("gattserverdisconnected", lost);
+    try {
+      await driver(device, timer);
+    } catch (error) {
+      close();
+      throw error;
+    }
+
+    return {
+      name: device.name,
+      onState(listener) {
+        listeners.push(listener);
+      },
+      disconnect: close,
+    };
+  }
+
+  // QiYi: work out the address from the name, listen, say hello, and answer each record.
+  async function qiyiDriver(device, timer) {
+    const mac = macFromName(device.name);
+    if (!mac) throw new Error(`No address can be worked out from the name ${device.name}`);
     let writer = null;
     let queue = Promise.resolve();
-
-    function emit(event) {
-      for (const listener of listeners) listener(event);
-    }
 
     // The timer takes one write at a time.
     function write(packets) {
@@ -268,59 +322,37 @@
       return done;
     }
 
-    function close() {
-      open = false;
-      device.removeEventListener("gattserverdisconnected", lost);
-      if (device.gatt.connected) device.gatt.disconnect();
-    }
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(QIYI_SERVICE);
+    writer = await service.getCharacteristic(QIYI_WRITE);
+    const notifier = await service.getCharacteristic(QIYI_NOTIFY);
+    const incoming = reader();
+    notifier.addEventListener("characteristicvaluechanged", (event) => {
+      if (!timer.isOpen()) return;
+      const message = incoming.push(received(event));
+      if (message) {
+        const cmd = [message.cmd >> 8, message.cmd & 0xff];
+        const length = [message.data.length >> 8, message.data.length & 0xff];
+        log("message", [...u32(message.sendSn), ...u32(message.ackSn), ...cmd, ...length, ...message.data]);
+      }
+      const meaning = parse(message);
+      if (meaning && meaning.ack) write(ack(message)).catch(() => {});
+      timer.heard(meaning);
+    });
+    await notifier.startNotifications();
+    await write(hello(mac));
+  }
 
-    function lost() {
-      if (!open) return;
-      close();
-      emit({ state: "disconnected" });
-    }
-
-    device.addEventListener("gattserverdisconnected", lost);
-    try {
-      const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(QIYI_SERVICE);
-      writer = await service.getCharacteristic(QIYI_WRITE);
-      const notifier = await service.getCharacteristic(QIYI_NOTIFY);
-      const incoming = reader();
-      notifier.addEventListener("characteristicvaluechanged", (event) => {
-        if (!open) return;
-        const value = event.target.value;
-        const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-        log("received", bytes);
-        const message = incoming.push(bytes);
-        if (message) {
-          const cmd = [message.cmd >> 8, message.cmd & 0xff];
-          const length = [message.data.length >> 8, message.data.length & 0xff];
-          log("message", [...u32(message.sendSn), ...u32(message.ackSn), ...cmd, ...length, ...message.data]);
-        }
-        const meaning = parse(message);
-        if (!meaning) return;
-        if (meaning.ack) write(ack(message)).catch(() => {});
-        if (meaning.state === "disconnected") {
-          lost();
-          return;
-        }
-        emit(meaning.state === "stopped" ? { state: "stopped", timeMs: meaning.timeMs } : { state: meaning.state });
-      });
-      await notifier.startNotifications();
-      await write(hello(mac));
-    } catch (error) {
-      close();
-      throw error;
-    }
-
-    return {
-      name: device.name,
-      onState(listener) {
-        listeners.push(listener);
-      },
-      disconnect: close,
-    };
+  // GAN: just listen. The timer needs nothing written to it.
+  async function ganDriver(device, timer) {
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(GAN_SERVICE);
+    const notifier = await service.getCharacteristic(GAN_STATE);
+    notifier.addEventListener("characteristicvaluechanged", (event) => {
+      if (!timer.isOpen()) return;
+      timer.heard(ganParse(received(event)));
+    });
+    await notifier.startNotifications();
   }
 
   window.BluetoothTimer = {
