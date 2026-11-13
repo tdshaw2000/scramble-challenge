@@ -24,15 +24,22 @@ and spacebar exactly as before.
 ### Requirement: Connecting a timer
 Connecting a timer SHALL need only the button press and choosing the timer from the
 browser's own Bluetooth device list: no browser flags, settings changes or typed codes. The
-first supported timers SHALL be the QiYi protocol devices (the QiYi Smart Timer, and the QiYi
-Bluetooth adapter fitted to a Speed Stacks timer).
+supported timers SHALL be the QiYi protocol devices (the QiYi Smart Timer, and the QiYi
+Bluetooth adapter fitted to a Speed Stacks timer) and GAN timers (the GAN Halo and GAN Smart
+Timer). One button SHALL offer all of them, and the app SHALL work out which kind of timer was
+chosen by itself.
 
 #### Scenario: Successful connection
-- **WHEN** a player presses "Connect timer" and picks their QiYi timer or adapter in the
-  browser's device list
+- **WHEN** a player presses "Connect timer" and picks their QiYi timer or adapter, or their
+  GAN timer, in the browser's device list
 - **THEN** the button reads "Timer connected" and is highlighted the way an "on" toggle is in
   that skin, and the timer controls that player's
   solves from then on
+
+#### Scenario: Both kinds of timer in range
+- **WHEN** a player presses "Connect timer" with a QiYi timer and a GAN timer both switched on
+  nearby
+- **THEN** the device list shows both, and whichever the player picks works
 
 #### Scenario: Connection fails or is cancelled
 - **WHEN** the player cancels the device list, or the timer cannot be connected
@@ -81,14 +88,15 @@ timer is connected.
 - **WHEN** the player's hands have been on the pads long enough for the timer to be ready to
   start
 - **THEN** the screen shows the same "ready" state it shows while a finger is held down
-  (where the timer reports it: the QiYi adapter on a Speed Stacks G5 does not, so with it only
-  the timer's own light shows readiness)
+  (where the timer reports it: GAN timers do; the QiYi adapter on a Speed Stacks G5 does not,
+  so with it only the timer's own light shows readiness)
 
 #### Scenario: The timer is switched off mid-solve
-- **WHEN** a connected player switches their timer itself off (not the Bluetooth adapter) while
-  solving
+- **WHEN** a connected player switches a Speed Stacks timer fitted with the QiYi adapter off
+  (the timer itself, not the adapter) while solving
 - **THEN** the solve stops with the time the timer had reached, as if the player had stopped it,
-  because the adapter reports it exactly like a stop
+  because the adapter reports it exactly like a stop (a GAN timer that switches off is lost
+  instead, as in "Disconnect during a solve")
 
 #### Scenario: Brushing the screen
 - **WHEN** a connected player touches the screen or presses the spacebar while inspecting or
