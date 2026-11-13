@@ -2,10 +2,10 @@
 
 ## 1. Hardware check and capture (owner, before any code)
 
-- [ ] 1.1 Owner scans with the nRF Connect app on Android, with the GAN Halo switched on:
+- [x] 1.1 Owner scans with the nRF Connect app on Android, with the GAN Halo switched on:
       note the timer's name exactly, and screenshot its expanded advertisement (services and
       manufacturer data). Verify the name prefix to filter on.
-- [ ] 1.2 Owner connects to the timer in nRF Connect, opens service `FFF0`, turns on
+- [x] 1.2 Owner connects to the timer in nRF Connect, opens service `FFF0`, turns on
       notifications for characteristic `FFF5`, and does one normal solve and one solve stopped
       with a +2-style late start (any order is fine). Then shares the log (nRF Connect's
       "Log" tab, or screenshots of the values). Verify the packets start `FE` and the stopped
@@ -19,7 +19,8 @@ low byte first), then a CRC16-CCITT (start 0xFFFF, polynomial 0x1021) of everyth
 length, low byte first. All 11 packets' CRCs check. States seen: 06 hands on, 01 getting set,
 03 running, 04 stopped (3.775 s and 4.601 s), 07 finished, 05 idle (time zero, on reset).
 A solve is hands on, getting set, running, stopped with the time, finished, as the design
-expected. Hands off (02) didn't appear. Nothing has to be written to the timer.
+expected. Hands off (02) didn't appear. Nothing has to be written to the timer. The owner
+confirmed the Halo displayed 3.77 and 4.60 (times are truncated, so 3.775 shows as 3.77).
 
 ## 2. Protocol building blocks
 
