@@ -20,7 +20,9 @@ length, low byte first. All 11 packets' CRCs check. States seen: 06 hands on, 01
 03 running, 04 stopped (3.775 s and 4.601 s), 07 finished, 05 idle (time zero, on reset).
 A solve is hands on, getting set, running, stopped with the time, finished, as the design
 expected. Hands off (02) didn't appear. Nothing has to be written to the timer. The owner
-confirmed the Halo displayed 3.77 and 4.60 (times are truncated, so 3.775 shows as 3.77).
+confirmed the Halo displayed 3.77 and 4.60 (times are truncated, so 3.775 shows as 3.77). A third
+solve over a minute, `FE-08-01-04-01-07-A2-03-ED-7A`, decodes to 1:07.930, which the Halo
+showed too, so the minutes byte works as expected.
 
 ## 2. Protocol building blocks
 
