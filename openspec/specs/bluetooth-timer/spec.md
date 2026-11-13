@@ -92,10 +92,11 @@ timer is connected.
   so with it only the timer's own light shows readiness)
 
 #### Scenario: The timer is switched off mid-solve
-- **WHEN** a connected player switches their timer itself off (not the Bluetooth adapter) while
-  solving
+- **WHEN** a connected player switches a Speed Stacks timer fitted with the QiYi adapter off
+  (the timer itself, not the adapter) while solving
 - **THEN** the solve stops with the time the timer had reached, as if the player had stopped it,
-  because the adapter reports it exactly like a stop
+  because the adapter reports it exactly like a stop (a GAN timer that switches off is lost
+  instead, as in "Disconnect during a solve")
 
 #### Scenario: Brushing the screen
 - **WHEN** a connected player touches the screen or presses the spacebar while inspecting or

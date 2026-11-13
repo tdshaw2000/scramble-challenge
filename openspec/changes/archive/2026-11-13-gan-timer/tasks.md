@@ -64,7 +64,10 @@ showed too, so the minutes byte works as expected.
       `?timerlog` log; add any new frames to the fixture tests. Also connect the QiYi adapter
       once more to confirm it still works.
 
-Result (2026-11-13, owner, live site, Android Chrome): the owner confirmed the GAN Halo works. With the Halo the screen lights up "ready" once the player's hands are
+Result (2026-11-13, owner, live site, Android Chrome): the owner reported "test confirmed it
+works", and that the screen shows ready while hands are on the pads. The owner didn't report the
+other checks one by one (+2, brushed screen, switching off mid-solve, a `?timerlog` capture, the
+QiYi re-check), so they are covered by the browser tests only. No new frames were added. With the Halo the screen lights up "ready" once the player's hands are
 on the pads, from the timer's getting-set message (the QiYi adapter on a G5 never sends it).
 - [x] 5.3 Update the README's Bluetooth timers section to name GAN
 
@@ -75,3 +78,8 @@ on the pads, from the timer's getting-set message (the QiYi adapter on a G5 neve
 Archived 2026-11-13. Judgment call from the review of PR #74: GAN timers are found by the `GAN`
 name prefix alone (not name plus the FFF0 service), so a GAN smart cube nearby may also be
 listed; picking one fails cleanly with "Timer not connected."
+
+Besides the delta's "Connecting a timer" requirement, the archive also changed two scenarios in
+the live spec: "Getting ready on the pads" now says GAN timers report readiness, and "The timer
+is switched off mid-solve" is limited to the QiYi adapter, since a GAN timer switching off
+goes through "Losing the timer" instead (judgment call from the review of this archive).
