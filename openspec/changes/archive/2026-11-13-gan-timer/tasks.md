@@ -57,14 +57,21 @@ showed too, so the minutes byte works as expected.
 ## 5. Integration and real hardware
 
 - [x] 5.1 Run the full suite and verify it is green
-- [ ] 5.2 Owner checks on Android Chrome with the GAN Halo on the live site, as for QiYi:
+- [x] 5.2 Owner checks on Android Chrome with the GAN Halo on the live site, as for QiYi:
       connect with one press, a full solve with the time matching the timer's display, the
       screen lighting up ready on the pads, a +2 start, a brushed screen doing nothing, and
       switching the timer off mid-solve then finishing on the screen. Captures the
       `?timerlog` log; add any new frames to the fixture tests. Also connect the QiYi adapter
       once more to confirm it still works.
+
+Result (2026-11-13, owner, live site, Android Chrome): the owner confirmed the GAN Halo works. With the Halo the screen lights up "ready" once the player's hands are
+on the pads, from the timer's getting-set message (the QiYi adapter on a G5 never sends it).
 - [x] 5.3 Update the README's Bluetooth timers section to name GAN
 
 ## Workflow follow-up
 
 - Archive this change once it has shipped and the owner's 5.2 check passes.
+
+Archived 2026-11-13. Judgment call from the review of PR #74: GAN timers are found by the `GAN`
+name prefix alone (not name plus the FFF0 service), so a GAN smart cube nearby may also be
+listed; picking one fails cleanly with "Timer not connected."
