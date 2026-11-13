@@ -6,12 +6,12 @@ A live multiplayer scramble-timing party game for speedcubers. See the capabilit
 ## Bluetooth timers
 
 A player can connect a QiYi Bluetooth timer (the QiYi Smart Timer, or the QiYi adapter on a
-Speed Stacks timer) with the "Connect timer" button on the scramble screen. Inspection stays
-on the screen; the timer's pads start and stop the solve, and its own time is recorded. This
-needs Web Bluetooth, so it works in Chrome and Edge on Android and desktop only; on iPhones
-and in Safari the button doesn't appear. The protocol code is in
-`app/static/bluetooth-timer.js`, and it logs every packet to the browser console as
-`[timer] sent ...` / `[timer] received ...`. Adding `?timerlog` to a challenge page's
+Speed Stacks timer) or a GAN timer (the GAN Halo or GAN Smart Timer) with the "Connect timer"
+button on the scramble screen. Inspection stays on the screen; the timer's pads start and stop
+the solve, and its own time is recorded. This needs Web Bluetooth, so it works in Chrome and
+Edge on Android and desktop only; on iPhones and in Safari the button doesn't appear. The
+protocol code for both is in `app/static/bluetooth-timer.js`, and it logs every packet to the
+browser console as `[timer] sent ...` / `[timer] received ...`. Adding `?timerlog` to a challenge page's
 address shows the same log on the page, with each decrypted message and a Copy button, which
 is the easy way to capture it on a phone.
 
