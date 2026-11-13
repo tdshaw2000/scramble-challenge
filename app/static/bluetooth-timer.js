@@ -165,6 +165,43 @@
     return encode(message.ackSn + 1, message.sendSn, QIYI_TIMER_DATA, [0x00]);
   }
 
+  // --- GAN protocol ----------------------------------------------------------------------
+  //
+  // GAN timers (the Halo and the Smart Timer) notify their state unencrypted and need nothing
+  // written to them. A packet is 0xFE, the number of bytes after this one, 0x01, the state,
+  // for a stop the time (minutes, seconds, then milliseconds as 2 bytes low first), and a
+  // CRC16-CCITT of everything after the length byte, low byte first.
+
+  // Hands on the pads, lifted too soon, and the reset after a solve are all "idle" to us;
+  // finished follows the stop that already ended the solve, so it means nothing.
+  const GAN_STATES = ["disconnected", "ready", "idle", "running", "stopped", "idle", "idle", null];
+
+  function crc16ccitt(bytes) {
+    let crc = 0xffff;
+    for (const byte of bytes) {
+      crc ^= byte << 8;
+      for (let bit = 0; bit < 8; bit++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    }
+    return crc;
+  }
+
+  // The neutral state one packet from the timer means, or null if it means nothing to us or
+  // fails its check.
+  function ganParse(packet) {
+    const bytes = Array.from(packet);
+    if (bytes.length < 6 || bytes[0] !== 0xfe || bytes[1] !== bytes.length - 2) return null;
+    const crc = bytes[bytes.length - 2] | (bytes[bytes.length - 1] << 8);
+    if (crc16ccitt(bytes.slice(2, -2)) !== crc) return null;
+    const state = GAN_STATES[bytes[3]];
+    if (!state) return null;
+    if (state === "stopped") {
+      if (bytes.length < 10) return null;
+      const timeMs = bytes[4] * 60000 + bytes[5] * 1000 + (bytes[6] | (bytes[7] << 8));
+      return timeMs > 0 ? { state, timeMs } : null;
+    }
+    return { state };
+  }
+
   // --- connecting ------------------------------------------------------------------------
 
   // Web Bluetooth: Chrome and Edge on Android and desktop. Not Safari, nor any iPhone browser.
@@ -291,5 +328,6 @@
     onLog,
     supported,
     qiyi: { ack, crc16modbus, encode, hello, macFromName, parse, reader },
+    gan: { crc16ccitt, parse: ganParse },
   };
 })();
