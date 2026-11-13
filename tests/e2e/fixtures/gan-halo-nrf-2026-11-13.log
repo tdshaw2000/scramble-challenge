@@ -1,0 +1,16 @@
+# Real notifications from the owner's GAN Halo (GAN-STv4769) on characteristic fff5, captured
+# with the nRF Connect app on Android, 2026-11-13. Three solves, whose times the Halo showed as
+# 3.775, 4.601 and 1:07.930. The third was captured on its own, so only its stop is here.
+# Each line: the time it arrived, the packet, and what the timer was doing.
+15:55:42.746 fe040106f84e hands-on
+15:55:43.131 fe0401011f3e get-set
+15:55:43.582 fe0401035d1e running
+15:55:47.273 fe080104000307031232 stopped 3775
+15:55:47.480 fe040107d95e finished
+15:55:55.462 fe08010500000000e768 idle
+15:55:56.030 fe040106f84e hands-on
+15:55:56.539 fe0401011f3e get-set
+15:55:59.573 fe0401035d1e running
+15:56:04.163 fe08010400045902138a stopped 4601
+15:56:04.370 fe040107d95e finished
+~16:01 fe0801040107a203ed7a stopped 67930
